@@ -42,7 +42,12 @@ CLIP_SUMMARY = 1200
 CLIP_CMD = 200
 MAX_NEW_BYTES = 4 * 1024 * 1024   # don't read more than 4MB of new tail in one turn
 
-# Lines that look like a decision / commitment / next step (English + Russian).
+# Lines that look like a decision / commitment / next step.
+# The alternation is DELIBERATELY BILINGUAL (English + Russian) because the sessions this was
+# built on are: a turn states its verdict in whichever language the human was using. Dropping
+# the non-English half does not raise an error and does not fail any check -- the ledger simply
+# stops recording decisions for half the turns, which looks exactly like a quiet week.
+# Add your own language here rather than translating these away.
 DECISION_RX = re.compile(
     r"(реш(?:ил|ено|аем)|дел(?:аем|ать)\b|не дел(?:аем|ать)|выбра(?:л|ли|ем)|вердикт|"
     r"\btodo\b|to-?do|next step|следующий шаг|\bвыбор\b|"

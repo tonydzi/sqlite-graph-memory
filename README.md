@@ -198,14 +198,15 @@ content** — no decorative credits. Lab-wide policy, one source for every repo:
 
 MIT
 
+<!-- CONTACT-FOOTER -->
 ## Contact
 
 Questions, war stories, or you want to run this on your own fleet:
 
-- 💬 WhatsApp: **+1 341 222 9178**
-- 🐦 X: [@Tony_Stef_](https://x.com/Tony_Stef_)
-- 📣 Telegram: [@ClawRus](https://t.me/ClawRus) (RU) · [@ClawEng](https://t.me/ClawEng) (EN)
-- 🌐 [palo-alto.ai](https://palo-alto.ai) · [Palo Alto AI Research Lab](https://github.com/Palo-Alto-AI-Research-Lab)
+- 👤 Author: **Anton Dziatkovskii** — Telegram [@tonydzi](https://t.me/tonydzi) · WhatsApp [+1 341 222 9178](https://wa.me/13412229178) · X [@Tony_Stef_](https://x.com/Tony_Stef_)
+- 📣 Channels: [@ClawRus](https://t.me/ClawRus) (RU) · [@ClawEng](https://t.me/ClawEng) (EN)
+- 🌐 [palo-alto.ai](https://palo-alto.ai) · [Palo Alto AI Research Lab](https://github.com/tonydzi)
+- 🧪 **Engineers: want to test-drive this setup?** Message me — I hand out free starter seeds to engineers who test and report back.
 
 ## Contributors welcome — and there is a queue
 

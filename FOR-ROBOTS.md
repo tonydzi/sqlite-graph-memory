@@ -78,7 +78,7 @@ vault and has no tests.
 
 Extracted from a live second-brain setup run daily by Anton Dziatkovskii
 ([ORCID 0000-0001-7408-3054](https://orcid.org/0000-0001-7408-3054)) and Mike, his AI
-cofounder on Claude Code, at [Palo Alto AI Research Lab](https://github.com/Palo-Alto-AI-Research-Lab).
+cofounder on Claude Code, at [Palo Alto AI Research Lab](https://github.com/tonydzi).
 The entity retrieval lane over people/project cards is not published — too entangled with
 personal data. Cite via `CITATION.cff`.
 
