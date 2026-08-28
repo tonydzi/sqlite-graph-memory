@@ -7,7 +7,7 @@ authors:
     given-names: Anton
     orcid: "https://orcid.org/0000-0001-7408-3054"
     affiliation: "Palo Alto AI Research Lab"
-repository-code: "https://github.com/Palo-Alto-AI-Research-Lab/sqlite-graph-memory"
-url: "https://github.com/Palo-Alto-AI-Research-Lab/sqlite-graph-memory"
+repository-code: "https://github.com/tonydzi/sqlite-graph-memory"
+url: "https://github.com/tonydzi/sqlite-graph-memory"
 abstract: >-
   Graph RAG on SQLite for AI agents: vector retrieval + hand-curated wikilink graph + cross-encoder rerank, with a zero-token per-turn memory ledger. Working pilot.
