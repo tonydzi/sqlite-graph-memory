@@ -84,7 +84,7 @@ personal data. Cite via `CITATION.cff`.
 
 ## Family
 
-Rules-as-files governance: [claude-bible](https://github.com/Palo-Alto-AI-Research-Lab/claude-bible).
-Multi-machine coordination: [claude-consensus](https://github.com/Palo-Alto-AI-Research-Lab/claude-consensus).
-Control model for delegated authority: [agent-leash](https://github.com/Palo-Alto-AI-Research-Lab/agent-leash).
-Catch fabricated RAG citations: [verbatim-citation-gate](https://github.com/Palo-Alto-AI-Research-Lab/verbatim-citation-gate).
+Rules-as-files governance: [claude-bible](https://github.com/tonydzi/claude-bible).
+Multi-machine coordination: [claude-consensus](https://github.com/tonydzi/claude-consensus).
+Control model for delegated authority: [agent-leash](https://github.com/tonydzi/agent-leash).
+Catch fabricated RAG citations: [verbatim-citation-gate](https://github.com/tonydzi/verbatim-citation-gate).
