@@ -141,19 +141,19 @@ table in [`schema.sql`](schema.sql) accumulates evidence for.
 
 ## Roadmap
 
-**Now — [v0.1.1](https://github.com/Palo-Alto-AI-Research-Lab/sqlite-graph-memory/releases).**
+**Now — [v0.1.1](https://github.com/tonydzi/sqlite-graph-memory/releases).**
 The pilot as it runs daily: retrieval pipeline, per-turn ledger and A/B telemetry, all in
 `brain_ask.py` and `turnstate_hook.py`, plus the bi-temporal design note. Two known defects are
 open issues rather than footnotes:
-[#1](https://github.com/Palo-Alto-AI-Research-Lab/sqlite-graph-memory/issues/1) (the indexer
+[#1](https://github.com/tonydzi/sqlite-graph-memory/issues/1) (the indexer
 ingests `.stversions` backups, sync-conflict copies and `.obsidian` junk as if they were notes)
-and [#2](https://github.com/Palo-Alto-AI-Research-Lab/sqlite-graph-memory/issues/2) (no tests at
+and [#2](https://github.com/tonydzi/sqlite-graph-memory/issues/2) (no tests at
 all — 677 lines of it).
 
 **Next:**
 
-- **A smoke test that runs without downloading a model** ([#2](https://github.com/Palo-Alto-AI-Research-Lab/sqlite-graph-memory/issues/2)) — until that exists, "pilot" is the only word this repo is entitled to.
-- **Ignore rules for the indexer** ([#1](https://github.com/Palo-Alto-AI-Research-Lab/sqlite-graph-memory/issues/1)).
+- **A smoke test that runs without downloading a model** ([#2](https://github.com/tonydzi/sqlite-graph-memory/issues/2)) — until that exists, "pilot" is the only word this repo is entitled to.
+- **Ignore rules for the indexer** ([#1](https://github.com/tonydzi/sqlite-graph-memory/issues/1)).
 - **v0.2**: a public benchmark — a synthetic 200–500 note mini-vault with real wikilinks,
   ~200 hand-labeled queries stratified by type (entity / theme / bridge / compare /
   temporal / navigational), and a full ablation matrix (hops × seed caps × neighbour caps
@@ -170,7 +170,7 @@ all — 677 lines of it).
 - A write-up on the pattern ("Graph RAG without graph extraction") is in progress.
 
 Every noticeable change ships as a new release, so the
-[release feed](https://github.com/Palo-Alto-AI-Research-Lab/sqlite-graph-memory/releases) — not
+[release feed](https://github.com/tonydzi/sqlite-graph-memory/releases) — not
 the commit graph — is where you can see whether "pilot" has stopped being the right word.
 
 ## Models
@@ -192,7 +192,7 @@ This project is built by a human + AI team, and the git log says so: Claude
 writes most of the code, Codex and Grok review it, Gemini feeds the research.
 Each is credited on a commit **only if its output changed that commit's
 content** — no decorative credits. Lab-wide policy, one source for every repo:
-[AI-CONTRIBUTORS.md](https://github.com/Palo-Alto-AI-Research-Lab/.github/blob/main/AI-CONTRIBUTORS.md).
+[AI-CONTRIBUTORS.md](https://github.com/tonydzi/.github/blob/main/AI-CONTRIBUTORS.md).
 
 ## License
 
@@ -210,16 +210,16 @@ Questions, war stories, or you want to run this on your own fleet:
 
 ## Contributors welcome — and there is a queue
 
-Issues labelled [`accepted`](https://github.com/Palo-Alto-AI-Research-Lab/sqlite-graph-memory/issues?q=is%3Aissue+is%3Aopen+label%3Aaccepted)
+Issues labelled [`accepted`](https://github.com/tonydzi/sqlite-graph-memory/issues?q=is%3Aissue+is%3Aopen+label%3Aaccepted)
 are scoped, free to take, and nobody is on them. Comment **"claiming this"** — no permission needed —
 and it is yours for 7 days. New here? Start with
-[`good first issue`](https://github.com/Palo-Alto-AI-Research-Lab/sqlite-graph-memory/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
+[`good first issue`](https://github.com/tonydzi/sqlite-graph-memory/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
 
 **You keep the copyright to your code.** No CLA, no assignment, ever — your contribution goes in
 under this repo's existing license, the same terms as ours. We answer every issue and PR within
 48 hours, including "no, and here is why"; our silence is our bug, so ping the thread.
 
-Full deal: [CONTRIBUTING.md](https://github.com/Palo-Alto-AI-Research-Lab/.github/blob/main/CONTRIBUTING.md)
+Full deal: [CONTRIBUTING.md](https://github.com/tonydzi/.github/blob/main/CONTRIBUTING.md)
 
 ---
 
