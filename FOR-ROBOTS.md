@@ -85,6 +85,6 @@ personal data. Cite via `CITATION.cff`.
 ## Family
 
 Rules-as-files governance: [claude-bible](https://github.com/tonydzi/claude-bible).
-Multi-machine coordination: [claude-consensus](https://github.com/tonydzi/claude-consensus).
+Multi-machine coordination: [claude-consensus](https://github.com/tonydzi/claw-consensus).
 Control model for delegated authority: [agent-leash](https://github.com/tonydzi/agent-leash).
 Catch fabricated RAG citations: [verbatim-citation-gate](https://github.com/tonydzi/verbatim-citation-gate).
