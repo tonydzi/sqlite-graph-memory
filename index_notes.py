@@ -11,7 +11,10 @@ cross-encoder reranker downstream forgives coarse chunk boundaries.
 USAGE:
   python index_notes.py <notes_dir>
 Config (env, optional):
-  BRAIN_INDEX_DIR  output dir (default: ./index)
+  BRAIN_INDEX_DIR     output dir (default: ./index)
+  BRAIN_INDEX_HIDDEN  1 = also index dot-directories (default: skip them,
+                      so .stversions/.obsidian/.git and Syncthing conflict
+                      copies never enter the index)
 """
 import os, re, sys, pickle
 from pathlib import Path
@@ -40,6 +43,46 @@ def fm_date(fm):
     return m.group(1) if m else ''
 
 
+# A synced Obsidian vault is full of markdown that is not a note. `.stversions/`
+# holds Syncthing's old revisions, `*.sync-conflict-*` are its conflict copies,
+# `.obsidian/` is plugin cache and `.git/` is repository internals. Indexing those
+# is worse than noise: a stale revision of a note is semantically almost identical
+# to the live one, so it sits next to it in the top-K and answers with old content.
+CONFLICT_MARKER = 'sync-conflict'
+
+
+def iter_notes(notes_dir):
+    """Files that count as a note under ``notes_dir``.
+
+    Skips dot-directories and Syncthing conflict copies. Set ``BRAIN_INDEX_HIDDEN=1``
+    to index hidden folders too — someone will legitimately keep notes in one.
+    """
+    root = Path(notes_dir)
+    include_hidden = os.getenv('BRAIN_INDEX_HIDDEN', '') not in ('', '0', 'false', 'no')
+    out = []
+    for p in root.rglob('*.md'):
+        rel = p.relative_to(root)
+        if not include_hidden and any(part.startswith('.') for part in rel.parts[:-1]):
+            continue
+        if CONFLICT_MARKER in p.name:
+            continue
+        out.append(p)
+    return sorted(out)
+
+
+def read_note(path):
+    """Text of one note, or None if it cannot be read.
+
+    ``utf-8-sig`` strips the BOM. Reading BOM'd files as plain utf-8 leaves a
+    leading U+FEFF, so the first line is not ``---`` and the frontmatter regex
+    below silently sees a note as having none — losing its date and title.
+    """
+    try:
+        return Path(path).read_text(encoding='utf-8-sig', errors='replace')
+    except Exception:
+        return None
+
+
 def main():
     if len(sys.argv) < 2:
         print(__doc__); return
@@ -48,10 +91,9 @@ def main():
     out_dir.mkdir(parents=True, exist_ok=True)
 
     meta, texts = [], []
-    for p in sorted(notes_dir.rglob('*.md')):
-        try:
-            t = p.read_text(encoding='utf-8', errors='ignore')
-        except Exception:
+    for p in iter_notes(notes_dir):
+        t = read_note(p)
+        if t is None:
             continue
         m = FM_RX.match(t)
         fm = m.group(1) if m else ''
