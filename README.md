@@ -194,6 +194,10 @@ Each is credited on a commit **only if its output changed that commit's
 content** — no decorative credits. Lab-wide policy, one source for every repo:
 [AI-CONTRIBUTORS.md](https://github.com/tonydzi/.github/blob/main/AI-CONTRIBUTORS.md).
 
+## Cite this work
+
+The paper about this system — retrieval design, pilot telemetry, and the query-class-stratified evaluation protocol — is published: [DOI 10.5281/zenodo.22639718](https://doi.org/10.5281/zenodo.22639718) (preprint, CC BY 4.0). Machine-readable citation: [CITATION.cff](CITATION.cff).
+
 ## License
 
 MIT

@@ -11,3 +11,19 @@ repository-code: "https://github.com/tonydzi/sqlite-graph-memory"
 url: "https://github.com/tonydzi/sqlite-graph-memory"
 abstract: >-
   Graph RAG on SQLite for AI agents: vector retrieval + hand-curated wikilink graph + cross-encoder rerank, with a zero-token per-turn memory ledger. Working pilot.
+license: MIT
+keywords:
+  - retrieval-augmented generation
+  - graph RAG
+  - SQLite
+  - personal knowledge management
+  - wikilinks
+references:
+  - type: article
+    title: "When Does Graph Expansion Help Personal-Corpus Retrieval? A Query-Class-Stratified Evaluation Protocol for Retrieval over Human-Curated Wikilink Graphs, with Pilot Telemetry from a Production Deployment"
+    authors:
+      - family-names: Dziatkovskii
+        given-names: Anton
+    year: 2026
+    doi: "10.5281/zenodo.22639718"
+    notes: "The paper about this system and its evaluation protocol (preprint, CC BY 4.0)."
