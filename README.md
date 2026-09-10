@@ -11,6 +11,8 @@ Status: **pilot**, and the word is load-bearing: it runs daily in one real setup
 Obsidian vault driven by Claude Code), but it is deliberately minimal, has 7 tests for
 `index_notes.py`, while `brain_ask.py` and `turnstate_hook.py` have none, and makes no
 attempt to be general — see [What's intentionally missing](#whats-intentionally-missing).
+Published as the companion code for an upcoming write-up on lightweight Graph RAG for agents;
+the one design note that is already written is [docs/bitemporal.md](docs/bitemporal.md).
 
 ## Why
 
