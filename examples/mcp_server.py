@@ -19,7 +19,7 @@ Config (env, optional):
   TURNSTATE_DB      SQLite db for telemetry (default: ./turnstate.db)
   BRAIN_ANSWER_OUT  file to mirror answer into (default: ./_brain_answer.txt)
 """
-import sys, os, json, subprocess
+import sys, os, json, subprocess, tempfile
 from pathlib import Path
 
 # Ensure UTF-8 for stdio communication on all platforms (including Windows console)
@@ -74,6 +74,9 @@ def run_recall(query: str, mode: str = "associative") -> str:
     if not BRAIN_ASK_SCRIPT.exists():
         return f"Error: brain_ask.py not found at {BRAIN_ASK_SCRIPT}"
 
+    if mode not in ("associative", "direct", "ab"):
+        mode = "associative"
+
     cmd = [sys.executable, str(BRAIN_ASK_SCRIPT)]
     if mode == "ab":
         cmd.append("--ab")
@@ -83,10 +86,15 @@ def run_recall(query: str, mode: str = "associative") -> str:
         cmd.extend(["--graph", "--ask"])
     cmd.append(query)
 
+    with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as tf:
+        temp_ans_file = Path(tf.name)
+
     try:
+        call_env = {**os.environ, "BRAIN_ANSWER_OUT": str(temp_ans_file)}
         res = subprocess.run(
             cmd,
             cwd=str(ROOT_DIR),
+            env=call_env,
             capture_output=True,
             text=True,
             encoding="utf-8",
@@ -97,11 +105,10 @@ def run_recall(query: str, mode: str = "associative") -> str:
             err = (res.stderr or res.stdout or "").strip()
             return f"Recall error (exit code {res.returncode}):\n{err}"
 
-        # If --ask mode was used, check BRAIN_ANSWER_OUT for the context bundle
-        ans_file = Path(os.getenv("BRAIN_ANSWER_OUT", ROOT_DIR / "_brain_answer.txt"))
-        if ans_file.exists():
+        # If --ask mode was used, read the scoped per-call answer file
+        if temp_ans_file.exists():
             try:
-                content = ans_file.read_text(encoding="utf-8", errors="replace").strip()
+                content = temp_ans_file.read_text(encoding="utf-8", errors="replace").strip()
                 if content:
                     return content
             except Exception:
@@ -112,6 +119,12 @@ def run_recall(query: str, mode: str = "associative") -> str:
         return "Recall error: timed out after 60 seconds."
     except Exception as e:
         return f"Recall exception: {e}"
+    finally:
+        if temp_ans_file.exists():
+            try:
+                temp_ans_file.unlink()
+            except Exception:
+                pass
 
 
 def handle_request(req: dict) -> dict:

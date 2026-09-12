@@ -90,3 +90,61 @@ def test_mcp_tool_call_unknown_tool():
     resp = handle_request(req)
     assert resp["id"] == 6
     assert resp["error"]["code"] == -32601
+
+
+def test_run_recall_success_with_scoped_answer_file(tmp_path, monkeypatch):
+    """Verify run_recall passes a scoped BRAIN_ANSWER_OUT and reads it back cleanly."""
+    stub = tmp_path / "stub_brain_ask.py"
+    stub.write_text(
+        "import os, sys\n"
+        "out_path = os.environ.get('BRAIN_ANSWER_OUT')\n"
+        "if out_path:\n"
+        "    with open(out_path, 'w', encoding='utf-8') as f:\n"
+        "        f.write('STUB CONTEXT BUNDLE FOR: ' + sys.argv[-1])\n",
+        encoding="utf-8"
+    )
+    import mcp_server
+    monkeypatch.setattr(mcp_server, "BRAIN_ASK_SCRIPT", stub)
+    res = mcp_server.run_recall("test agent memory query", mode="associative")
+    assert "STUB CONTEXT BUNDLE FOR: test agent memory query" in res
+
+
+def test_run_recall_exit_code_error(tmp_path, monkeypatch):
+    """Verify non-zero exit codes from brain_ask.py are captured and returned safely."""
+    stub = tmp_path / "stub_fail.py"
+    stub.write_text("import sys\nsys.stderr.write('SYNTHETIC_FAILURE_MSG\\n')\nsys.exit(1)\n", encoding="utf-8")
+    import mcp_server
+    monkeypatch.setattr(mcp_server, "BRAIN_ASK_SCRIPT", stub)
+    res = mcp_server.run_recall("test query")
+    assert "Recall error (exit code 1)" in res
+    assert "SYNTHETIC_FAILURE_MSG" in res
+
+
+def test_run_recall_stdout_fallback(tmp_path, monkeypatch):
+    """Verify stdout is returned when no answer file is produced."""
+    stub = tmp_path / "stub_stdout.py"
+    stub.write_text("print('Direct stdout text from stub')\n", encoding="utf-8")
+    import mcp_server
+    monkeypatch.setattr(mcp_server, "BRAIN_ASK_SCRIPT", stub)
+    res = mcp_server.run_recall("test query")
+    assert "Direct stdout text from stub" in res
+
+
+def test_run_recall_missing_script(tmp_path, monkeypatch):
+    """Verify missing brain_ask.py script returns error rather than raising."""
+    import mcp_server
+    monkeypatch.setattr(mcp_server, "BRAIN_ASK_SCRIPT", tmp_path / "non_existent.py")
+    res = mcp_server.run_recall("test query")
+    assert "Error: brain_ask.py not found" in res
+
+
+def test_run_recall_timeout(tmp_path, monkeypatch):
+    """Verify subprocess timeout is caught and returns clear error text."""
+    import mcp_server, subprocess
+    def mock_run(*args, **kwargs):
+        raise subprocess.TimeoutExpired(cmd=kwargs.get("args") or [], timeout=60)
+    monkeypatch.setattr(mcp_server.subprocess, "run", mock_run)
+    res = mcp_server.run_recall("test query")
+    assert "timed out after 60 seconds" in res
+
+
