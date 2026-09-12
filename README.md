@@ -8,10 +8,11 @@ scripts — `index_notes.py`, `brain_ask.py`, `turnstate_hook.py` — that give 
 SQLite is the only database ([`schema.sql`](schema.sql)) and `[[wikilinks]]` are the graph.
 
 Status: **pilot**, and the word is load-bearing: it runs daily in one real setup (a ~100k-note
-Obsidian vault driven by Claude Code), but it is deliberately minimal, has no tests, and makes
-no attempt to be general — see [What's intentionally missing](#whats-intentionally-missing).
+Obsidian vault driven by Claude Code), but it is deliberately minimal, has 7 tests for
+`index_notes.py`, while `brain_ask.py` and `turnstate_hook.py` have none, and makes no
+attempt to be general — see [What's intentionally missing](#whats-intentionally-missing).
 Published as the companion code for an upcoming write-up on lightweight Graph RAG for agents;
-the one design note that is already written is [`docs/bitemporal.md`](docs/bitemporal.md).
+the one design note that is already written is [docs/bitemporal.md](docs/bitemporal.md).
 
 ## Why
 
@@ -83,10 +84,11 @@ an edge table only when hop depth or corpus size demands it.
 
 - No entity lane. The production setup has an extra retrieval lane over people/project
   cards; it is too entangled with personal data to publish.
-- No incremental indexing, no eval suite, no packaging, and no tests — the status line
-  above says **pilot** on purpose.
+- No incremental indexing, no eval suite, and no packaging; `index_notes.py` has 7 tests,
+  while `brain_ask.py` and `turnstate_hook.py` have none — the status line above says
+  **pilot** on purpose.
 
-## Quickstart
+## Quickstart  
 
 ```bash
 pip install -r requirements.txt
@@ -147,12 +149,11 @@ The pilot as it runs daily: retrieval pipeline, per-turn ledger and A/B telemetr
 open issues rather than footnotes:
 [#1](https://github.com/tonydzi/sqlite-graph-memory/issues/1) (the indexer
 ingests `.stversions` backups, sync-conflict copies and `.obsidian` junk as if they were notes)
-and [#2](https://github.com/tonydzi/sqlite-graph-memory/issues/2) (no tests at
-all — 677 lines of it).
+and the former #2 test gap is now closed: `index_notes.py` has 7 tests,
+while `brain_ask.py` and `turnstate_hook.py` have none.
 
 **Next:**
 
-- **A smoke test that runs without downloading a model** ([#2](https://github.com/tonydzi/sqlite-graph-memory/issues/2)) — until that exists, "pilot" is the only word this repo is entitled to.
 - **Ignore rules for the indexer** ([#1](https://github.com/tonydzi/sqlite-graph-memory/issues/1)).
 - **v0.2**: a public benchmark — a synthetic 200–500 note mini-vault with real wikilinks,
   ~200 hand-labeled queries stratified by type (entity / theme / bridge / compare /
