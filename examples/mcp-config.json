@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "sqlite-graph-memory": {
+      "command": "python",
+      "args": [
+        "/path/to/sqlite-graph-memory/examples/mcp_server.py"
+      ],
+      "env": {
+        "BRAIN_INDEX_DIR": "/path/to/sqlite-graph-memory/index",
+        "TURNSTATE_DB": "/path/to/sqlite-graph-memory/turnstate.db"
+      }
+    }
+  }
+}
+
