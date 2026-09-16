@@ -99,12 +99,22 @@ def first_paragraph(body, minlen=100, maxlen=400):
 
 
 def indexed_stems(index_dir):
-    """Filenames (no extension, lowercased) present in the embedding index."""
+    """-> (set of indexed filenames without extension, set of AMBIGUOUS ones).
+
+    Wikilinks address a note by filename, so two notes with the same filename in different
+    folders are genuinely ambiguous: `[[foo]]` names both. Such a name cannot be a gold
+    answer — whichever of the two is retrieved, the score is a coin flip — so the caller
+    excludes them and reports how many were dropped.
+    """
     meta_path = Path(index_dir) / '_brain_e5_meta.pkl'
     if not meta_path.exists():
         sys.exit('no index meta at %s — run index_notes.py first' % meta_path)
     meta = pickle.loads(meta_path.read_bytes())
-    return {Path(m['path']).stem.lower() for m in meta}
+    by_stem = {}
+    for m in meta:
+        p = Path(m['path'])
+        by_stem.setdefault(p.stem.lower(), set()).add(str(p))
+    return set(by_stem), {s for s, paths in by_stem.items() if len(paths) > 1}
 
 
 def read_notes(notes_dir, stems, folders=None):
@@ -134,8 +144,18 @@ def read_notes(notes_dir, stems, folders=None):
     return notes
 
 
+BRIDGE_MAX_GOLD = 8
+
+
 def build_gold(notes, n_per_class, seed):
-    """-> list of question dicts. Sampling is seeded, so the same vault gives the same set."""
+    """-> list of question dicts. Sampling is seeded, so the same vault gives the same set.
+
+    `bridge` keeps at most BRIDGE_MAX_GOLD link targets per question, because Recall@12
+    cannot reward more gold answers than it has slots for, and a note with thirty links would
+    score badly no matter how good retrieval is. The cut is recorded per question as
+    `gold_truncated`, so a low bridge score can be read honestly rather than blamed on the
+    pipeline.
+    """
     rnd = random.Random(seed)
     notes = list(notes)
     rnd.shuffle(notes)
@@ -147,10 +167,15 @@ def build_gold(notes, n_per_class, seed):
     for cls in ('title', 'body', 'bridge', 'temporal'):
         for n in pools[cls][:n_per_class]:
             q = n['para'] if cls in ('body', 'bridge') else n['title']
-            g = n['links'][:8] if cls == 'bridge' else ([n['sup']] if cls == 'temporal' else [n['stem']])
+            if cls == 'bridge':
+                g, dropped = n['links'][:BRIDGE_MAX_GOLD], max(0, len(n['links']) - BRIDGE_MAX_GOLD)
+            elif cls == 'temporal':
+                g, dropped = [n['sup']], 0
+            else:
+                g, dropped = [n['stem']], 0
             gold.append({'id': '%s-%03d' % (cls, sum(1 for x in gold if x['cls'] == cls) + 1),
                          'cls': cls, 'query': q, 'gold': g, 'lang': lang_of(q),
-                         'folder': n['folder'], 'src': n['stem']})
+                         'folder': n['folder'], 'src': n['stem'], 'gold_truncated': dropped})
     return gold
 
 
@@ -166,7 +191,8 @@ def main():
                                       '(default: the whole vault)')
     a = ap.parse_args()
 
-    stems = indexed_stems(os.getenv('BRAIN_INDEX_DIR', 'index'))
+    all_stems, ambiguous = indexed_stems(os.getenv('BRAIN_INDEX_DIR', 'index'))
+    stems = all_stems - ambiguous
     folders = set(f.strip() for f in a.folders.split(',')) if a.folders else None
     notes = read_notes(a.notes_dir, stems, folders)
     if not notes:
@@ -179,6 +205,14 @@ def main():
 
     counts = Counter(g['cls'] for g in gold)
     print('%d questions from %d indexed notes -> %s' % (len(gold), len(notes), out))
+    if ambiguous:
+        print('  ! %d filenames occur in more than one folder and were excluded — a wikilink '
+              'names both, so neither can be a gold answer (e.g. %s)'
+              % (len(ambiguous), ', '.join(sorted(ambiguous)[:3])))
+    cut = sum(1 for g in gold if g.get('gold_truncated'))
+    if cut:
+        print('  ! %d bridge questions had more than %d links; the rest were cut, because '
+              'Recall@12 has only 12 slots' % (cut, BRIDGE_MAX_GOLD))
     print('  classes %s · languages %s' % (dict(counts), dict(Counter(g['lang'] for g in gold))))
     for cls in ('title', 'body', 'bridge', 'temporal'):
         if counts[cls] < 20:

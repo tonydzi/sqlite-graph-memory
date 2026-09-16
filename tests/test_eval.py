@@ -25,7 +25,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / 'eval'))
 
-from build_gold import build_gold, first_paragraph, lang_of, read_notes  # noqa: E402
+from build_gold import (build_gold, first_paragraph, indexed_stems,  # noqa: E402
+                        lang_of, read_notes)
 from run_eval import mrr_at, ndcg_at, recall_at  # noqa: E402
 
 PARA = ('This paragraph is long enough to be treated as a real question by the gold builder, '
@@ -59,6 +60,21 @@ def test_ndcg_is_perfect_only_when_gold_is_first():
 def test_ndcg_is_zero_when_nothing_relevant_was_retrieved():
     # This is the assertion EVAL_MUTANT=1 breaks: the mutant returns 1.0 here.
     assert ndcg_at(['a', 'b', 'c'], ['z']) == 0.0
+
+
+def test_ndcg_never_exceeds_one_when_a_name_is_retrieved_twice():
+    """Found by an external review panel, reproduced at nDCG = 1.63 on live code.
+
+    Wikilinks address notes by filename, so two notes sharing a filename put the same name in
+    the ranking twice. DCG used to count both while IDCG counted the gold set once.
+    """
+    assert ndcg_at(['foo', 'foo'], ['foo']) == 1.0
+    assert ndcg_at(['a', 'foo', 'foo'], ['foo']) <= 1.0
+    assert ndcg_at(['foo', 'foo', 'bar'], ['foo', 'bar']) <= 1.0
+
+
+def test_a_duplicate_hit_is_worth_no_more_than_a_single_one():
+    assert ndcg_at(['x', 'foo', 'foo'], ['foo']) == ndcg_at(['x', 'foo', 'zzz'], ['foo'])
 
 
 def test_lang_split_separates_a_bilingual_vault():
@@ -129,6 +145,44 @@ def test_bridge_needs_at_least_two_links(tmp_path):
     assert {g['src'] for g in gold if g['cls'] == 'bridge'} == {'alpha'}
 
 
+def test_a_bridge_question_records_how_many_links_were_cut(tmp_path):
+    """A low bridge score must be readable: cut gold, or genuinely missed notes?"""
+    vault = _vault(tmp_path)
+    many = ' '.join('[[n%02d]]' % i for i in range(12))
+    (vault / 'alpha.md').write_text('---\ntitle: "Alpha"\n---\n\n' + PARA + '\n\n' + many + '\n',
+                                    encoding='utf-8')
+    stems = INDEXED | {'n%02d' % i for i in range(12)}
+    gold = build_gold(read_notes(vault, stems), n_per_class=10, seed=1)
+    bridge = next(g for g in gold if g['cls'] == 'bridge' and g['src'] == 'alpha')
+    assert len(bridge['gold']) == 8
+    assert bridge['gold_truncated'] == 4
+
+
+def test_a_filename_living_in_two_folders_is_reported_as_ambiguous(tmp_path):
+    """Found by the review panel: `[[foo]]` names both files, so neither can be gold."""
+    vault = _vault(tmp_path)
+    (vault / 'sub').mkdir()
+    (vault / 'sub' / 'beta.md').write_text('---\ntitle: "Another Beta"\n---\n\n' + PARA + '\n',
+                                           encoding='utf-8')
+    index = tmp_path / 'index'
+    index.mkdir()
+    paths = [vault / 'alpha.md', vault / 'beta.md', vault / 'sub' / 'beta.md', vault / 'gamma.md']
+    (index / '_brain_e5_meta.pkl').write_bytes(pickle.dumps(
+        [{'path': str(p), 'title': p.stem, 'snippet': PARA, 'date': ''} for p in paths]))
+    all_stems, ambiguous = indexed_stems(index)
+    assert ambiguous == {'beta'}
+    assert 'alpha' in all_stems
+
+    out = tmp_path / 'gold.jsonl'
+    env = {**dict(__import__('os').environ), 'BRAIN_INDEX_DIR': str(index)}
+    r = subprocess.run([sys.executable, str(ROOT / 'eval' / 'build_gold.py'), str(vault),
+                        '--out', str(out)], capture_output=True, text=True, env=env)
+    assert r.returncode == 0, r.stderr
+    assert 'more than one folder' in r.stdout, r.stdout
+    rows = [json.loads(l) for l in out.read_text(encoding='utf-8').splitlines() if l.strip()]
+    assert all('beta' not in row['gold'] for row in rows)
+
+
 def test_the_same_seed_gives_the_same_question_set(tmp_path):
     notes = read_notes(_vault(tmp_path), INDEXED)
     a = build_gold(notes, n_per_class=2, seed=7)
@@ -153,6 +207,38 @@ def test_build_gold_cli_writes_a_frozen_file(tmp_path):
     rows = [json.loads(l) for l in out.read_text(encoding='utf-8').splitlines() if l.strip()]
     assert {r_['cls'] for r_ in rows} == {'title', 'body', 'bridge', 'temporal'}
     assert all(r_['gold'] for r_ in rows)
+
+
+def _run_eval(*args, **kw):
+    return subprocess.run([sys.executable, str(ROOT / 'eval' / 'run_eval.py'), *args],
+                          capture_output=True, text=True, **kw)
+
+
+def test_a_wrong_gold_path_is_a_message_not_a_stack_trace(tmp_path):
+    """Pointing --gold at nothing is a typo. It should read like one."""
+    r = _run_eval('--gold', str(tmp_path / 'nope.jsonl'))
+    out = r.stdout + r.stderr
+    assert r.returncode != 0
+    assert 'Traceback' not in out, out
+    assert 'build_gold.py' in out, out       # tells you which command makes the missing file
+
+
+def test_a_gold_file_that_is_not_jsonl_says_so(tmp_path):
+    bad = tmp_path / 'bad.jsonl'
+    bad.write_text('this is not json\n', encoding='utf-8')
+    r = _run_eval('--gold', str(bad))
+    out = r.stdout + r.stderr
+    assert r.returncode != 0
+    assert 'Traceback' not in out, out
+    assert 'not a gold file' in out, out
+
+
+def test_an_empty_gold_file_is_refused(tmp_path):
+    empty = tmp_path / 'empty.jsonl'
+    empty.write_text('', encoding='utf-8')
+    r = _run_eval('--gold', str(empty))
+    assert r.returncode != 0
+    assert 'empty' in (r.stdout + r.stderr)
 
 
 def test_selftest_exits_zero():

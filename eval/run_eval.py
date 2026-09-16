@@ -71,11 +71,22 @@ def mrr_at(ranked, gold, k=TOPN):
 
 
 def ndcg_at(ranked, gold, k=TOPN):
-    """Rank-weighted hit rate, 1.0 when every gold note sits at the top."""
+    """Rank-weighted hit rate, 1.0 when every gold note sits at the top.
+
+    Each gold note counts ONCE even if it appears twice in the ranking. Two notes in
+    different folders can share a filename, and wikilinks address notes by filename, so a
+    ranking legitimately contains the same name twice — before this guard, DCG counted both
+    hits while IDCG counted the gold set, and nDCG came out at 1.63. A metric that can
+    exceed its own maximum quietly rewards exactly the corpus that confuses it.
+    """
     if os.environ.get('EVAL_MUTANT') == '1':
         return 1.0                      # deliberate break; see RED-TEST HOOK above
-    g = set(gold)
-    dcg = sum(1.0 / math.log2(i + 2) for i, r in enumerate(ranked[:k]) if r in g)
+    g, credited = set(gold), set()
+    dcg = 0.0
+    for i, r in enumerate(ranked[:k]):
+        if r in g and r not in credited:
+            credited.add(r)
+            dcg += 1.0 / math.log2(i + 2)
     idcg = sum(1.0 / math.log2(i + 2) for i in range(min(len(g), k)))
     return dcg / idcg if idcg else 0.0
 
@@ -113,6 +124,11 @@ def score_gold(gold, progress=True):
     import brain_ask as ba
 
     dev = ba.pick_device()
+    if not Path(ba.EMB).exists():
+        # A missing index is the single most likely way to arrive here, and a raw
+        # FileNotFoundError names a .npy path without saying which command produces it.
+        sys.exit('no embedding index at %s — run `python index_notes.py <notes_dir>` first '
+                 '(BRAIN_INDEX_DIR=%s)' % (ba.EMB, ba.INDEX_DIR))
     emb, meta = ba.load_index()
     enc = ba.load_encoder(dev)
     ce = ba.load_reranker(dev)
@@ -140,6 +156,13 @@ def score_gold(gold, progress=True):
     cfg = {'index_chunks': len(emb), 'embedder': ba.E5_MODEL, 'reranker': ba.RERANK_MODEL,
            'device': str(dev), 'topk': ba.TOPK_RETRIEVE, 'topn': TOPN,
            'sec_per_q': round((time.time() - t0) / max(len(rows), 1), 2)}
+    # expand_1hop degrades to [] on any failure, by design — a broken graph must never break
+    # recall. In an eval that same silence is a lie: every graph row equals its vector row and
+    # the table reads "the graph adds nothing" instead of "the graph never ran".
+    if rows and not any(r['cand_graph_added'] for r in rows):
+        sys.stderr.write('!! the graph added no neighbours to ANY question — link resolution or '
+                         'the index is broken, not the graph. The graph rows below are the '
+                         'vector rows.\n')
     return rows, cfg
 
 
@@ -219,9 +242,19 @@ def main():
         a.gold = str(here[-1])
         print('no --gold given, using the newest: %s' % a.gold)
 
-    gold = [json.loads(l) for l in Path(a.gold).read_text(encoding='utf-8').splitlines() if l.strip()]
+    gold_path = Path(a.gold)
+    if not gold_path.exists():
+        # Pointing at a gold file that is not there is a typo, not a crash: say which path
+        # was tried and which command writes one, instead of a stack trace.
+        sys.exit('no gold file at %s — build one with `python eval/build_gold.py <notes_dir>`'
+                 % gold_path)
+    try:
+        lines = gold_path.read_text(encoding='utf-8').splitlines()
+        gold = [json.loads(l) for l in lines if l.strip()]
+    except json.JSONDecodeError as e:
+        sys.exit('%s is not a gold file (expected one JSON object per line): %s' % (gold_path, e))
     if a.limit: gold = gold[:a.limit]
-    if not gold: return ap.error('gold file %s is empty' % a.gold)
+    if not gold: sys.exit('gold file %s is empty' % gold_path)
 
     rows, cfg = score_gold(gold)
     summary = summarize(rows)
@@ -231,6 +264,11 @@ def main():
 
     if a.no_persist:
         print('nothing written (--no-persist)')
+        return 0
+    if os.environ.get('EVAL_MUTANT') == '1':
+        # A mutant run must never enter the history it would later be compared against: a
+        # leftover env var is enough to make every future diff meaningless.
+        print('nothing written: EVAL_MUTANT=1 runs are never persisted')
         return 0
     out = Path(a.out) if a.out else (Path(__file__).parent /
                                      ('scores-%s.jsonl' % datetime.datetime.now().strftime('%Y%m%d-%H%M')))

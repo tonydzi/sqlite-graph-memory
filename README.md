@@ -179,10 +179,22 @@ questions (60 title / 60 body / 60 bridge / 4 temporal), vector+graph mode:
 
 | class | Recall@12 | nDCG@12 |
 |---|---|---|
-| title | 0.933 -> **0.950** | 0.921 -> **0.927** |
+| title | 0.933 -> **0.950** | 0.890 -> **0.895** |
 | body | 0.733 -> **0.800** | 0.600 -> **0.623** |
 | bridge | 0.251 -> **0.451** | 0.176 -> **0.279** |
-| temporal (n=4 — a smoke test, not a result) | 1.000 -> 1.000 | 0.638 -> 0.638 |
+| temporal (n=4 — a smoke test, not a result) | 1.000 -> 1.000 | 0.531 -> 0.531 |
+
+Those title and temporal nDCG figures are **corrected**, and the correction is the most
+useful thing on this page. An external review panel reading this module found that `ndcg_at`
+credited a gold note twice when the same filename appeared twice in the ranking — and since
+wikilinks address notes by filename, that happens whenever two folders hold a `foo.md`.
+Reproduced immediately: `ndcg_at(['foo','foo'], ['foo'])` returned **1.63**, above the
+maximum the metric can have. It affected 4 of our 184 questions, which inflated title nDCG by
+0.031 and temporal by 0.108. Recall@12 and MRR were never affected (one is set-based, the
+other stops at the first hit), and because the same four questions inflated both runs, every
+before/after delta survived to the fourth decimal: title +0.0056 became +0.0055. The merge
+and revert decisions below therefore stand — but the absolute levels we would have quoted
+were wrong, and an eval nobody attacks keeps being wrong politely.
 
 Two changes earned that. Cleaning duplicate snapshot copies out of the index (27 095 ->
 24 216 chunks) moved the metric by exactly 0.0000 — it buys nothing on the ruler and stops

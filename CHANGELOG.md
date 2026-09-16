@@ -24,6 +24,17 @@ scores it as Recall@12 / MRR / nDCG@12 in both retrieval modes, vector-only and 
 - **The ruler is testable too.** `EVAL_MUTANT=1` breaks nDCG deliberately, and `tests/test_eval.py`
   must go red under it: a suite that stays green while the metric is broken never tested the metric.
 
+- **An external review panel broke the ruler before anyone else could.** Two engines
+  independently found that `ndcg_at` credited the same gold note twice when one filename
+  appeared twice in the ranking — which, since wikilinks address notes by filename, happens as
+  soon as two folders hold a `foo.md`. `ndcg_at(['foo','foo'], ['foo'])` returned 1.63. Fixed,
+  with the published title/temporal numbers corrected downward (0.921 -> 0.890 and 0.638 ->
+  0.531); the before/after deltas were unaffected, because the same four questions of 184
+  inflated both runs. Also from that review: ambiguous filenames are now excluded from gold
+  and reported, a truncated `bridge` gold set records how many links were cut (9 of 30
+  questions on our own vault), a run where the graph never fired says so instead of printing
+  "the graph adds nothing", and an `EVAL_MUTANT=1` run refuses to write history at all.
+
 ## v0.1.3 — 2026-09-05
 
 Two ways the indexer quietly answered with the wrong text. Both were found on a real synced vault,
