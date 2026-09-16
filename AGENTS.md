@@ -21,20 +21,40 @@ graph database, no ETL, no entity-extraction pass.
   them, and logs the delta to SQLite.
 - `turnstate_hook.py` — agent Stop-hook; appends one row per assistant turn. Zero tokens, pure
   stdlib. `turnstate_show.py` is the read-only viewer.
-- `schema.sql` — documents both tables (`turns`, `ab_recall`).
+- `eval/build_gold.py` + `eval/run_eval.py` — the retrieval ruler: a gold set built
+  from the vault's own `[[wikilinks]]` (four question classes), scored in both modes
+  as Recall@12 / MRR / nDCG@12. `run_eval.py` imports `brain_ask.py` rather than
+  re-implementing it, so the eval and the agent cannot drift apart.
+- `schema.sql` — documents both tables (`turns`, `ab_recall`); `run_eval.py --sqlite`
+  adds a third, `gold_eval`, one row per class and mode per run.
 - `examples/claude-code-stop-hook.json` — how the hook gets wired.
 
 ## How to verify a change
 
-There is **no test suite yet** — that is a known gap with an open issue, and closing it is welcome
-work. Until then, a change is verified by running it and pasting the output:
+Start with `pytest -q` — the suite needs no model download and no network. Then run the thing
+you changed and paste the output:
 
 ```bash
+pytest -q                                      # file rules, entity gate, link parsing, eval metrics
 python index_notes.py <folder-of-markdown>     # build an index over a small sample
 python brain_ask.py "<question>" --graph       # recall, with graph expansion
 python brain_ask.py "<question>" --ab          # both arms + the logged delta
 python turnstate_show.py                       # what the ledger captured
 ```
+
+**If you touch retrieval, numbers are not optional.** Build a gold set once, keep the file, and
+show the table before and after your change:
+
+```bash
+python eval/build_gold.py <folder-of-markdown> --n-per-class 60
+python eval/run_eval.py --gold eval/gold-<date>.jsonl        # before
+python eval/run_eval.py --gold eval/gold-<date>.jsonl        # after
+```
+
+Same gold file both times: rebuilding it between runs makes the two tables incomparable. A
+regression worse than 0.01 nDCG@12 on any class is a reason to revert, not to explain. And if you
+touch `eval/` itself, prove the ruler still bites: `EVAL_MUTANT=1 pytest tests/test_eval.py` must
+FAIL.
 
 Use a **synthetic** notes folder — five or six files with a couple of `[[wikilinks]]` between them
 is enough to show a behaviour change. Never paste real notes into an issue or PR.

@@ -4,6 +4,26 @@ What shipped, in plain words. Entries below v0.1.3 were written on 2026-09-05 fr
 release notes that already existed — the file itself did not exist until then, so those three are
 recorded after the fact rather than backdated to look contemporaneous.
 
+## Unreleased
+
+**An eval, and the seven upgrades it talked us out of.** `eval/build_gold.py` turns the vault's own
+`[[wikilinks]]` into a retrieval test set — no hand labelling, no LLM calls — and `eval/run_eval.py`
+scores it as Recall@12 / MRR / nDCG@12 in both retrieval modes, vector-only and vector+graph.
+
+- **The eval imports the pipeline instead of copying it.** `brain_ask.py` keeps exactly the
+  behaviour it had (proven byte-for-byte on nine runs over a 10 918-chunk index), but its stages are
+  now importable functions — `load_index`, `query_sims`, `retrieve_candidates`, `index_by_basename`,
+  `expand_1hop`, `rerank_candidates` — and `main()` is a CLI over them. An eval that re-implements
+  the pipeline measures the re-implementation.
+- **Four question classes**, because "does the graph help?" has four different answers: `title`,
+  `body`, `bridge` (the note's own links are the gold answers) and `temporal` (a `superseded_by`
+  frontmatter field points at the replacement).
+- **The README now carries real numbers** from the home vault: what two changes improved (bridge
+  Recall@12 0.251 -> 0.451) and what seven changes that "obviously should have helped" measurably did
+  not — BGE-M3, two rerankers, a BM25 hybrid, a heading-path chunker, `sqlite-vec`, and more.
+- **The ruler is testable too.** `EVAL_MUTANT=1` breaks nDCG deliberately, and `tests/test_eval.py`
+  must go red under it: a suite that stays green while the metric is broken never tested the metric.
+
 ## v0.1.3 — 2026-09-05
 
 Two ways the indexer quietly answered with the wrong text. Both were found on a real synced vault,

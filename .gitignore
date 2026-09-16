@@ -5,3 +5,5 @@ ab_last.json
 .env
 __pycache__/
 *.pyc
+eval/gold-*.jsonl
+eval/scores-*.jsonl

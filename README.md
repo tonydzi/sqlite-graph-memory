@@ -84,7 +84,9 @@ an edge table only when hop depth or corpus size demands it.
 
 - No entity lane. The production setup has an extra retrieval lane over people/project
   cards; it is too entangled with personal data to publish.
-- No incremental indexing, no eval suite, and no packaging. Test coverage is uneven:
+- No incremental indexing and no packaging. There IS an eval suite now — see
+  [Measure before you swap](#measure-before-you-swap--eval) — but it scores retrieval on
+  wikilink-derived gold, which is weak supervision and says so out loud. Test coverage is uneven:
   `index_notes.py`, `brain_ask.py` and `mcp_server.py` have unit tests, `turnstate_hook.py`
   has none. Run `pytest -q` for the current count rather than trusting a number written in
   prose here — that is how this file ended up claiming "no tests" while seven were passing.
@@ -143,6 +145,87 @@ On a corpus this small the graph adds nothing — every note is already in the c
 pool. The interesting deltas appear at scale, and that is exactly what the `ab_recall`
 table in [`schema.sql`](schema.sql) accumulates evidence for.
 
+## Measure before you swap — `eval/`
+
+Every "obvious" upgrade to a RAG pipeline — a newer embedder, a stronger reranker, hybrid
+BM25, a different chunker — is a hypothesis. Without a number on *your* corpus, swapping one
+in is superstition with a changelog entry. `eval/` is the smallest honest ruler we could
+build, and it needs no labelling budget and no LLM calls: **the wikilinks you already wrote
+are the relevance labels.**
+
+```bash
+python eval/run_eval.py --selftest                       # metrics only: no model, no index
+python eval/build_gold.py /path/to/notes --n-per-class 60   # -> eval/gold-<today>.jsonl (freeze it)
+python eval/run_eval.py --gold eval/gold-<today>.jsonl --sqlite
+```
+
+Four question classes, each probing a different part of the pipeline: `title` (a note's own
+title should find it), `body` (its first paragraph should find it), `bridge` (its first
+paragraph should surface the notes it `[[links]]` to — this is what the graph is *for*), and
+`temporal` (an outdated note's title should surface its replacement, via a
+`superseded_by: "[[newer-note]]"` frontmatter field). Every question is scored in both modes,
+vector-only and vector+graph, so "does the graph help?" stops being a matter of taste.
+
+`run_eval.py` imports `brain_ask.py` and calls the same functions the agent calls —
+`load_index`, `retrieve_candidates`, `expand_1hop`, `rerank_candidates` — so what you measure
+is what runs. An eval that re-implements the pipeline measures the re-implementation.
+`--sqlite` appends one row per class and mode to a `gold_eval` table, which is how a run six
+weeks from now can be diffed against today's.
+
+### What it cost us to find out
+
+Numbers from the home vault (~24k chunks, RU+EN, 2026-09-16), one frozen gold set of 184
+questions (60 title / 60 body / 60 bridge / 4 temporal), vector+graph mode:
+
+| class | Recall@12 | nDCG@12 |
+|---|---|---|
+| title | 0.933 -> **0.950** | 0.921 -> **0.927** |
+| body | 0.733 -> **0.800** | 0.600 -> **0.623** |
+| bridge | 0.251 -> **0.451** | 0.176 -> **0.279** |
+| temporal (n=4 — a smoke test, not a result) | 1.000 -> 1.000 | 0.638 -> 0.638 |
+
+Two changes earned that. Cleaning duplicate snapshot copies out of the index (27 095 ->
+24 216 chunks) moved the metric by exactly 0.0000 — it buys nothing on the ruler and stops
+stale copies eating retrieval slots, which is worth knowing precisely *because* the number is
+zero. The change that did move it gave the graph a vote in the **ordering** rather than in the
+candidate set: personalized PageRank over the wikilink graph, fused with the reranker by RRF,
+with the reranker's top 5 positions protected. The root cause was found by measuring instead
+of guessing — 97% of the correct `bridge` answers were *already in the candidate pool* and the
+cross-encoder was dropping them, because the relation is structural, not textual. Widening
+retrieval, the obvious fix, would have done nothing at all.
+
+Seven other changes were rejected by the same ruler, under one rule fixed in advance:
+**a regression worse than 0.01 nDCG@12 on any class reverts the change.**
+
+| tried | verdict |
+|---|---|
+| BGE-M3 embedder | +0.005…0.007 on title/body/bridge, but temporal −0.011 and Russian −0.013 (English alone +0.080) -> **rejected** |
+| Qwen3-Embedding-0.6B | body Recall 0.767 -> 0.683; reindex 2863 s vs 333 s -> **rejected** |
+| bge-reranker-v2-m3 | −0.011…−0.018 nDCG on every class except English (+0.041) -> **rejected** |
+| Qwen3-Reranker-0.6B | title −0.111 nDCG at 12x the cost -> **rejected** |
+| BM25 + RRF hybrid | temporal −0.035 -> **merged switched off** |
+| heading-path prefix in every chunk | body −0.023, temporal −0.035 -> **reverted** |
+| `sqlite-vec` (vec0) | full scan 11.99 s vs 0.14 s for a plain SQLite table, and its ANN missed 1.2 hits of 60 -> vectors live in SQLite, **the extension does not** |
+| bi-temporal demotion of superseded notes | temporal +0.130 nDCG on a 41-question temporal set, but title −0.012 -> **merged behind a flag, default off** |
+
+None of those verdicts is a claim about the models. They are claims about *this corpus with
+this ruler*, which is the only kind of claim a swap decision actually needs — and the reason
+the module is here rather than in a blog post is that your corpus will disagree with ours.
+
+### What this eval cannot tell you
+
+Wikilink gold is weak supervision: a linked neighbour is not always the note that answers the
+question. `bridge` is built *from* links, so any method that walks links is flattered there —
+it measures "can the pipeline follow a connection", not "is this the right connection". One
+run scores one version of one index, and rebuilding the gold set between two runs makes the
+two numbers incomparable, which is the quiet way an eval starts lying. On 60 questions a
+±0.02 nDCG difference is inside the noise: we learned that by watching two candidate freezes
+of the same pipeline disagree on 33 questions out of 184.
+
+The metric can be broken on purpose. `EVAL_MUTANT=1` makes nDCG return a perfect 1.000 for
+everything, and `pytest tests/test_eval.py` **must go red** under it. A suite that stays green
+while the metric is broken never tested the metric.
+
 ## Roadmap
 
 **Now — [v0.1.1](https://github.com/tonydzi/sqlite-graph-memory/releases).**
@@ -154,11 +237,14 @@ does not notice, and that drift is the defect this paragraph used to carry twice
 
 **Next:**
 
-- **v0.2**: a public benchmark — a synthetic 200–500 note mini-vault with real wikilinks,
-  ~200 hand-labeled queries stratified by type (entity / theme / bridge / compare /
-  temporal / navigational), and a full ablation matrix (hops × seed caps × neighbour caps
-  × rerank pool × gating policy). The interesting question is not "does graph help" but
-  *for which query classes*. Not built yet — this line is a plan, not a result.
+- **v0.2**: a public benchmark. Half of it now exists as
+  [`eval/`](#measure-before-you-swap--eval): a gold builder that needs no hand labelling, four
+  query classes, both retrieval modes scored side by side, and the numbers from nine real
+  changes on one 24k-chunk vault. What is still missing is the *public* half — a shareable
+  synthetic mini-vault (200–500 notes with real wikilinks) so the numbers can be reproduced by
+  someone who is not us — and the full ablation matrix (hops × seed caps × neighbour caps ×
+  rerank pool × gating policy). The interesting question was never "does graph help" but
+  *for which query classes*; `eval/` answers that per class instead of per intuition.
 - **Bi-temporal edges** — design note [`docs/bitemporal.md`](docs/bitemporal.md). When you
   materialize the graph instead of parsing it at query time, give every edge a validity
   window (`valid_from` / `valid_to` / `observed_at`) so a rebuild *closes* superseded facts

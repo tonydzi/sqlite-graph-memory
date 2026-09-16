@@ -86,6 +86,88 @@ def _links_in(path):
     return [m.strip() for m in WIKILINK_RX.findall(t)]
 
 
+
+# --------------------------------------------------------------------------- pipeline
+# The retrieval pipeline lives in these functions so that anything measuring it
+# (eval/run_eval.py) runs THE SAME CODE the agent runs, instead of a re-implementation
+# that quietly drifts from it. main() below is a CLI over them.
+
+def load_index(emb_path=None, meta_path=None):
+    """-> (embedding matrix, meta list). Defaults to the index BRAIN_INDEX_DIR points at."""
+    meta = pickle.loads(Path(meta_path or META).read_bytes())
+    emb = np.load(emb_path or EMB)
+    return emb, meta
+
+
+def load_encoder(dev=None):
+    from sentence_transformers import SentenceTransformer
+    return SentenceTransformer(E5_MODEL, device=dev or pick_device())
+
+
+def load_reranker(dev=None):
+    from sentence_transformers import CrossEncoder
+    return CrossEncoder(RERANK_MODEL, device=dev or pick_device())
+
+
+def query_sims(enc, emb, query):
+    """Cosine similarity of one query against every chunk. e5 wants the 'query: ' prefix."""
+    qv = enc.encode(['query: ' + query], normalize_embeddings=True,
+                    convert_to_numpy=True)[0].astype('float32')
+    return emb @ qv
+
+
+def retrieve_candidates(sims, meta, topk=TOPK_RETRIEVE):
+    """Dense retrieve -> best chunk per file -> top-K unique files (as chunk indices)."""
+    order, seen = [], set()
+    for i in np.argsort(-sims):
+        m = meta[i]
+        if m['path'] in seen: continue
+        seen.add(m['path']); order.append(int(i))
+        if len(order) >= topk: break
+    return order
+
+
+def index_by_basename(meta):
+    """basename(no .md) -> meta indices, used to resolve [[wikilink]] targets to chunks."""
+    by_base = {}
+    for j, mm in enumerate(meta):
+        by_base.setdefault(Path(mm['path']).stem.lower(), []).append(j)
+    return by_base
+
+
+def expand_1hop(sims, meta, base_order, by_base=None, ghops=GHOPS, gmax=GMAX):
+    """Follow 1-hop OUTGOING wikilinks from the top vector hits and return the neighbour
+    chunks to ADD to the candidate set; the reranker decides whether they are relevant.
+
+    Bounded by ghops/gmax. CRASH-SAFETY: any failure returns [] and the caller degrades to
+    vector-only -- worst case you get the old result, never an empty or broken recall."""
+    added = []
+    if not base_order: return added
+    try:
+        by_base = by_base or index_by_basename(meta)
+        in_order = set(base_order)
+        for i in base_order[:ghops]:
+            for tgt in _links_in(meta[i]['path']):
+                idxs = by_base.get(tgt.lower())
+                if not idxs: continue
+                best = max(idxs, key=lambda j: sims[j])   # best chunk of neighbour for THIS query
+                if best in in_order: continue
+                in_order.add(best); added.append(best)
+                if len(added) >= gmax: break
+            if len(added) >= gmax: break
+    except Exception as e:
+        sys.stderr.write(("graph-expansion fell back to vector (%s)" % e) + chr(10))
+        return []
+    return added
+
+
+def rerank_candidates(ce, query, cand, meta, topn=TOPN):
+    """Cross-encoder rerank of candidate chunks -> [(chunk index, score)], best first."""
+    pairs = [(query, meta[i]['title'] + '. ' + meta[i]['snippet']) for i in cand]
+    sc = ce.predict(pairs) if len(pairs) else []
+    return sorted(zip(cand, sc), key=lambda x: -x[1])[:topn]
+
+
 def main():
     args = sys.argv[1:]
     ask = '--ask' in args
@@ -95,20 +177,13 @@ def main():
     if not query or not EMB.exists():
         print('need an embedding index (%s) and a query — run index_notes.py first' % EMB); return
 
-    from sentence_transformers import SentenceTransformer, CrossEncoder
     dev = pick_device()
-    meta = pickle.loads(META.read_bytes()); emb = np.load(EMB)
-    enc = SentenceTransformer(E5_MODEL, device=dev)
-    qv = enc.encode(['query: ' + query], normalize_embeddings=True, convert_to_numpy=True)[0].astype('float32')
-    sims = emb @ qv
+    emb, meta = load_index()
+    enc = load_encoder(dev)
+    sims = query_sims(enc, emb, query)
 
     # dense retrieve -> dedup by path (best chunk per file) -> top-K unique files
-    order, seen = [], set()
-    for i in np.argsort(-sims):
-        m = meta[i]
-        if m['path'] in seen: continue
-        seen.add(m['path']); order.append(int(i))
-        if len(order) >= TOPK_RETRIEVE: break
+    order = retrieve_candidates(sims, meta)
 
     # Graph expansion: follow 1-hop OUTGOING wikilinks from the top vector hits, pull in
     # those neighbour notes (resolved to already-indexed chunks), then let the reranker
@@ -116,33 +191,17 @@ def main():
     # Serendipity that the reranker keeps honest.
     # CRASH-SAFETY: wrapped so ANY failure degrades to vector-only — worst case you get
     # the old result, never an empty/broken recall.
+    # Graph expansion: 1-hop outgoing wikilinks from the top vector hits, bounded and
+    # opt-in (--graph / --ab) so base recall is untouched. Serendipity the reranker keeps honest.
     base_order = list(order); added = []
     if (graph or ab) and order:
-        try:
-            by_base = {}                     # basename(no .md) -> meta indices (resolve link targets)
-            for j, mm in enumerate(meta):
-                by_base.setdefault(Path(mm['path']).stem.lower(), []).append(j)
-            in_order = set(base_order)
-            for i in base_order[:GHOPS]:
-                for tgt in _links_in(meta[i]['path']):
-                    idxs = by_base.get(tgt.lower())
-                    if not idxs: continue
-                    best = max(idxs, key=lambda j: sims[j])   # best chunk of neighbour for THIS query
-                    if best in in_order: continue
-                    in_order.add(best); added.append(best)
-                    if len(added) >= GMAX: break
-                if len(added) >= GMAX: break
-        except Exception as e:
-            added = []                       # graph failed -> fall back to vector only
-            sys.stderr.write("graph-expansion fell back to vector (%s)\n" % e)
+        added = expand_1hop(sims, meta, base_order)
     graph_order = base_order + added; graph_set = set(added)
 
     # rerank on the matched chunk (precise)
-    ce = CrossEncoder(RERANK_MODEL, device=dev)
+    ce = load_reranker(dev)
     def rerank(cand):
-        pairs = [(query, meta[i]['title'] + '. ' + meta[i]['snippet']) for i in cand]
-        sc = ce.predict(pairs) if len(pairs) else []
-        return sorted(zip(cand, sc), key=lambda x: -x[1])[:TOPN]
+        return rerank_candidates(ce, query, cand, meta)
 
     # --ab: run BOTH paths in ONE process, diff, log. Answers "does graph REALLY help?"
     if ab:
