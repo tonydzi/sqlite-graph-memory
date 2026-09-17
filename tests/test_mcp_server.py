@@ -216,3 +216,53 @@ def test_run_recall_answer_file_is_unique_per_call_and_cleaned_up(tmp_path, monk
     for p in used:
         assert not Path(p).exists(), f"answer file left behind: {p}"
 
+
+def test_run_recall_read_text_error(tmp_path, monkeypatch):
+    """Verify answer file read failure returns distinct error with context."""
+    stub = tmp_path / "stub_brain.py"
+    stub.write_text("import sys\nsys.exit(0)\n", encoding="utf-8")
+
+    import mcp_server
+    monkeypatch.setattr(mcp_server, "BRAIN_ASK_SCRIPT", stub)
+
+    orig_read_text = Path.read_text
+
+    def mock_read_text(self, *args, **kwargs):
+        if str(self).endswith(".txt"):
+            raise PermissionError("Access denied")
+        return orig_read_text(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", mock_read_text)
+    text, is_err = mcp_server.run_recall("test query")
+    assert is_err is True
+    assert "Recall error: failed to read answer file: Access denied" in text
+
+
+def test_handle_request_read_text_error_is_mcp_error(tmp_path, monkeypatch):
+    """Verify answer file read error propagates through handle_request as isError: true."""
+    stub = tmp_path / "stub_brain.py"
+    stub.write_text("import sys\nsys.exit(0)\n", encoding="utf-8")
+
+    import mcp_server
+    monkeypatch.setattr(mcp_server, "BRAIN_ASK_SCRIPT", stub)
+
+    orig_read_text = Path.read_text
+
+    def mock_read_text(self, *args, **kwargs):
+        if str(self).endswith(".txt"):
+            raise OSError("Disk I/O failure")
+        return orig_read_text(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", mock_read_text)
+
+    req = {
+        "jsonrpc": "2.0",
+        "id": 11,
+        "method": "tools/call",
+        "params": {"name": "memory_recall", "arguments": {"query": "test query"}},
+    }
+    resp = mcp_server.handle_request(req)
+    assert resp["id"] == 11
+    assert resp["result"]["isError"] is True
+    assert "Recall error: failed to read answer file: Disk I/O failure" in resp["result"]["content"][0]["text"]
+

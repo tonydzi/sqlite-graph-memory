@@ -110,13 +110,12 @@ def run_recall(query: str, mode: str = "associative") -> tuple[str, bool]:
             return f"Recall error (exit code {res.returncode}):\n{err}", True
 
         # Read the scoped per-call answer file
-        if temp_ans_file.exists():
-            try:
-                content = temp_ans_file.read_text(encoding="utf-8", errors="replace").strip()
-                if content:
-                    return content, False
-            except Exception:
-                pass
+        try:
+            content = temp_ans_file.read_text(encoding="utf-8", errors="replace").strip()
+            if content:
+                return content, False
+        except Exception as e:
+            return f"Recall error: failed to read answer file: {e}", True
 
         # Empty answer file: return explicit message and flag error so agent does not ingest stdout noise
         return "(no matching notes found)", True
