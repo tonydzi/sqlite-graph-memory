@@ -1,0 +1,37 @@
+name: tests
+
+# The suite needs no model download and no network: sentence-transformers is
+# imported lazily, inside the functions that actually embed. So CI installs
+# numpy and pytest, nothing else, and finishes in seconds.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: install
+        run: python -m pip install --upgrade pip numpy pytest
+      - name: pytest
+        run: python -m pytest tests -q
+      - name: the ruler must break when broken
+        # EVAL_MUTANT=1 sabotages nDCG on purpose. If the eval suite stays green
+        # under it, the suite never tested the metric, and that is a CI failure.
+        run: |
+          if EVAL_MUTANT=1 python -m pytest tests/test_eval.py -q > /dev/null 2>&1; then
+            echo "::error::EVAL_MUTANT=1 left the eval suite green - the metric is not under test"
+            exit 1
+          fi
+          echo "EVAL_MUTANT=1 went red, as it must"
