@@ -4,7 +4,7 @@ What shipped, in plain words. Entries below v0.1.3 were written on 2026-09-05 fr
 release notes that already existed — the file itself did not exist until then, so those three are
 recorded after the fact rather than backdated to look contemporaneous.
 
-## Unreleased
+## v0.2.0 — 2026-09-20
 
 **An eval, and the seven upgrades it talked us out of.** `eval/build_gold.py` turns the vault's own
 `[[wikilinks]]` into a retrieval test set — no hand labelling, no LLM calls — and `eval/run_eval.py`
@@ -34,6 +34,26 @@ scores it as Recall@12 / MRR / nDCG@12 in both retrieval modes, vector-only and 
   and reported, a truncated `bridge` gold set records how many links were cut (9 of 30
   questions on our own vault), a run where the graph never fired says so instead of printing
   "the graph adds nothing", and an `EVAL_MUTANT=1` run refuses to write history at all.
+
+**The MCP server got a runtime, examples, and three fixes to how it reports nothing.**
+`examples/` now carries a runnable MCP server and its own README, so the recall pipeline is
+reachable from an agent harness without reading the source first
+([#5](https://github.com/tonydzi/sqlite-graph-memory/issues/5)).
+
+- **The answer file was shared between calls.** Two recalls in flight wrote the same path, so one
+  could return the other's text. It is scoped per call now, and `tests/test_mcp_server.py` pins the
+  filename so the race can actually fail a test instead of passing on timing.
+- **Empty is not an error, and an error is not empty.** An empty answer file used to fall back to
+  whatever was on stdout, which meant a log line could come back as a recall result; the server
+  returns `isError` instead
+  ([#9](https://github.com/tonydzi/sqlite-graph-memory/issues/9)). A file it could not read is now
+  reported separately from a recall that genuinely found nothing
+  ([#13](https://github.com/tonydzi/sqlite-graph-memory/issues/13)).
+- **The paper is out.** A JOSS draft (`paper.md` and its bibliography) with a readiness checklist,
+  and `CITATION.cff` plus a cite section pointing at
+  [10.5281/zenodo.22639718](https://doi.org/10.5281/zenodo.22639718).
+- `brain_ask.py`'s `looks_like_entity` and `_links_in` are covered by tests, and the README
+  describes its test coverage by shape instead of by a count that rots.
 
 ## v0.1.3 — 2026-09-05
 
