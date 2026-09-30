@@ -174,7 +174,7 @@ weeks from now can be diffed against today's.
 
 ### What it cost us to find out
 
-Numbers from the home vault (~24k chunks, RU+EN, 2026-09-16), one frozen gold set of 184
+Numbers from the home vault (~24k chunks, RU+EN, 2026-09-30), one frozen gold set of 184
 questions (60 title / 60 body / 60 bridge / 4 temporal), vector+graph mode:
 
 | class | Recall@12 | nDCG@12 |
