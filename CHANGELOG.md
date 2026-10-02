@@ -4,6 +4,20 @@ What shipped, in plain words. Entries below v0.1.3 were written on 2026-09-05 fr
 release notes that already existed — the file itself did not exist until then, so those three are
 recorded after the fact rather than backdated to look contemporaneous.
 
+## v0.2.1 — 2026-10-02
+
+**The suite stopped being something a human remembers to run.** The 84 tests and the eval suite had
+only ever been run by hand. `.github/workflows/tests.yml` now runs them on every push against
+Python 3.11, 3.12 and 3.13, and carries one unusual step: it sets `EVAL_MUTANT=1`, which breaks the
+retrieval pipeline on purpose, and fails the build if the eval suite still comes back green. A test
+that has never been seen red is not evidence, so CI proves the red before it trusts the green.
+
+- **Read this with AI**: a one-click entry point into Codex, ChatGPT or Claude with a prompt that
+  asks the agent to extract the reusable patterns, plus the raw prompt for any other model, and a
+  line pointing at the neighbouring repos in the memory layer.
+- A date correction in the docs was reverted on 30 September: the original date was right, and the
+  machine that "fixed" it was the one with the wrong clock.
+
 ## v0.2.0 — 2026-09-20
 
 **An eval, and the seven upgrades it talked us out of.** `eval/build_gold.py` turns the vault's own
