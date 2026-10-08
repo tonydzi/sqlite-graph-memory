@@ -4,6 +4,34 @@ What shipped, in plain words. Entries below v0.1.3 were written on 2026-09-05 fr
 release notes that already existed — the file itself did not exist until then, so those three are
 recorded after the fact rather than backdated to look contemporaneous.
 
+## v0.3.0 — 2026-10-07
+
+**You can install it now.** For three months this was a repository you had to clone, and for
+an engineer deciding whether to try something, a clone is a much bigger ask than a command.
+There is now a `pyproject.toml`, the modules live in `src/sqlite_graph_memory/`, and
+`pip install sqlite-graph-memory` gives you five commands: `sgm-index`, `sgm-ask`,
+`sgm-mcp`, `sgm-turnstate-hook` and `sgm-turnstate-show`.
+
+**The MCP server moved inside the package.** It used to sit in `examples/` and shell out to
+`../brain_ask.py`, which meant the one integration most agents actually use — the MCP tool —
+only worked from a checkout. It is now `sgm-mcp`, so the client config is a command name
+instead of a path into someone's clone, and the Stop-hook snippet lost its `/path/to/` too.
+
+**The heavy half is optional, and says so.** The base install is numpy and nothing else,
+about 20 MB; `sentence-transformers` and `torch` (~2 GB) come from
+`pip install 'sqlite-graph-memory[embeddings]'`. Running the indexer without the extra used
+to end in a `ModuleNotFoundError` traceback through site-packages — which reads like a broken
+package rather than a missing option — and now ends in one line naming the extra to install.
+`tests/test_optional_extra.py` covers that path, including the case it must *not* swallow: an
+unrelated missing module still surfaces as itself, instead of sending you after the wrong fix.
+
+**CI now proves the package is installable, not just that the tests pass.** A wheel can break
+without a single test failing — a bad entry point, a file left out of the build, a dependency
+that only exists on the author's machine. The new `installable` job builds the distributions,
+runs `twine check`, installs the wheel into a venv with nothing else in it, and checks that
+all five commands start, that `schema.sql` travelled with the wheel, and that a base install
+prints instructions rather than a traceback.
+
 ## v0.2.1 — 2026-10-02
 
 **The suite stopped being something a human remembers to run.** The 84 tests and the eval suite had

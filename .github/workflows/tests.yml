@@ -35,3 +35,55 @@ jobs:
             exit 1
           fi
           echo "EVAL_MUTANT=1 went red, as it must"
+
+  installable:
+    # `pip install sqlite-graph-memory` is the only door most people will ever
+    # use, and it can break without a single test failing — a bad entry point,
+    # a file left out of the wheel, a dependency that only exists on the author's
+    # machine. This job installs the built wheel into a venv that has nothing
+    # else in it and checks that the four commands actually start.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: build the distributions
+        run: |
+          python -m pip install --upgrade pip build twine
+          python -m build
+      - name: the metadata PyPI will see must be valid
+        run: python -m twine check dist/*
+      - name: install the wheel into a pristine venv
+        run: |
+          python -m venv /tmp/clean
+          /tmp/clean/bin/pip install dist/*.whl
+      - name: every advertised command must start
+        run: |
+          for cmd in sgm-index sgm-ask sgm-turnstate-hook sgm-turnstate-show; do
+            test -x "/tmp/clean/bin/$cmd" || { echo "::error::$cmd was not installed"; exit 1; }
+          done
+          /tmp/clean/bin/sgm-turnstate-show --help > /dev/null
+          echo "all four entry points present and startable"
+      - name: package data must travel with the wheel
+        # schema.sql is the database contract; a wheel without it installs fine
+        # and then fails the first time someone creates the database.
+        run: |
+          /tmp/clean/bin/python -c "from importlib.resources import files; \
+            assert (files('sqlite_graph_memory')/'schema.sql').read_text().strip(), 'schema.sql missing from wheel'; \
+            print('schema.sql present')"
+      - name: a base install must explain the missing extra, not traceback
+        # The base install deliberately omits torch, so this is the normal first
+        # run for most people. It must end in instructions, not a stack trace.
+        run: |
+          mkdir -p /tmp/notes
+          printf '# A\n\nA note long enough to survive chunking, linking to [[B]].\n' > /tmp/notes/a.md
+          out=$(/tmp/clean/bin/sgm-index /tmp/notes 2>&1 || true)
+          echo "$out"
+          case "$out" in
+            *"sqlite-graph-memory[embeddings]"*) echo "base install explains itself" ;;
+            *) echo "::error::base install did not name the embeddings extra"; exit 1 ;;
+          esac
+          case "$out" in
+            *Traceback*) echo "::error::base install printed a traceback"; exit 1 ;;
+          esac

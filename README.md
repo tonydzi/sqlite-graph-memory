@@ -1,11 +1,18 @@
 # sqlite-graph-memory
 
-**Graph RAG on SQLite for AI agents — a working pilot, not a framework.**
+**Your agent forgets everything between sessions, and plain vector search gives it back
+flat, unrelated chunks. This gives it associative recall over your own markdown notes —
+one SQLite file, no graph database, no ETL pass, no server.**
 
-The extracted memory layer of a personal "second brain" agent setup: three small Python
-scripts — `index_notes.py`, `brain_ask.py`, `turnstate_hook.py` — that give an LLM agent
-*associative* recall over a folder of markdown notes.
-SQLite is the only database ([`schema.sql`](schema.sql)) and `[[wikilinks]]` are the graph.
+```bash
+pip install sqlite-graph-memory
+```
+
+Graph RAG on SQLite for AI agents — a working pilot, not a framework. It is the extracted
+memory layer of a personal "second brain" agent setup: vector search finds the entry
+points, the `[[wikilinks]]` you already wrote by hand are the graph, and a cross-encoder
+reranks what the hop dragged in.
+SQLite is the only database ([`schema.sql`](src/sqlite_graph_memory/schema.sql)).
 
 Status: **pilot**, and the word is load-bearing: it runs daily in one real setup (a ~100k-note
 Obsidian vault driven by Claude Code), but it is deliberately minimal and makes no attempt
@@ -95,26 +102,36 @@ an edge table only when hop depth or corpus size demands it.
 ## Quickstart
 
 ```bash
-pip install -r requirements.txt
+# Indexing and reranking need the embedding stack; the base install leaves it out
+# so that `pip install sqlite-graph-memory` stays small instead of pulling ~2 GB
+# of torch. Ask for it explicitly:
+pip install 'sqlite-graph-memory[embeddings]'
 
 # 1. index a folder of markdown notes
-python index_notes.py /path/to/notes
+sgm-index /path/to/notes
 
 # 2. ask, three ways
-python brain_ask.py "how do I think about agent memory"
-python brain_ask.py --graph "how do I think about agent memory"
-python brain_ask.py --ab    "how do I think about agent memory"   # logs the diff to SQLite
+sgm-ask "how do I think about agent memory"
+sgm-ask --graph "how do I think about agent memory"
+sgm-ask --ab    "how do I think about agent memory"   # logs the diff to SQLite
 
 # 3. inspect the A/B telemetry
 sqlite3 turnstate.db "select ts, query, new_in_top, promoted_via_graph from ab_recall order by id desc limit 10"
 ```
 
-To enable the per-turn ledger in Claude Code, register `turnstate_hook.py` as a Stop hook
-(the exact block is `examples/claude-code-stop-hook.json`), then:
+Run any of them on a base install and they tell you which extra is missing rather than
+raising `ModuleNotFoundError` — that path is covered by `tests/test_optional_extra.py`.
+
+To enable the per-turn ledger in Claude Code, register the Stop hook (the exact block is
+`examples/claude-code-stop-hook.json`, which calls `sgm-turnstate-hook`), then:
 
 ```bash
-python turnstate_show.py --stats
+sgm-turnstate-show --stats
 ```
+
+Working from a clone instead of an install? `pip install -e '.[embeddings]'` gives you the
+same four commands, and the modules stay importable as
+`from sqlite_graph_memory import brain_ask`.
 
 Configuration is env-only and every variable is listed in `.env.example`; everything
 defaults to the current directory. GPU is used automatically if a CUDA torch build is

@@ -1,13 +1,13 @@
 {
-  "//": "Snippet for ~/.claude/settings.json — registers turnstate_hook.py as a Stop hook.",
-  "//2": "Point the command at your clone; on Windows wrap it in a .cmd that calls python.",
+  "//": "Snippet for ~/.claude/settings.json — registers the per-turn ledger as a Stop hook.",
+  "//2": "After `pip install sqlite-graph-memory` the command is on PATH, so there is no clone path to edit. If you installed into a venv that Claude Code does not inherit, use the absolute path to that venv's bin/sgm-turnstate-hook instead.",
   "hooks": {
     "Stop": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "python /path/to/sqlite-graph-memory/turnstate_hook.py",
+            "command": "sgm-turnstate-hook",
             "timeout": 20
           }
         ]

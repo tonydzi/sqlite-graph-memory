@@ -12,7 +12,7 @@ USAGE:
   python examples/mcp_server.py
 
   # Direct test mode (runs a recall query without an MCP client)
-  python examples/mcp_server.py --test "how do I think about agent memory"
+  sgm-mcp --test "how do I think about agent memory"
 
 Config (env, optional):
   BRAIN_INDEX_DIR   dir holding embedding index (default: ./index)
@@ -30,12 +30,20 @@ try:
 except Exception:
     pass
 
-ROOT_DIR = Path(__file__).resolve().parents[1]
-BRAIN_ASK_SCRIPT = ROOT_DIR / "brain_ask.py"
+# Where the recall subprocess runs. The server deliberately shells out instead
+# of importing brain_ask: a model load that segfaults or runs out of memory then
+# kills a child process and returns an MCP error, rather than taking the server
+# down mid-session.
+ROOT_DIR = Path(__file__).resolve().parent
+
+
+def _brain_ask_cmd():
+    """How to invoke brain_ask — a guaranteed sibling module inside this package."""
+    return [sys.executable, "-m", "sqlite_graph_memory.brain_ask"]
 
 SERVER_INFO = {
     "name": "sqlite-graph-memory",
-    "version": "0.1.3"
+    "version": "0.3.0"
 }
 
 TOOLS = [
@@ -75,13 +83,19 @@ def run_recall(query: str, mode: str = "associative") -> tuple[str, bool]:
     An empty answer file means no notes matched; stdout is never promoted to an answer
     because it carries startup notices, load reports, and tokenizer warnings.
     """
-    if not BRAIN_ASK_SCRIPT.exists():
-        return f"Error: brain_ask.py not found at {BRAIN_ASK_SCRIPT}", True
+    base_cmd = _brain_ask_cmd()
+    if base_cmd is None:
+        return (
+            "Error: brain_ask not found. Install it with "
+            "`pip install sqlite-graph-memory[embeddings]`, or run this example "
+            "from a checkout of the repository.",
+            True,
+        )
 
     if mode not in ("associative", "direct", "ab"):
         mode = "associative"
 
-    cmd = [sys.executable, str(BRAIN_ASK_SCRIPT)]
+    cmd = list(base_cmd)
     if mode == "ab":
         cmd.append("--ab")
     elif mode == "direct":
@@ -219,7 +233,7 @@ def handle_request(req: dict) -> dict:
 
 
 def main():
-    # Direct CLI testing mode: python examples/mcp_server.py --test "query"
+    # Direct CLI testing mode: sgm-mcp --test "query"
     if len(sys.argv) > 1 and sys.argv[1] in ("--test", "-t", "--query"):
         flags = {"--test", "-t", "--query", "--direct", "--ab", "--associative"}
         mode = "associative"

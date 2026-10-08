@@ -1,0 +1,72 @@
+[build-system]
+requires = ["hatchling>=1.21"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sqlite-graph-memory"
+version = "0.3.0"
+description = "Associative memory for LLM agents: Graph RAG over a folder of markdown notes, in one SQLite file, with no server to run."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [{ name = "Anton Dziatkovskii" }]
+keywords = [
+  "graph-rag",
+  "agent-memory",
+  "llm-memory",
+  "retrieval",
+  "sqlite",
+  "rag",
+  "obsidian",
+  "wikilinks",
+  "second-brain",
+  "mcp",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Text Processing :: Indexing",
+]
+dependencies = ["numpy>=1.24"]
+
+[project.optional-dependencies]
+# The indexer and the reranker need these; the graph half, the SQLite schema and
+# the turnstate memory do not. Kept out of the base install so that
+# `pip install sqlite-graph-memory` stays a two-second, ~20 MB operation instead
+# of pulling ~2 GB of torch on a machine that only wants to read the graph.
+embeddings = ["sentence-transformers>=2.6"]
+
+[project.urls]
+Homepage = "https://github.com/tonydzi/sqlite-graph-memory"
+Repository = "https://github.com/tonydzi/sqlite-graph-memory"
+Changelog = "https://github.com/tonydzi/sqlite-graph-memory/blob/main/CHANGELOG.md"
+Issues = "https://github.com/tonydzi/sqlite-graph-memory/issues"
+
+[project.scripts]
+sgm-index = "sqlite_graph_memory.index_notes:main"
+sgm-ask = "sqlite_graph_memory.brain_ask:main"
+sgm-turnstate-hook = "sqlite_graph_memory.turnstate_hook:main"
+sgm-turnstate-show = "sqlite_graph_memory.turnstate_show:main"
+sgm-mcp = "sqlite_graph_memory.mcp_server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/sqlite_graph_memory"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "src/sqlite_graph_memory",
+  "tests",
+  "eval",
+  "examples",
+  "docs",
+  "README.md",
+  "CHANGELOG.md",
+  "LICENSE",
+  "CITATION.cff",
+  "requirements.txt",
+]

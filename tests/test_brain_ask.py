@@ -13,8 +13,8 @@ import sys
 from pathlib import Path
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from brain_ask import looks_like_entity, _links_in  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+from sqlite_graph_memory.brain_ask import looks_like_entity, _links_in  # noqa: E402
 
 
 @pytest.mark.parametrize(

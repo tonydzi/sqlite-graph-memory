@@ -8,13 +8,13 @@ This directory contains reference integrations wiring `sqlite-graph-memory` into
 
 | File | Harness / Protocol | Description |
 | :--- | :--- | :--- |
-| [`mcp_server.py`](mcp_server.py) | **MCP (Model Context Protocol)** | Stdio MCP server exposing memory recall as an agent tool. Works with Cursor, Claude Desktop, Antigravity, Zed, and Windsurf. |
+| `sgm-mcp` ([source](../src/sqlite_graph_memory/mcp_server.py)) | **MCP (Model Context Protocol)** | Stdio MCP server exposing memory recall as an agent tool. Works with Cursor, Claude Desktop, Antigravity, Zed, and Windsurf. |
 | [`mcp-config.json`](mcp-config.json) | **MCP Client Config** | Sample configuration block for `claude_desktop_config.json` or Cursor MCP settings. |
 | [`claude-code-stop-hook.json`](claude-code-stop-hook.json) | **Claude Code Stop Hook** | Configuration snippet registering `turnstate_hook.py` as an automatic post-turn ledger hook. |
 
 ---
 
-## 1. MCP Server Integration (`mcp_server.py`)
+## 1. MCP Server Integration (`sgm-mcp`)
 
 The MCP server exposes a single tool (`memory_recall`) that provides associative memory to any MCP-compliant agent.
 
@@ -22,11 +22,11 @@ The MCP server exposes a single tool (`memory_recall`) that provides associative
 
 1. Install requirements:
    ```bash
-   pip install -r requirements.txt
+   pip install 'sqlite-graph-memory[embeddings]'
    ```
 2. Build the embedding index over your markdown notes:
    ```bash
-   python index_notes.py /path/to/your/notes
+   sgm-index /path/to/your/notes
    ```
 
 ### Tool Definition
@@ -49,7 +49,7 @@ Add the server to your MCP client config (e.g. `claude_desktop_config.json` or C
     "sqlite-graph-memory": {
       "command": "python",
       "args": [
-        "/absolute/path/to/sqlite-graph-memory/examples/mcp_server.py"
+        "/absolute/path/to/sqlite-graph-memory/sgm-mcp"
       ],
       "env": {
         "BRAIN_INDEX_DIR": "/absolute/path/to/sqlite-graph-memory/index",
@@ -66,13 +66,13 @@ You can verify the MCP server directly from the command line without launching a
 
 ```bash
 # Test default associative recall
-python examples/mcp_server.py --test "how do I think about agent memory"
+sgm-mcp --test "how do I think about agent memory"
 
 # Test direct (vector-only) recall
-python examples/mcp_server.py --test "how do I think about agent memory" --direct
+sgm-mcp --test "how do I think about agent memory" --direct
 
 # Test A/B recall mode
-python examples/mcp_server.py --test "how do I think about agent memory" --ab
+sgm-mcp --test "how do I think about agent memory" --ab
 ```
 
 ---
@@ -85,8 +85,8 @@ To register, add the snippet from [`claude-code-stop-hook.json`](claude-code-sto
 
 Inspect the recorded turns anytime:
 ```bash
-python turnstate_show.py --stats
-python turnstate_show.py --n 10
+sgm-turnstate-show --stats
+sgm-turnstate-show --n 10
 ```
 
 ---

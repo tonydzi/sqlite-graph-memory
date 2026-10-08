@@ -28,6 +28,29 @@ SNIPPET_CHARS = 600
 FM_RX = re.compile(r'^---\r?\n(.*?)\r?\n---\r?\n', re.S)
 
 
+
+_EMBEDDINGS_HINT = (
+    "This step needs the optional embedding stack (sentence-transformers, torch).\n"
+    "Install it with:  pip install 'sqlite-graph-memory[embeddings]'\n"
+    "The base install stays small on purpose: the graph half, the SQLite schema\n"
+    "and the turnstate memory work without it."
+)
+
+
+def _require_sentence_transformers():
+    """Import sentence_transformers, or exit with instructions.
+
+    Raises SystemExit (not ImportError) so the CLI prints one actionable line
+    rather than a traceback through site-packages.
+    """
+    try:
+        import sentence_transformers  # noqa: F401
+    except ModuleNotFoundError as exc:
+        if exc.name not in ("sentence_transformers", "torch"):
+            raise
+        raise SystemExit(_EMBEDDINGS_HINT) from exc
+    return sentence_transformers
+
 def chunks_of(text):
     step = CHUNK_CHARS - CHUNK_OVERLAP
     for start in range(0, max(len(text), 1), step):
@@ -107,6 +130,7 @@ def main():
     if not texts:
         print('no indexable .md notes found under', notes_dir); return
 
+    _require_sentence_transformers()
     from sentence_transformers import SentenceTransformer
     try:
         import torch

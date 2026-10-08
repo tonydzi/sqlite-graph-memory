@@ -6,9 +6,9 @@ Runs offline with no model download or network.
 import sys, json
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "examples"))
-from mcp_server import handle_request, TOOLS, SERVER_INFO
-import mcp_server
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+from sqlite_graph_memory.mcp_server import handle_request, TOOLS, SERVER_INFO
+from sqlite_graph_memory import mcp_server
 
 
 
@@ -104,8 +104,8 @@ def test_run_recall_success_with_scoped_answer_file(tmp_path, monkeypatch):
         "        f.write('STUB CONTEXT BUNDLE FOR: ' + sys.argv[-1])\n",
         encoding="utf-8"
     )
-    import mcp_server
-    monkeypatch.setattr(mcp_server, "BRAIN_ASK_SCRIPT", stub)
+    from sqlite_graph_memory import mcp_server
+    monkeypatch.setattr(mcp_server, "_brain_ask_cmd", lambda: [sys.executable, str(stub)])
     text, is_err = mcp_server.run_recall("test agent memory query", mode="associative")
     assert "STUB CONTEXT BUNDLE FOR: test agent memory query" in text
     assert is_err is False
@@ -115,8 +115,8 @@ def test_run_recall_exit_code_error(tmp_path, monkeypatch):
     """Verify non-zero exit codes from brain_ask.py are captured and returned safely."""
     stub = tmp_path / "stub_fail.py"
     stub.write_text("import sys\nsys.stderr.write('SYNTHETIC_FAILURE_MSG\\n')\nsys.exit(1)\n", encoding="utf-8")
-    import mcp_server
-    monkeypatch.setattr(mcp_server, "BRAIN_ASK_SCRIPT", stub)
+    from sqlite_graph_memory import mcp_server
+    monkeypatch.setattr(mcp_server, "_brain_ask_cmd", lambda: [sys.executable, str(stub)])
     text, is_err = mcp_server.run_recall("test query")
     assert "Recall error (exit code 1)" in text
     assert "SYNTHETIC_FAILURE_MSG" in text
@@ -135,8 +135,8 @@ def test_empty_answer_file_does_not_fallback_to_stdout(tmp_path, monkeypatch):
         "sys.stdout.write('XLMRobertaModel LOAD REPORT: tokenizer warning noise\\n')\n",
         encoding="utf-8"
     )
-    import mcp_server
-    monkeypatch.setattr(mcp_server, "BRAIN_ASK_SCRIPT", stub)
+    from sqlite_graph_memory import mcp_server
+    monkeypatch.setattr(mcp_server, "_brain_ask_cmd", lambda: [sys.executable, str(stub)])
 
     # 1. Direct function call test
     text, is_err = mcp_server.run_recall("test query")
@@ -160,16 +160,17 @@ def test_empty_answer_file_does_not_fallback_to_stdout(tmp_path, monkeypatch):
 
 def test_run_recall_missing_script(tmp_path, monkeypatch):
     """Verify missing brain_ask.py script returns error rather than raising."""
-    import mcp_server
-    monkeypatch.setattr(mcp_server, "BRAIN_ASK_SCRIPT", tmp_path / "non_existent.py")
+    from sqlite_graph_memory import mcp_server
+    monkeypatch.setattr(mcp_server, "_brain_ask_cmd", lambda: None)
     text, is_err = mcp_server.run_recall("test query")
-    assert "Error: brain_ask.py not found" in text
+    assert "brain_ask not found" in text
     assert is_err is True
 
 
 def test_run_recall_timeout(tmp_path, monkeypatch):
     """Verify subprocess timeout is caught and returns clear error text."""
-    import mcp_server, subprocess
+    from sqlite_graph_memory import mcp_server
+    import subprocess
     def mock_run(*args, **kwargs):
         raise subprocess.TimeoutExpired(cmd=kwargs.get("args") or [], timeout=60)
     monkeypatch.setattr(mcp_server.subprocess, "run", mock_run)
@@ -199,8 +200,8 @@ def test_run_recall_answer_file_is_unique_per_call_and_cleaned_up(tmp_path, monk
         ).format(rec=recorder),
         encoding="utf-8",
     )
-    import mcp_server
-    monkeypatch.setattr(mcp_server, "BRAIN_ASK_SCRIPT", stub)
+    from sqlite_graph_memory import mcp_server
+    monkeypatch.setattr(mcp_server, "_brain_ask_cmd", lambda: [sys.executable, str(stub)])
 
     text1, is_err1 = mcp_server.run_recall("first query")
     assert "BUNDLE" in text1
@@ -222,8 +223,8 @@ def test_run_recall_read_text_error(tmp_path, monkeypatch):
     stub = tmp_path / "stub_brain.py"
     stub.write_text("import sys\nsys.exit(0)\n", encoding="utf-8")
 
-    import mcp_server
-    monkeypatch.setattr(mcp_server, "BRAIN_ASK_SCRIPT", stub)
+    from sqlite_graph_memory import mcp_server
+    monkeypatch.setattr(mcp_server, "_brain_ask_cmd", lambda: [sys.executable, str(stub)])
 
     orig_read_text = Path.read_text
 
@@ -243,8 +244,8 @@ def test_handle_request_read_text_error_is_mcp_error(tmp_path, monkeypatch):
     stub = tmp_path / "stub_brain.py"
     stub.write_text("import sys\nsys.exit(0)\n", encoding="utf-8")
 
-    import mcp_server
-    monkeypatch.setattr(mcp_server, "BRAIN_ASK_SCRIPT", stub)
+    from sqlite_graph_memory import mcp_server
+    monkeypatch.setattr(mcp_server, "_brain_ask_cmd", lambda: [sys.executable, str(stub)])
 
     orig_read_text = Path.read_text
 

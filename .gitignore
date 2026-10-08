@@ -7,3 +7,5 @@ __pycache__/
 *.pyc
 eval/gold-*.jsonl
 eval/scores-*.jsonl
+dist/
+*.egg-info/

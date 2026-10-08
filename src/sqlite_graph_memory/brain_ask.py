@@ -40,6 +40,29 @@ GHOPS, GMAX = 15, 40   # graph-expansion: expand from top-GHOPS hits, add at mos
 ENTITY_TOOLS = {'obsidian', 'syncthing', 'sqlite', 'telegram', 'whatsapp', 'n8n'}
 
 
+
+_EMBEDDINGS_HINT = (
+    "This step needs the optional embedding stack (sentence-transformers, torch).\n"
+    "Install it with:  pip install 'sqlite-graph-memory[embeddings]'\n"
+    "The base install stays small on purpose: the graph half, the SQLite schema\n"
+    "and the turnstate memory work without it."
+)
+
+
+def _require_sentence_transformers():
+    """Import sentence_transformers, or exit with instructions.
+
+    Raises SystemExit (not ImportError) so the CLI prints one actionable line
+    rather than a traceback through site-packages.
+    """
+    try:
+        import sentence_transformers  # noqa: F401
+    except ModuleNotFoundError as exc:
+        if exc.name not in ("sentence_transformers", "torch"):
+            raise
+        raise SystemExit(_EMBEDDINGS_HINT) from exc
+    return sentence_transformers
+
 def pick_device():
     try:
         import torch
@@ -100,11 +123,13 @@ def load_index(emb_path=None, meta_path=None):
 
 
 def load_encoder(dev=None):
+    _require_sentence_transformers()
     from sentence_transformers import SentenceTransformer
     return SentenceTransformer(E5_MODEL, device=dev or pick_device())
 
 
 def load_reranker(dev=None):
+    _require_sentence_transformers()
     from sentence_transformers import CrossEncoder
     return CrossEncoder(RERANK_MODEL, device=dev or pick_device())
 

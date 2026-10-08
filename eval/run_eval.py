@@ -44,7 +44,7 @@ import sys
 import time
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 TOPN = 12
 THRESHOLDS = {'title': 0.90, 'body': 0.80, 'bridge': 0.70, 'temporal': 0.60}
@@ -121,7 +121,7 @@ def selftest():
 # ------------------------------------------------------------------ runner
 def score_gold(gold, progress=True):
     """Run every question through both modes. -> (rows, config dict)."""
-    import brain_ask as ba
+    from sqlite_graph_memory import brain_ask as ba
 
     dev = ba.pick_device()
     if not Path(ba.EMB).exists():

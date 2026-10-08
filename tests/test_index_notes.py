@@ -12,8 +12,8 @@ No model download, no network: `iter_notes` and `read_note` are pure file work.
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from index_notes import iter_notes, read_note  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+from sqlite_graph_memory.index_notes import iter_notes, read_note  # noqa: E402
 
 
 def _vault(tmp_path: Path) -> Path:
