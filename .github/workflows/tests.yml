@@ -16,7 +16,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11", "3.12", "3.13"]
+        # requires-python says >=3.9, so the floor is tested, not just claimed:
+        # the system Python on macOS is 3.9 and that is the machine this pilot
+        # runs on daily. A floor nobody runs is a promise, not a fact.
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
