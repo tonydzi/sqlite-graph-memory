@@ -8,6 +8,10 @@ one SQLite file, no graph database, no ETL pass, no server.**
 pip install sqlite-graph-memory
 ```
 
+> The first PyPI release has not landed yet (the publish workflow is in place).
+> Until it does: `pip install git+https://github.com/tonydzi/sqlite-graph-memory`
+> — same package, same five commands.
+
 Graph RAG on SQLite for AI agents — a working pilot, not a framework. It is the extracted
 memory layer of a personal "second brain" agent setup: vector search finds the entry
 points, the `[[wikilinks]]` you already wrote by hand are the graph, and a cross-encoder
