@@ -6,9 +6,9 @@ Synthetic vault: 202 notes · 91 questions (69 answerable, 22 with no answer in 
 
 | system | R@5 | R@10 | answer | verbatim cite | faithful quotes | abstains when absent | false abstain ↓ | CI-reproduced | by |
 |---|---:|---:|---:|---:|---:|---:|---:|:---:|---|
-| [sqlite-graph-memory-vector](https://github.com/tonydzi/sqlite-graph-memory) `0.3.0` | 0.88 | 0.92 | 0.36 | 0.36 | 1.00 | 0.45 | 0.26 | yes | tonydzi |
-| [sqlite-graph-memory](https://github.com/tonydzi/sqlite-graph-memory) `0.3.0` | 0.85 | 0.91 | 0.36 | 0.36 | 1.00 | 0.45 | 0.26 | yes | tonydzi |
-| [bm25](https://en.wikipedia.org/wiki/Okapi_BM25) `reference` | 0.77 | 0.79 | 0.45 | 0.45 | 1.00 | 0.36 | 0.04 | yes | tonydzi |
+| [sqlite-graph-memory-vector](https://github.com/tonydzi/sqlite-graph-memory) `0.3.0` | 0.88 | 0.92 | 0.33 | 0.33 | 1.00 | 0.45 | 0.26 | yes | tonydzi |
+| [sqlite-graph-memory](https://github.com/tonydzi/sqlite-graph-memory) `0.3.0` | 0.85 | 0.91 | 0.33 | 0.33 | 1.00 | 0.45 | 0.26 | yes | tonydzi |
+| [bm25](https://en.wikipedia.org/wiki/Okapi_BM25) `reference` | 0.77 | 0.79 | 0.42 | 0.42 | 1.00 | 0.36 | 0.04 | yes | tonydzi |
 
 ## Recall@5 by question class
 

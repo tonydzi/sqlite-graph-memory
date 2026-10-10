@@ -13,7 +13,7 @@ leaderboard. `python bench/run.py --system bm25` runs end to end with nothing in
 
 **You submit outputs, not numbers.** Each result file carries every per-question output, and
 `bench/validate.py` recomputes every metric with the same scorer. CI rejects any file whose
-claimed numbers do not follow from its own outputs, and a self-test forges a real result nine
+claimed numbers do not follow from its own outputs, and a self-test forges a real result thirteen
 ways on every push to prove the gate still catches it.
 
 **The baseline is honest about itself.** sqlite-graph-memory retrieves both the old and the new

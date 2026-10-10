@@ -22,16 +22,16 @@
   }
  },
  "submitted_by": "tonydzi",
- "date": "2026-10-09",
+ "date": "2026-10-10",
  "vault_sha256": "f1b3cda731a93640fe2762aa9335e44059d2bb9c1e164593314c190aa42b8528",
- "questions_sha256": "0c46f753334ac26070b2aa99803c623acafa1faef474baee992d09cbf5fe3fb8",
+ "questions_sha256": "e203f965c33bfa94b05f8230d68661dad475dea416c6ebdf90194aad5604cd75",
  "reproduce": {
   "in_ci": true,
   "command": "python bench/run.py --system sqlite-graph-memory"
  },
  "runtime": {
-  "setup_sec": 153.3,
-  "sec_per_question": 7.445,
+  "setup_sec": 101.4,
+  "sec_per_question": 7.366,
   "python": "3.11.9"
  },
  "notes": "Our own system, graph mode. Answers come from a simple extractor, not an LLM. Weakest spots: cites the superseded decision on 6/6 current-deadline questions; abstains on all 16 paraphrase questions, including the ones it retrieved; answers 55% of absent-fact questions anyway.",
@@ -42,8 +42,8 @@
    "n_unanswerable": 22,
    "recall@5": 0.8478,
    "recall@10": 0.913,
-   "answer_acc": 0.3623,
-   "citation_verbatim": 0.3623,
+   "answer_acc": 0.3333,
+   "citation_verbatim": 0.3333,
    "citation_faithful": 1.0,
    "abstain_correct": 0.4545,
    "false_abstain": 0.2609
@@ -79,8 +79,8 @@
     "n_unanswerable": 0,
     "recall@5": 1.0,
     "recall@10": 1.0,
-    "answer_acc": 0.2667,
-    "citation_verbatim": 0.2667,
+    "answer_acc": 0.1333,
+    "citation_verbatim": 0.1333,
     "citation_faithful": 1.0,
     "abstain_correct": null,
     "false_abstain": 0.0
@@ -159,7 +159,7 @@
      "quote": "Rurik Pellegrin works as a hardware technician on the Willowherb team."
     }
    ],
-   "sec": 6.824,
+   "sec": 6.651,
    "top_score": 6.578
   },
   {
@@ -185,7 +185,7 @@
      "quote": "Ines Rautio works as a research scientist on the Saltmarsh team."
     }
    ],
-   "sec": 7.546,
+   "sec": 8.169,
    "top_score": 4.614
   },
   {
@@ -211,7 +211,7 @@
      "quote": "Saskia Brannock works as a research scientist on the Bramble team."
     }
    ],
-   "sec": 8.774,
+   "sec": 9.309,
    "top_score": 4.32
   },
   {
@@ -237,7 +237,7 @@
      "quote": "Anselm Asturias works as a program manager on the Tidewater team."
     }
    ],
-   "sec": 8.589,
+   "sec": 10.042,
    "top_score": 7.759
   },
   {
@@ -263,7 +263,7 @@
      "quote": "Bastian Marchetti works as a technical writer on the Meridian team."
     }
    ],
-   "sec": 7.586,
+   "sec": 9.936,
    "top_score": 8.148
   },
   {
@@ -289,7 +289,7 @@
      "quote": "Oskar Rautio grew up in Port Varen."
     }
    ],
-   "sec": 7.171,
+   "sec": 8.154,
    "top_score": 9.587
   },
   {
@@ -315,7 +315,7 @@
      "quote": "Talia Wexley grew up in Tamsin Ford."
     }
    ],
-   "sec": 9.469,
+   "sec": 8.993,
    "top_score": 9.215
   },
   {
@@ -341,7 +341,7 @@
      "quote": "Severin Ibarrondo works as a statistician on the Cinder team."
     }
    ],
-   "sec": 8.248,
+   "sec": 8.194,
    "top_score": 7.492
   },
   {
@@ -367,7 +367,7 @@
      "quote": "The current release of Sextantix is version 9.7.7."
     }
    ],
-   "sec": 8.037,
+   "sec": 9.441,
    "top_score": 8.237
   },
   {
@@ -393,7 +393,7 @@
      "quote": "Brindlewood is written in Erlang."
     }
    ],
-   "sec": 8.946,
+   "sec": 9.328,
    "top_score": 1.057
   },
   {
@@ -419,7 +419,7 @@
      "quote": "The current release of Wickline is version 3.4.1."
     }
    ],
-   "sec": 8.481,
+   "sec": 10.054,
    "top_score": 6.443
   },
   {
@@ -445,7 +445,7 @@
      "quote": "Mosscache is written in Clojure."
     }
    ],
-   "sec": 9.244,
+   "sec": 7.136,
    "top_score": 2.459
   },
   {
@@ -471,7 +471,7 @@
      "quote": "The current release of Ferrodb is version 6.7.6."
     }
    ],
-   "sec": 8.573,
+   "sec": 7.658,
    "top_score": 8.164
   },
   {
@@ -497,7 +497,7 @@
      "quote": "The current release of Siltcore is version 1.2.3."
     }
    ],
-   "sec": 8.889,
+   "sec": 7.286,
    "top_score": 6.567
   },
   {
@@ -523,7 +523,7 @@
      "quote": "The goal of Project Siskin is to route night-shift alerts to the right on-call person."
     }
    ],
-   "sec": 7.644,
+   "sec": 7.238,
    "top_score": 5.952
   },
   {
@@ -549,7 +549,7 @@
      "quote": "The goal of Project Dunlin is to detect sensor drift in the greenhouse arrays."
     }
    ],
-   "sec": 8.493,
+   "sec": 7.788,
    "top_score": 6.09
   },
   {
@@ -575,7 +575,7 @@
      "quote": "The goal of Project Whimbrel is to replace nightly batch exports with a streaming feed."
     }
    ],
-   "sec": 9.05,
+   "sec": 8.505,
    "top_score": 6.078
   },
   {
@@ -596,7 +596,7 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 8.546,
+   "sec": 7.304,
    "top_score": -0.901
   },
   {
@@ -617,7 +617,7 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 8.307,
+   "sec": 6.738,
    "top_score": -0.239
   },
   {
@@ -643,7 +643,7 @@
      "quote": "The goal of Project Redshank is to predict which builds will fail before they run."
     }
    ],
-   "sec": 7.386,
+   "sec": 8.188,
    "top_score": 0.75
   },
   {
@@ -669,7 +669,7 @@
      "quote": "The Drumlin Cross office has 69 desks."
     }
    ],
-   "sec": 7.867,
+   "sec": 8.054,
    "top_score": 10.934
   },
   {
@@ -695,7 +695,7 @@
      "quote": "The Holloway Reach office has 185 desks."
     }
    ],
-   "sec": 8.755,
+   "sec": 8.213,
    "top_score": 10.946
   },
   {
@@ -721,7 +721,7 @@
      "quote": "The Ninefold office has 113 desks."
     }
    ],
-   "sec": 8.42,
+   "sec": 6.755,
    "top_score": 10.891
   },
   {
@@ -747,7 +747,7 @@
      "quote": "The Sorrel Point office has 27 desks."
     }
    ],
-   "sec": 10.458,
+   "sec": 7.375,
    "top_score": 10.87
   },
   {
@@ -773,7 +773,7 @@
      "quote": "On 26 September 2025, the steering group approved a budget of 10,000 compute credits for Project Lapwing."
     }
    ],
-   "sec": 10.961,
+   "sec": 7.851,
    "top_score": 10.63
   },
   {
@@ -799,7 +799,7 @@
      "quote": "On 12 June 2025, the steering group approved a budget of 91,000 compute credits for Project Skua."
     }
    ],
-   "sec": 6.22,
+   "sec": 5.761,
    "top_score": 10.792
   },
   {
@@ -825,7 +825,7 @@
      "quote": "On 20 July 2025, the steering group approved a budget of 50,000 compute credits for Project Linnet."
     }
    ],
-   "sec": 6.868,
+   "sec": 5.809,
    "top_score": 10.587
   },
   {
@@ -851,63 +851,37 @@
      "quote": "On 4 December 2025, the steering group approved a budget of 78,000 compute credits for Project Petrel."
     }
    ],
-   "sec": 7.369,
+   "sec": 6.582,
    "top_score": 10.709
   },
   {
    "id": "q029",
    "retrieved": [
-    "person-greta-lindqvist",
+    "person-oskar-rautio",
     "team-foxglove",
-    "project-linnet",
-    "person-talia-lindqvist",
+    "person-severin-rautio",
     "person-greta-oyelaran",
-    "meeting-2025-05-16-foxglove-sync",
-    "team-willowherb",
-    "team-granite",
-    "team-cinder",
-    "team-bramble",
-    "team-ironbark",
-    "team-saltmarsh"
+    "person-ines-rautio",
+    "person-mirela-rautio",
+    "team-saltmarsh",
+    "team-meridian",
+    "meeting-2025-10-06-foxglove-sync",
+    "person-oskar-vestergaard",
+    "meeting-2025-10-03-foxglove-sync",
+    "person-saskia-brannock"
    ],
-   "answer": "Greta Lindqvist works as a product designer on the Foxglove team.",
+   "answer": "Oskar Rautio works as a data engineer on the Foxglove team.",
    "citations": [
     {
-     "note": "person-greta-lindqvist",
-     "quote": "Greta Lindqvist works as a product designer on the Foxglove team."
+     "note": "person-oskar-rautio",
+     "quote": "Oskar Rautio works as a data engineer on the Foxglove team."
     }
    ],
-   "sec": 8.938,
-   "top_score": 8.858
+   "sec": 6.379,
+   "top_score": 8.261
   },
   {
    "id": "q030",
-   "retrieved": [
-    "person-petra-asturias",
-    "team-saltmarsh",
-    "person-anselm-asturias",
-    "person-emeric-moravec",
-    "person-petra-fennimore",
-    "person-ulrik-asturias",
-    "project-heron",
-    "team-tidewater",
-    "team-cinder",
-    "project-whimbrel",
-    "project-petrel",
-    "team-foxglove"
-   ],
-   "answer": "Petra Asturias works as a security analyst on the Saltmarsh team.",
-   "citations": [
-    {
-     "note": "person-petra-asturias",
-     "quote": "Petra Asturias works as a security analyst on the Saltmarsh team."
-    }
-   ],
-   "sec": 9.215,
-   "top_score": 8.344
-  },
-  {
-   "id": "q031",
    "retrieved": [
     "person-ines-rautio",
     "team-saltmarsh",
@@ -929,37 +903,37 @@
      "quote": "Ines Rautio works as a research scientist on the Saltmarsh team."
     }
    ],
-   "sec": 7.123,
+   "sec": 6.421,
    "top_score": 8.516
   },
   {
-   "id": "q032",
+   "id": "q031",
    "retrieved": [
-    "person-teodor-brannock",
-    "team-lighthouse",
-    "person-ottilie-brannock",
-    "person-ilsa-thorsby",
+    "person-anselm-tamberlane",
+    "person-joran-tamberlane",
+    "team-saltmarsh",
+    "person-anselm-asturias",
+    "person-ines-wexley",
+    "meeting-2025-02-02-saltmarsh-sync",
+    "meeting-2025-07-06-saltmarsh-sync",
+    "team-tidewater",
+    "team-cinder",
+    "team-ironbark",
     "team-bramble",
-    "person-saskia-brannock",
-    "person-brisa-brannock",
-    "meeting-2025-01-13-lighthouse-sync",
-    "person-oskar-vestergaard",
-    "team-granite",
-    "project-smew",
-    "meeting-2025-05-12-lighthouse-sync"
+    "team-meridian"
    ],
-   "answer": "Teodor Brannock works as a site reliability engineer on the Lighthouse team.",
+   "answer": "Anselm Tamberlane works as a program manager on the Saltmarsh team.",
    "citations": [
     {
-     "note": "person-teodor-brannock",
-     "quote": "Teodor Brannock works as a site reliability engineer on the Lighthouse team."
+     "note": "person-anselm-tamberlane",
+     "quote": "Anselm Tamberlane works as a program manager on the Saltmarsh team."
     }
    ],
-   "sec": 7.96,
-   "top_score": 8.148
+   "sec": 7.612,
+   "top_score": 9.45
   },
   {
-   "id": "q033",
+   "id": "q032",
    "retrieved": [
     "person-ulrik-oyelaran",
     "person-anselm-asturias",
@@ -981,8 +955,34 @@
      "quote": "Ulrik Oyelaran works as a ML engineer on the Lighthouse team."
     }
    ],
-   "sec": 7.856,
+   "sec": 6.998,
    "top_score": 7.999
+  },
+  {
+   "id": "q033",
+   "retrieved": [
+    "person-leopold-halloran",
+    "team-lighthouse",
+    "person-kasimir-okafor-lind",
+    "person-fabian-halloran",
+    "person-elodie-pellegrin",
+    "person-vesna-halloran",
+    "meeting-2025-01-13-lighthouse-sync",
+    "meeting-2025-12-05-lighthouse-sync",
+    "person-leopold-fennimore",
+    "meeting-2025-10-21-lighthouse-sync",
+    "team-willowherb",
+    "project-tern"
+   ],
+   "answer": "Leopold Halloran works as a program manager on the Lighthouse team.",
+   "citations": [
+    {
+     "note": "person-leopold-halloran",
+     "quote": "Leopold Halloran works as a program manager on the Lighthouse team."
+    }
+   ],
+   "sec": 6.888,
+   "top_score": 8.742
   },
   {
    "id": "q034",
@@ -1007,7 +1007,7 @@
      "quote": "The Tidewater team maintains Thimblerig and Corvex."
     }
    ],
-   "sec": 8.377,
+   "sec": 8.032,
    "top_score": 6.208
   },
   {
@@ -1033,7 +1033,7 @@
      "quote": "The Lighthouse team maintains Loamstack and Mosscache."
     }
    ],
-   "sec": 8.054,
+   "sec": 8.569,
    "top_score": 5.106
   },
   {
@@ -1059,7 +1059,7 @@
      "quote": "The Willowherb team maintains Ferrodb and Lanternfish."
     }
    ],
-   "sec": 8.716,
+   "sec": 8.687,
    "top_score": 5.163
   },
   {
@@ -1085,7 +1085,7 @@
      "quote": "The Cinder team maintains Quillmark and Wickline."
     }
    ],
-   "sec": 7.798,
+   "sec": 8.143,
    "top_score": 4.544
   },
   {
@@ -1111,7 +1111,7 @@
      "quote": "The Bramble team maintains Cobbleset and Fathomer."
     }
    ],
-   "sec": 7.294,
+   "sec": 8.043,
    "top_score": 5.344
   },
   {
@@ -1137,7 +1137,7 @@
      "quote": "The goal of Project Ouzel is to automate desk booking across all sites."
     }
    ],
-   "sec": 7.81,
+   "sec": 7.645,
    "top_score": 1.662
   },
   {
@@ -1163,7 +1163,7 @@
      "quote": "Sextantix is written in Erlang."
     }
    ],
-   "sec": 8.984,
+   "sec": 8.328,
    "top_score": 2.718
   },
   {
@@ -1189,7 +1189,7 @@
      "quote": "Mosscache is written in Clojure."
     }
    ],
-   "sec": 8.019,
+   "sec": 6.854,
    "top_score": 3.144
   },
   {
@@ -1215,7 +1215,7 @@
      "quote": "The goal of Project Avocet is to keep the visitor badge system running during outages."
     }
    ],
-   "sec": 6.46,
+   "sec": 6.774,
    "top_score": 3.774
   },
   {
@@ -1241,7 +1241,7 @@
      "quote": "The goal of Project Kestrel is to translate support tickets between five languages."
     }
    ],
-   "sec": 6.709,
+   "sec": 6.629,
    "top_score": 6.035
   },
   {
@@ -1262,7 +1262,7 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 8.197,
+   "sec": 8.172,
    "top_score": -6.351
   },
   {
@@ -1283,7 +1283,7 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 7.415,
+   "sec": 7.695,
    "top_score": -4.796
   },
   {
@@ -1304,7 +1304,7 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 6.832,
+   "sec": 6.835,
    "top_score": -6.292
   },
   {
@@ -1325,7 +1325,7 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 6.898,
+   "sec": 6.863,
    "top_score": -6.177
   },
   {
@@ -1346,7 +1346,7 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 7.711,
+   "sec": 7.833,
    "top_score": -6.396
   },
   {
@@ -1367,7 +1367,7 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 7.454,
+   "sec": 8.399,
    "top_score": -4.252
   },
   {
@@ -1388,7 +1388,7 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 7.384,
+   "sec": 7.788,
    "top_score": -4.392
   },
   {
@@ -1409,7 +1409,7 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 7.313,
+   "sec": 8.112,
    "top_score": -4.208
   },
   {
@@ -1430,7 +1430,7 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 7.779,
+   "sec": 7.092,
    "top_score": -7.061
   },
   {
@@ -1451,7 +1451,7 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 8.613,
+   "sec": 8.698,
    "top_score": -4.403
   },
   {
@@ -1472,7 +1472,7 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 7.681,
+   "sec": 7.654,
    "top_score": -2.502
   },
   {
@@ -1493,7 +1493,7 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 8.736,
+   "sec": 9.306,
    "top_score": -4.077
   },
   {
@@ -1514,7 +1514,7 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 7.903,
+   "sec": 7.578,
    "top_score": -4.511
   },
   {
@@ -1535,7 +1535,7 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 8.973,
+   "sec": 8.263,
    "top_score": -3.172
   },
   {
@@ -1556,7 +1556,7 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 8.455,
+   "sec": 6.945,
    "top_score": -4.656
   },
   {
@@ -1577,7 +1577,7 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 7.541,
+   "sec": 7.566,
    "top_score": -3.827
   },
   {
@@ -1603,7 +1603,7 @@
      "quote": "On 9 June 2025, the steering group set the deadline for Project Kestrel to 18 January 2026."
     }
    ],
-   "sec": 6.507,
+   "sec": 5.863,
    "top_score": 10.584
   },
   {
@@ -1629,7 +1629,7 @@
      "quote": "On 7 February 2025, the steering group set the deadline for Project Heron to 7 May 2026."
     }
    ],
-   "sec": 6.626,
+   "sec": 5.955,
    "top_score": 10.542
   },
   {
@@ -1655,7 +1655,7 @@
      "quote": "On 8 February 2025, the steering group set the deadline for Project Plover to 6 January 2026."
     }
    ],
-   "sec": 6.268,
+   "sec": 6.072,
    "top_score": 10.421
   },
   {
@@ -1681,7 +1681,7 @@
      "quote": "On 6 May 2025, the steering group set the deadline for Project Merlin to 24 January 2026."
     }
    ],
-   "sec": 5.94,
+   "sec": 5.779,
    "top_score": 10.609
   },
   {
@@ -1707,7 +1707,7 @@
      "quote": "On 10 May 2025, the steering group set the deadline for Project Osprey to 11 February 2026."
     }
    ],
-   "sec": 6.402,
+   "sec": 5.924,
    "top_score": 10.175
   },
   {
@@ -1733,7 +1733,7 @@
      "quote": "On 17 June 2025, the steering group set the deadline for Project Curlew to 13 April 2026."
     }
    ],
-   "sec": 5.932,
+   "sec": 5.96,
    "top_score": 10.262
   },
   {
@@ -1759,7 +1759,7 @@
      "quote": "On 11 April 2025, the steering group set the deadline for Project Dunlin to 1 June 2026."
     }
    ],
-   "sec": 6.169,
+   "sec": 5.859,
    "top_score": 10.606
   },
   {
@@ -1785,7 +1785,7 @@
      "quote": "On 6 March 2025, the steering group set the deadline for Project Gannet to 17 February 2026."
     }
    ],
-   "sec": 5.901,
+   "sec": 6.01,
    "top_score": 10.589
   },
   {
@@ -1811,7 +1811,7 @@
      "quote": "On 28 April 2025, the steering group set the deadline for Project Shrike to 13 March 2026."
     }
    ],
-   "sec": 5.632,
+   "sec": 5.858,
    "top_score": 10.475
   },
   {
@@ -1837,7 +1837,7 @@
      "quote": "On 26 April 2025, the steering group set the deadline for Project Bittern to 1 January 2026."
     }
    ],
-   "sec": 5.885,
+   "sec": 6.247,
    "top_score": 10.409
   },
   {
@@ -1863,7 +1863,7 @@
      "quote": "Outside work, Severin Ibarrondo swims in the harbour every morning, all year."
     }
    ],
-   "sec": 7.111,
+   "sec": 7.842,
    "top_score": 4.999
   },
   {
@@ -1884,7 +1884,7 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 6.557,
+   "sec": 7.781,
    "top_score": -2.043
   },
   {
@@ -1910,7 +1910,7 @@
      "quote": "Kasimir Okafor-Lind works as a program manager on the Tidewater team."
     }
    ],
-   "sec": 8.211,
+   "sec": 9.25,
    "top_score": 7.835
   },
   {
@@ -1936,7 +1936,7 @@
      "quote": "Marit Quintanar works as a hardware technician on the Saltmarsh team."
     }
    ],
-   "sec": 8.509,
+   "sec": 8.624,
    "top_score": 2.255
   },
   {
@@ -1957,7 +1957,7 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 4.636,
+   "sec": 5.485,
    "top_score": -1.776
   },
   {
@@ -1983,7 +1983,7 @@
      "quote": "Elodie currently leads Project Bittern."
     }
    ],
-   "sec": 4.155,
+   "sec": 6.194,
    "top_score": 1.924
   },
   {
@@ -2004,7 +2004,7 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 4.925,
+   "sec": 5.679,
    "top_score": 0.305
   },
   {
@@ -2025,7 +2025,7 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 6.472,
+   "sec": 8.246,
    "top_score": -1.519
   },
   {
@@ -2046,7 +2046,7 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 6.432,
+   "sec": 7.423,
    "top_score": -4.455
   },
   {
@@ -2067,7 +2067,7 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 5.311,
+   "sec": 6.894,
    "top_score": -2.571
   },
   {
@@ -2088,7 +2088,7 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 6.969,
+   "sec": 7.279,
    "top_score": -0.089
   },
   {
@@ -2114,7 +2114,7 @@
      "quote": "Ottilie Strandberg works as a ML engineer on the Granite team."
     }
    ],
-   "sec": 7.2,
+   "sec": 8.013,
    "top_score": 0.276
   },
   {
@@ -2140,7 +2140,7 @@
      "quote": "Corvin Strandberg works as a hardware technician on the Ironbark team."
     }
    ],
-   "sec": 7.46,
+   "sec": 7.941,
    "top_score": 0.583
   },
   {
@@ -2166,7 +2166,7 @@
      "quote": "Oskar Vestergaard works as a program manager on the Willowherb team."
     }
    ],
-   "sec": 7.032,
+   "sec": 6.388,
    "top_score": 0.247
   },
   {
@@ -2187,7 +2187,7 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 4.551,
+   "sec": 4.694,
    "top_score": -0.928
   },
   {
@@ -2208,7 +2208,7 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 4.756,
+   "sec": 4.478,
    "top_score": -1.433
   },
   {
@@ -2234,7 +2234,7 @@
      "quote": "Tallyhoe was first released in 2020."
     }
    ],
-   "sec": 6.954,
+   "sec": 7.288,
    "top_score": 3.804
   },
   {
@@ -2260,7 +2260,7 @@
      "quote": "Brindlewood was first released in 2019."
     }
    ],
-   "sec": 7.143,
+   "sec": 7.236,
    "top_score": 4.96
   },
   {
@@ -2286,7 +2286,7 @@
      "quote": "On 20 July 2025, the steering group approved a budget of 50,000 compute credits for Project Linnet."
     }
    ],
-   "sec": 5.63,
+   "sec": 5.434,
    "top_score": 2.88
   },
   {
@@ -2312,7 +2312,7 @@
      "quote": "On 26 September 2025, the steering group approved a budget of 10,000 compute credits for Project Lapwing."
     }
    ],
-   "sec": 5.399,
+   "sec": 5.177,
    "top_score": 0.44
   },
   {
@@ -2338,7 +2338,7 @@
      "quote": "On 26 June 2025, the steering group approved a budget of 13,000 compute credits for Project Ouzel."
     }
    ],
-   "sec": 5.191,
+   "sec": 5.423,
    "top_score": 3.738
   },
   {
@@ -2359,7 +2359,7 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 8.704,
+   "sec": 8.667,
    "top_score": -0.064
   }
  ]

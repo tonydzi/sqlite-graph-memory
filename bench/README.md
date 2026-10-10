@@ -71,8 +71,8 @@ fixed before the first run: return nothing when the reranker's best score is bel
 
 | mode | R@5 | R@10 | answer | verbatim cite | abstains when absent | false abstain |
 |---|---:|---:|---:|---:|---:|---:|
-| graph (`--graph`) | 0.85 | 0.91 | 0.36 | 0.36 | 0.45 | 0.26 |
-| vector (default) | 0.88 | 0.92 | 0.36 | 0.36 | 0.45 | 0.26 |
+| graph (`--graph`) | 0.85 | 0.91 | 0.33 | 0.33 | 0.45 | 0.26 |
+| vector (default) | 0.88 | 0.92 | 0.33 | 0.33 | 0.45 | 0.26 |
 
 What the per-class table in [LEADERBOARD.md](LEADERBOARD.md) shows, worst first:
 
@@ -94,7 +94,7 @@ What the per-class table in [LEADERBOARD.md](LEADERBOARD.md) shows, worst first:
    never records. The rest of the time it returns a confident sentence about something
    else.
 4. **Two-hop questions retrieve both notes and answer from the first one.** On `bridge`,
-   R@5 is 1.00 and answer accuracy is 0.27. That number belongs to the extractor and not to
+   R@5 is 1.00 and answer accuracy is 0.13 (BM25 gets the same 0.13). That number belongs to the extractor and not to
    retrieval, and it is the main reason an LLM reader would move this row.
 5. **On this vault the graph costs more than it gives.** The entity gate turns the hop off
    for only 5 of the 91 questions (it only fires on queries of five words or fewer), so the
@@ -115,15 +115,16 @@ BM25 is on the board as the floor that needs no model at all. It wins on names a
   ranked note ids, the answer, the quotes. CI recomputes every metric with the same scorer
   `run.py` uses and rejects the file if a single claimed number differs. A quote that does
   not appear in the cited note is caught the same way.
-- **A forgery test runs on every push.** `validate.py --selftest` forges a real result nine
+- **A forgery test runs on every push.** `validate.py --selftest` forges a real result thirteen
   ways (an inflated headline, a flipped class metric, invented quotes, a dropped question, a
   different vault, a self-awarded CI badge, a fake quote padded with real ones, an invented
-  class, a +0.0001 nudge) and fails the
+  class, a +0.0001 nudge, a version, URL, notes or handle that draws extra cells into the board) and fails the
   build if any forgery gets through. Citations are capped at 5 per question and deduplicated,
   so repeating a real quote cannot dilute a made-up one.
 - **Reruns where possible.** BM25 is rerun on every push and has to match exactly. The two
   sqlite-graph-memory rows are rerun on CPU from a fresh index and have to match within
-  0.02. Which systems CI reruns is decided by [`ci_reproduced.txt`](ci_reproduced.txt), a
+  0.02 on every metric, and none of the 91 questions may differ in top-10, answer or
+  quotes, so a row cannot hand-edit even one answer and keep its badge. Which systems CI reruns is decided by [`ci_reproduced.txt`](ci_reproduced.txt), a
   maintainer-owned list, and never by the result file. Rows that CI cannot rerun, because
   they need an API key or a paid service, are labelled **self-reported**.
 - **The vault comes from code and is never hand-edited.** `make_vault.py --check` regenerates

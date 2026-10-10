@@ -30,6 +30,8 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import bench_core as bc  # noqa: E402
 
+MAX_CHANGED = 0
+
 for _s in (sys.stdout, sys.stderr):
     try: _s.reconfigure(encoding='utf-8')
     except Exception: pass
@@ -71,7 +73,7 @@ def check_leaderboard():
 
 
 def selftest():
-    """Forge a copy of a real result nine ways; each forgery must be rejected."""
+    """Forge a copy of a real result thirteen ways; each forgery must be rejected."""
     files = sorted(bc.RESULTS.glob('*.json'))
     if not files:
         print('selftest needs at least one result file'); return 1
@@ -110,6 +112,18 @@ def selftest():
         v = r['metrics']['overall']['answer_acc'] or 0
         r['metrics']['overall']['answer_acc'] = round(v + 0.0001 if v < 1 else v - 0.0001, 4)
 
+    def forge_table_injection(r):
+        r['system']['version'] = '1|0'   # short on purpose: must fail on the pipe, not the length
+
+    def forge_url(r):
+        r['system']['url'] = 'https://example.org\\'   # trailing backslash escapes the next cell
+
+    def forge_notes(r):
+        r['notes'] = 'fine\u2028| 1.00 | yes |'
+
+    def forge_handle(r):
+        r['submitted_by'] = '--'
+
     def forge_padding(r):
         o = r['per_question'][0]
         good = [{'note': 'home', 'quote': 'Entry point of the Larkfield Lab vault.'}] * 4
@@ -121,7 +135,9 @@ def selftest():
                      ('invented quotes', forge_quote), ('dropped question', forge_drop),
                      ('other vault', forge_vault), ('self-awarded CI badge', forge_ci_claim),
                      ('fake quote padded', forge_padding), ('invented class', forge_extra_class),
-                     ('+0.0001 nudge', forge_epsilon)]:
+                     ('+0.0001 nudge', forge_epsilon), ('table injection', forge_table_injection),
+                     ('url backslash', forge_url), ('notes line break', forge_notes),
+                     ('fake GitHub handle', forge_handle)]:
         r = copy.deepcopy(base); fn(r)
         errs = bc.check_result(r, q, v, vs, qs, filename=files[0])
         print('%s forgery %-22s -> %s' % ('ok  ' if errs else 'FAIL', name, (errs[0][:90] if errs else 'ACCEPTED')))
@@ -149,13 +165,22 @@ def reproduce(system, tol):
             d = abs(ov - nv)
             worst = max(worst, d)
             if d > 1e-9: diffs.append('%s.%s %.4f -> %.4f' % (scope, k, ov, nv))
-    changed = sum(1 for a, b in zip(old['per_question'], new['per_question']) if a['retrieved'][:10] != b['retrieved'][:10])
-    print('reproduce %s: worst metric drift %.4f (tolerance %.4f); %d/%d questions changed their top-10'
-          % (system, worst, tol, changed, len(new['per_question'])))
+    # Per question, not only the averages: with a 0.02 tolerance on averages alone, a
+    # CI-reproduced row could hand-edit a few answers and keep its "yes" badge (found by the
+    # mistral-large breaker probe, 10.10). The first CI rerun matched 91/91 exactly, so no
+    # question may differ in top-10, answer or citations (a slack of 2 still let two answers be
+    # hand-edited: panel of nine, 10.10). Matched by id, so a short or reordered rerun can't hide.
+    key = lambda o: (o['retrieved'][:10], o.get('answer'), o.get('citations'))
+    olds = {o['id']: o for o in old['per_question']}
+    news = {o['id']: o for o in new['per_question']}
+    changed = sum(1 for i in olds.keys() | news.keys()
+                  if i not in olds or i not in news or key(olds[i]) != key(news[i]))
+    print('reproduce %s: worst metric drift %.4f (tolerance %.4f); %d/%d questions changed (max %d)'
+          % (system, worst, tol, changed, len(new['per_question']), MAX_CHANGED))
     for d in diffs[:15]:
         print('   ', d)
-    if worst > tol:
-        print('FAIL the committed numbers for %s do not reproduce' % system); return 1
+    if worst > tol or changed > MAX_CHANGED:
+        print('FAIL the committed outputs for %s do not reproduce' % system); return 1
     print('ok   %s reproduces' % system)
     return 0
 

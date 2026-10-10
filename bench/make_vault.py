@@ -442,7 +442,7 @@ def build(seed=SEED):
         q('fact', 'How many compute credits did %s get approved?' % p['title'],
           ['{:,}'.format(p['credits']), str(p['credits'])], [p['budget_id']], [p['ev_budget']])
 
-    for p in R.sample(people, 5):
+    for p in R.sample([x for x in people if x['team']['head'] is not x], 5):   # else the answer is in the question
         q('bridge', 'Who is the head of the team %s works on?' % p['name'], [p['team']['head']['name']],
           [p['id'], p['team']['id']], [p['ev_team'], p['team']['ev_head']])
     for tl in R.sample(tools, 5):
@@ -497,6 +497,10 @@ def build(seed=SEED):
             assert any(e in plain_notes[s] for s in x['support']), (x['id'], e)
         if x['answers']:
             assert any(a.lower() in ' '.join(x['evidence']).lower() for a in x['answers']), x['id']
+            # an answer that is already in the question matches every sentence about the subject
+            # word-bounded, like the scorer: 'Ann' inside 'Joanna' is not the answer leaking
+            assert not any(re.search(r'(?<![a-z0-9])' + re.escape(a.lower()) + r'(?![a-z0-9])',
+                                     x['question'].lower()) for a in x['answers']), x['id']
     for n in absent_people + ABSENT_PROJECTS + ABSENT_TOOLS + ABSENT_SITES:
         assert n.lower() not in blob, n
     for word in ('phone', 'birthday', 'license', 'licence', 'owns the building', 'landlord'):

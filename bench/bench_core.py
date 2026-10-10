@@ -198,7 +198,19 @@ def check_result(res, questions, vault, vault_sha, questions_sha, filename=None)
         need(Path(filename).stem == sysd['name'], 'file name must be <system.name>.json')
     for k in ('version', 'url'):
         need(isinstance(sysd.get(k), str) and sysd.get(k), 'system.%s is required' % k)
-    need(isinstance(res.get('submitted_by'), str) and res.get('submitted_by'), 'submitted_by is required')
+    # These strings are rendered into a markdown table: no pipes, backticks or line breaks,
+    # or a submitter can draw extra cells (and extra rows) onto the leaderboard.
+    need(re.fullmatch(r'[A-Za-z0-9._+-]{1,40}', str(sysd.get('version') or '')) is not None,
+         'system.version must be 1-40 chars of A-Za-z0-9._+-')
+    need(re.fullmatch(r'https://[^\s|()<>`\[\]\\]{4,200}', str(sysd.get('url') or '')) is not None,
+         'system.url must be a plain https:// URL')
+    need(isinstance(res.get('submitted_by'), str)
+         and re.fullmatch(r'[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}', res.get('submitted_by') or '') is not None,
+         'submitted_by must be a GitHub handle')
+    notes = res.get('notes') or ''
+    # a backslash escapes the next cell's pipe; U+2028/2029 and control chars break the line
+    need(isinstance(notes, str) and not re.search('[|`<>\\\x00-\x1f\x7f\u2028\u2029]', notes),
+         'notes must be one line without | ` < > \\ characters')
     need(isinstance(res.get('date'), str) and re.fullmatch(r'\d{4}-\d{2}-\d{2}', res.get('date') or ''), 'date must be YYYY-MM-DD')
     need(res.get('vault_sha256') == vault_sha, 'vault_sha256 does not match bench/vault (stale result or edited vault)')
     need(res.get('questions_sha256') == questions_sha, 'questions_sha256 does not match bench/questions.jsonl')
