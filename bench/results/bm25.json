@@ -33,7 +33,7 @@
    "n": 91,
    "n_answerable": 69,
    "n_unanswerable": 22,
-   "recall@5": 0.7681,
+   "recall@5": 0.95,
    "recall@10": 0.7899,
    "answer_acc": 0.4493,
    "citation_verbatim": 0.4493,
