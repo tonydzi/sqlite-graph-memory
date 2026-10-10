@@ -44,7 +44,7 @@ MIN_QUOTE = 15
 MAX_RETRIEVED = 50
 MAX_CITATIONS = 5
 CI_REPRODUCED = HERE / 'ci_reproduced.txt'
-TOL = 1e-4
+TOL = 1e-9   # both sides are rounded to 4 places by aggregate(); any visible change must fail
 
 WIKI_RX = re.compile(r'\[\[([^\]\|]+)(?:\|([^\]]+))?\]\]')
 
@@ -59,11 +59,14 @@ def file_sha256(path):
 
 
 def tree_sha256(folder):
-    """Hash of every .md file name + content, CRLF-insensitive (a Windows checkout must
-    hash the same as the Linux CI runner)."""
+    """Hash of every file under the folder, recursively (relative path + content), CRLF-
+    insensitive so a Windows checkout hashes the same as the Linux CI runner. Recursive on
+    purpose: the sqlite-graph-memory indexer reads subfolders, so a note smuggled into one
+    must change the hash."""
     h = hashlib.sha256()
-    for p in sorted(Path(folder).glob('*.md')):
-        h.update(p.name.encode('utf-8') + b'\0' + _lf(p.read_bytes()) + b'\0')
+    root = Path(folder)
+    for p in sorted(x for x in root.rglob('*') if x.is_file()):
+        h.update(p.relative_to(root).as_posix().encode('utf-8') + b'\0' + _lf(p.read_bytes()) + b'\0')
     return h.hexdigest()
 
 
@@ -178,6 +181,11 @@ def ci_reproduced():
 def check_result(res, questions, vault, vault_sha, questions_sha, filename=None):
     """-> list of error strings; empty = valid. Re-derives every metric from per_question."""
     errs = []
+    if not isinstance(res, dict):
+        return ['the result must be a JSON object']
+    for k in ('system', 'reproduce', 'metrics'):
+        if not isinstance(res.get(k), dict):
+            return ['%s must be a JSON object' % k]
 
     def need(cond, msg):
         if not cond: errs.append(msg)
@@ -204,9 +212,9 @@ def check_result(res, questions, vault, vault_sha, questions_sha, filename=None)
     need(isinstance(pq, list), 'per_question must be a list')
     if not isinstance(pq, list):
         return errs
-    ids = [o.get('id') for o in pq if isinstance(o, dict)]
+    ids = [o.get('id') for o in pq if isinstance(o, dict) and isinstance(o.get('id'), str)]
     want = [q['id'] for q in questions]
-    need(len(ids) == len(pq), 'every per_question entry must be an object with an id')
+    need(len(ids) == len(pq), 'every per_question entry must be an object with a string id')
     need(sorted(ids) == sorted(want), 'per_question must cover every question id exactly once '
          '(missing %d, extra %d)' % (len(set(want) - set(ids)), len(set(ids) - set(want))))
     for o in pq:
@@ -226,6 +234,18 @@ def check_result(res, questions, vault, vault_sha, questions_sha, filename=None)
         return errs
     got = score(questions, pq, vault)
     claimed = res.get('metrics') or {}
+    # Claims must have exactly the computed shape: an invented class or an extra key is a
+    # number nobody derived, even if nothing renders it today.
+    if set(claimed) != {'overall', 'by_class'}:
+        errs.append('metrics must have exactly the keys overall and by_class')
+    if not isinstance(claimed.get('overall'), dict) or set(claimed.get('overall') or {}) != set(got['overall']):
+        errs.append('metrics.overall must have exactly the keys %s' % sorted(got['overall']))
+    cb = claimed.get('by_class') if isinstance(claimed.get('by_class'), dict) else {}
+    if set(cb) != set(got['by_class']):
+        errs.append('metrics.by_class classes %s, the question set has %s' % (sorted(cb), sorted(got['by_class'])))
+    for cls, m in cb.items():
+        if cls in got['by_class'] and (not isinstance(m, dict) or set(m) != set(got['by_class'][cls])):
+            errs.append('metrics.by_class.%s has the wrong keys' % cls)
     for scope in ('overall',):
         for k, v in got[scope].items():
             cv = (claimed.get(scope) or {}).get(k, 'missing')

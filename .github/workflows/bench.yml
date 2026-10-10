@@ -53,6 +53,7 @@ jobs:
         # rerun can never disagree. BM25 is rerun exactly in the validate job.
         run: |
           set -e
-          for s in $(grep -v '^#' bench/ci_reproduced.txt | grep -v '^bm25$'); do
+          # read the list with the same parser the badge uses (bench_core.ci_reproduced)
+          for s in $(python -c "import sys; sys.path.insert(0, 'bench'); import bench_core as b; print(' '.join(sorted(b.ci_reproduced() - {'bm25'})))"); do
             python bench/validate.py --reproduce "$s" --tolerance 0.02
           done

@@ -71,7 +71,7 @@ def check_leaderboard():
 
 
 def selftest():
-    """Forge a copy of a real result seven ways; each forgery must be rejected."""
+    """Forge a copy of a real result nine ways; each forgery must be rejected."""
     files = sorted(bc.RESULTS.glob('*.json'))
     if not files:
         print('selftest needs at least one result file'); return 1
@@ -103,6 +103,13 @@ def selftest():
     def forge_ci_claim(r):
         r['reproduce']['in_ci'] = not r['reproduce']['in_ci']
 
+    def forge_extra_class(r):
+        r['metrics']['by_class']['made-up'] = dict(r['metrics']['overall'], **{'recall@5': 1.0})
+
+    def forge_epsilon(r):
+        v = r['metrics']['overall']['answer_acc'] or 0
+        r['metrics']['overall']['answer_acc'] = round(v + 0.0001 if v < 1 else v - 0.0001, 4)
+
     def forge_padding(r):
         o = r['per_question'][0]
         good = [{'note': 'home', 'quote': 'Entry point of the Larkfield Lab vault.'}] * 4
@@ -113,7 +120,8 @@ def selftest():
     for name, fn in [('inflated headline', forge_headline), ('flipped class metric', forge_class),
                      ('invented quotes', forge_quote), ('dropped question', forge_drop),
                      ('other vault', forge_vault), ('self-awarded CI badge', forge_ci_claim),
-                     ('fake quote padded', forge_padding)]:
+                     ('fake quote padded', forge_padding), ('invented class', forge_extra_class),
+                     ('+0.0001 nudge', forge_epsilon)]:
         r = copy.deepcopy(base); fn(r)
         errs = bc.check_result(r, q, v, vs, qs, filename=files[0])
         print('%s forgery %-22s -> %s' % ('ok  ' if errs else 'FAIL', name, (errs[0][:90] if errs else 'ACCEPTED')))

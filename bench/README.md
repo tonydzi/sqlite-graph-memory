@@ -115,9 +115,10 @@ BM25 is on the board as the floor that needs no model at all. It wins on names a
   ranked note ids, the answer, the quotes. CI recomputes every metric with the same scorer
   `run.py` uses and rejects the file if a single claimed number differs. A quote that does
   not appear in the cited note is caught the same way.
-- **A forgery test runs on every push.** `validate.py --selftest` forges a real result seven
+- **A forgery test runs on every push.** `validate.py --selftest` forges a real result nine
   ways (an inflated headline, a flipped class metric, invented quotes, a dropped question, a
-  different vault, a self-awarded CI badge, a fake quote padded with real ones) and fails the
+  different vault, a self-awarded CI badge, a fake quote padded with real ones, an invented
+  class, a +0.0001 nudge) and fails the
   build if any forgery gets through. Citations are capped at 5 per question and deduplicated,
   so repeating a real quote cannot dilute a made-up one.
 - **Reruns where possible.** BM25 is rerun on every push and has to match exactly. The two
