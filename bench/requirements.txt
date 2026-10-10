@@ -1,0 +1,6 @@
+# Only the sqlite-graph-memory adapters need these. bm25, the scorer and the validator
+# are stdlib. Install torch first, CPU build, the same one the baseline was run with:
+#   pip install torch==2.4.1 --index-url https://download.pytorch.org/whl/cpu
+numpy>=1.24
+sentence-transformers==3.1.1
+transformers==4.44.2

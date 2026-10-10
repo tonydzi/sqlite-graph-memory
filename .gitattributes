@@ -1,0 +1,4 @@
+bench/vault/*.md text eol=lf
+bench/questions.jsonl text eol=lf
+bench/results/*.json text eol=lf
+bench/LEADERBOARD.md text eol=lf

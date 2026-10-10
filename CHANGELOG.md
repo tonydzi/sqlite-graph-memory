@@ -4,6 +4,24 @@ What shipped, in plain words. Entries below v0.1.3 were written on 2026-09-05 fr
 release notes that already existed — the file itself did not exist until then, so those three are
 recorded after the fact rather than backdated to look contemporaneous.
 
+## bench-v0.1 — 2026-10-09
+
+**A benchmark other people can run.** Until now every retrieval number in this repo came from
+one private vault, so nobody could check them. `bench/` ships a generated 202-note vault about a
+fictional lab, 91 questions in seven classes (22 of them have no answer in the vault), and a
+leaderboard. `python bench/run.py --system bm25` runs end to end with nothing installed.
+
+**You submit outputs, not numbers.** Each result file carries every per-question output, and
+`bench/validate.py` recomputes every metric with the same scorer. CI rejects any file whose
+claimed numbers do not follow from its own outputs, and a self-test forges a real result seven
+ways on every push to prove the gate still catches it.
+
+**The baseline is honest about itself.** sqlite-graph-memory retrieves both the old and the new
+decision on "current deadline" questions and quotes the old one 6 times out of 6. It also
+abstains on every paraphrased question, and it answers 55% of questions whose fact is missing.
+On this vault, vector-only ranks ahead of graph mode. All of it is written out in
+`bench/README.md`. Closes #16.
+
 ## v0.3.0 — 2026-10-07
 
 **You can install it now.** For three months this was a repository you had to clone, and for

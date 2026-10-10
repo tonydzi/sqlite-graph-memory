@@ -1,0 +1,5 @@
+# Systems the bench workflow reruns from a clean checkout on every push (.github/workflows/bench.yml).
+# Only systems that need no API key and no paid service can be listed. A maintainer edits this file.
+bm25
+sqlite-graph-memory
+sqlite-graph-memory-vector

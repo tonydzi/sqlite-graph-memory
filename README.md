@@ -166,6 +166,27 @@ On a corpus this small the graph adds nothing — every note is already in the c
 pool. The interesting deltas appear at scale, and that is exactly what the `ab_recall`
 table in [`schema.sql`](schema.sql) accumulates evidence for.
 
+## Public benchmark — `bench/`
+
+Every number in the next section comes from our private vault, so nobody outside the lab can
+check it. [`bench/`](bench/README.md) is the reproducible half: a generated 202-note vault
+about a fictional lab, 91 questions in seven classes (including 22 whose answer is *not* in
+the vault), and three metrics that matter for agent memory: recall@k on the support notes,
+verbatim citation, and abstaining when the fact is missing.
+
+```bash
+python bench/run.py --system bm25          # one command, stdlib only
+python bench/validate.py                   # what CI runs on every result file
+```
+
+Our own baseline is on the [leaderboard](bench/LEADERBOARD.md) with its weak spots written
+out: on "what is the current deadline" questions it retrieves both decisions (R@5 1.00) and
+cites the superseded one 6 times out of 6; vector-only ranks ahead of graph mode on this
+vault (R@5 0.88 vs 0.85). Other memory systems (mem0, Letta, Khoj, plain RAG) can join the
+board with one adapter file and a pull request: [bench/CONTRIBUTING.md](bench/CONTRIBUTING.md).
+CI recomputes every submitted number from the per-question outputs, so a typed-in number
+cannot get onto the board.
+
 ## Measure before you swap — `eval/`
 
 Every "obvious" upgrade to a RAG pipeline — a newer embedder, a stronger reranker, hybrid
@@ -270,13 +291,11 @@ does not notice, and that drift is the defect this paragraph used to carry twice
 
 **Next:**
 
-- **v0.2**: a public benchmark. Half of it now exists as
-  [`eval/`](#measure-before-you-swap--eval): a gold builder that needs no hand labelling, four
-  query classes, both retrieval modes scored side by side, and the numbers from nine real
-  changes on one 24k-chunk vault. What is still missing is the *public* half — a shareable
-  synthetic mini-vault (200–500 notes with real wikilinks) so the numbers can be reproduced by
-  someone who is not us — and the full ablation matrix (hops × seed caps × neighbour caps ×
-  rerank pool × gating policy). The interesting question was never "does graph help" but
+- **The public benchmark** now exists as [`bench/`](bench/README.md) (`bench-v0.1`): a
+  synthetic 202-note vault, 91 questions, a leaderboard that other systems can join, and CI that
+  reproduces the numbers. Still missing: the full ablation matrix (hops × seed caps ×
+  neighbour caps × rerank pool × gating policy). `bench/` has its first two cells, 0 hops and
+  1 hop. The interesting question was never "does graph help" but
   *for which query classes*; `eval/` answers that per class instead of per intuition.
 - **Bi-temporal edges** — design note [`docs/bitemporal.md`](docs/bitemporal.md). When you
   materialize the graph instead of parsing it at query time, give every edge a validity
