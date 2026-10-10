@@ -32,9 +32,14 @@ ABSTAIN_BELOW = 0.0
 
 
 class Adapter:
-    def __init__(self, mode):
+    """mode: 'graph' or 'vector'. The other knobs are the ablation-matrix axes (#19); add a
+    SYSTEMS entry with different values and every cell becomes its own reproducible row.
+    None means the library default."""
+
+    def __init__(self, mode, ghops=None, gmax=None, gate=True, topk=None):
         assert mode in ('graph', 'vector')
-        self.mode = mode
+        self.mode, self.gate = mode, gate
+        self._ghops, self._gmax, self._topk = ghops, gmax, topk
 
     def info(self):
         from sqlite_graph_memory import brain_ask as ba
@@ -49,10 +54,11 @@ class Adapter:
                 v = line.split('=', 1)[1].strip().strip('"')
                 break
         return {'version': v, 'url': 'https://github.com/tonydzi/sqlite-graph-memory',
-                'config': {'mode': self.mode, 'entity_gate': self.mode == 'graph',
+                'config': {'mode': self.mode, 'entity_gate': self.mode == 'graph' and self.gate,
                            'embedder': ba.E5_MODEL, 'reranker': ba.RERANK_MODEL,
-                           'topk_retrieve': ba.TOPK_RETRIEVE, 'topn': ba.TOPN,
-                           'graph_hops': 1, 'graph_seeds': ba.GHOPS, 'graph_max_neighbours': ba.GMAX,
+                           'topk_retrieve': self._topk or ba.TOPK_RETRIEVE, 'topn': ba.TOPN,
+                           'graph_hops': 1, 'graph_seeds': self._ghops or ba.GHOPS,
+                           'graph_max_neighbours': self._gmax or ba.GMAX,
                            'device': 'cpu', 'answer': 'extractive: best-overlap sentence of top-3 notes',
                            'abstain': 'top reranker score < %s' % ABSTAIN_BELOW}}
 
@@ -74,9 +80,10 @@ class Adapter:
     def ask(self, question):
         ba = self.ba
         sims = ba.query_sims(self.enc, self.emb, question)
-        cand = ba.retrieve_candidates(sims, self.meta)
-        if self.mode == 'graph' and not ba.looks_like_entity(question):
-            added = ba.expand_1hop(sims, self.meta, cand, self.by_base)
+        cand = ba.retrieve_candidates(sims, self.meta, topk=self._topk or ba.TOPK_RETRIEVE)
+        if self.mode == 'graph' and not (self.gate and ba.looks_like_entity(question)):
+            added = ba.expand_1hop(sims, self.meta, cand, self.by_base,
+                                   ghops=self._ghops or ba.GHOPS, gmax=self._gmax or ba.GMAX)
             self.graph_added += len(added)
             cand = cand + added
         ranked = ba.rerank_candidates(self.ce, question, cand, self.meta)
