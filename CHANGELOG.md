@@ -4,6 +4,13 @@ What shipped, in plain words. Entries below v0.1.3 were written on 2026-09-05 fr
 release notes that already existed — the file itself did not exist until then, so those three are
 recorded after the fact rather than backdated to look contemporaneous.
 
+## Unreleased
+
+**Credit where it is due.** The MCP server that ships as `sgm-mcp` was written by Vardhman Gupta
+([@Kaap10](https://github.com/Kaap10)) in PR #8: the server, its tests, its docs, and the fixes
+for the shared answer-file race, the stdout fallback pollution and the swallowed read errors.
+He is now listed in the `authors` field of `pyproject.toml`, which is the attribution he asked for.
+
 ## bench-v0.1 — 2026-10-09
 
 **A benchmark other people can run.** Until now every retrieval number in this repo came from

@@ -9,7 +9,10 @@ description = "Associative memory for LLM agents: Graph RAG over a folder of mar
 readme = "README.md"
 requires-python = ">=3.9"
 license = { file = "LICENSE" }
-authors = [{ name = "Anton Dziatkovskii" }]
+authors = [
+  { name = "Anton Dziatkovskii" },
+  { name = "Vardhman Gupta" },
+]
 keywords = [
   "graph-rag",
   "agent-memory",
