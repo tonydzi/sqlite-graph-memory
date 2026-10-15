@@ -63,7 +63,7 @@ jobs:
           /tmp/clean/bin/pip install dist/*.whl
       - name: every advertised command must start
         run: |
-          for cmd in sgm-index sgm-ask sgm-turnstate-hook sgm-turnstate-show; do
+          for cmd in sgm-index sgm-ask sgm-mcp sgm-turnstate-hook sgm-turnstate-show sqlite-graph-memory; do
             test -x "/tmp/clean/bin/$cmd" || { echo "::error::$cmd was not installed"; exit 1; }
           done
           /tmp/clean/bin/sgm-turnstate-show --help > /dev/null

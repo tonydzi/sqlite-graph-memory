@@ -44,7 +44,7 @@ jobs:
         run: |
           python -m venv /tmp/clean
           /tmp/clean/bin/pip install dist/*.whl
-          for cmd in sgm-index sgm-ask sgm-mcp sgm-turnstate-hook sgm-turnstate-show; do
+          for cmd in sgm-index sgm-ask sgm-mcp sgm-turnstate-hook sgm-turnstate-show sqlite-graph-memory; do
             test -x "/tmp/clean/bin/$cmd" || { echo "::error::$cmd missing from wheel"; exit 1; }
           done
       - uses: actions/upload-artifact@v4
@@ -66,3 +66,37 @@ jobs:
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
           skip-existing: true   # the package may already be uploaded before the GitHub release object exists
+
+  # List the server in the official MCP Registry once PyPI has the release.
+  # Auth is GitHub OIDC (no stored secret): the registry grants the
+  # io.github.tonydzi/* namespace to workflows running in tonydzi's repos.
+  # Ownership is proven by the `mcp-name:` line in README.md, which PyPI shows
+  # as the package description, so this job must run AFTER the PyPI upload.
+  mcp-registry:
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: server.json must describe the version being released
+        run: |
+          pkg=$(python3 -c "import tomllib;print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          srv=$(python3 -c "import json;d=json.load(open('server.json'));print(d['version'], d['packages'][0]['version'])")
+          [ "$srv" = "$pkg $pkg" ] || { echo "::error::server.json says '$srv', pyproject says $pkg"; exit 1; }
+          grep -q "mcp-name: $(python3 -c "import json;print(json.load(open('server.json'))['name'])")" README.md \
+            || { echo "::error::README.md lacks the mcp-name line the registry verifies"; exit 1; }
+      - name: Wait until PyPI serves this version
+        run: |
+          v=$(python3 -c "import json;print(json.load(open('server.json'))['version'])")
+          for i in $(seq 1 30); do
+            curl -sf "https://pypi.org/pypi/sqlite-graph-memory/$v/json" >/dev/null && exit 0
+            sleep 20
+          done
+          echo "::error::PyPI never served $v"; exit 1
+      - name: Install mcp-publisher
+        run: |
+          curl -sL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" | tar xz mcp-publisher
+      - run: ./mcp-publisher login github-oidc
+      - run: ./mcp-publisher publish
