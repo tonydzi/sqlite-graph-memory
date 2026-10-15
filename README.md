@@ -15,8 +15,14 @@ sgm-index ./notes
 sgm-ask --ab "In which programming language is the tool behind Project Ouzel written?"
 ```
 
-Real output, top 5 of 12, on the 202-note synthetic vault that ships in
-[`bench/vault`](bench/vault) (copy it to `./notes` to get the same thing):
+`./notes` is any folder of markdown notes. To get exactly the output below, use the
+202-note synthetic vault from this repo (it is not inside the pip package):
+
+```bash
+git clone --depth 1 https://github.com/tonydzi/sqlite-graph-memory && cp -R sqlite-graph-memory/bench/vault ./notes
+```
+
+Real output, top 5 of 12:
 
 ```
 --- DIRECT memory (vector) ---
