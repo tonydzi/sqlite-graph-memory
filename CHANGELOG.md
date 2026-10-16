@@ -4,13 +4,30 @@ What shipped, in plain words. Entries below v0.1.3 were written on 2026-09-05 fr
 release notes that already existed — the file itself did not exist until then, so those three are
 recorded after the fact rather than backdated to look contemporaneous.
 
-## Unreleased
+## v0.3.1 — unreleased
 
 **Credit where it is due.** The MCP server that ships as `sgm-mcp` was written by Vardhman Gupta
 ([@Kaap10](https://github.com/Kaap10)) in PR #8: the server, its tests and its docs. His
 follow-up fixes are the shared answer-file race (commit 3ce7061), the stdout fallback (PR #10)
 and the swallowed read errors (PR #14).
 He is now listed in the `authors` field of `pyproject.toml`, which is the attribution he asked for.
+
+**Indexing works on Intel Macs again.** A fresh `pip install 'sqlite-graph-memory[embeddings]'`
+on an x86_64 Mac with Python 3.12 crashed `sgm-index` with `NameError: name 'nn' is not
+defined`. Torch stops at 2.2 there, transformers 5.x needs 2.6 and quietly disables torch,
+and sentence-transformers 6.x requires transformers 5.x. The embeddings extra now caps
+transformers below 4.50 and sentence-transformers below 5 on that one platform. Measured
+both ways on the same machine: 0.3.0 from PyPI crashes, this build indexes the 202-note
+bench vault cleanly (204 chunks).
+
+**Listed in the official MCP Registry.** `server.json` describes the server as
+`io.github.tonydzi/sqlite-graph-memory`, the README carries the `mcp-name` line the registry
+checks, and the publish workflow lists the release after PyPI has it. The package also
+installs the MCP server under its own name, `sqlite-graph-memory`, so registry clients can
+start it with `uvx`.
+
+**The README opens with three commands and their real output** on the bench vault, including
+the honest caveat that vector-only ranks ahead of graph mode on that vault overall.
 
 ## bench-v0.1 — 2026-10-09
 

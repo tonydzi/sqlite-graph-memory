@@ -1,12 +1,59 @@
 # sqlite-graph-memory
 
+<!-- mcp-name: io.github.tonydzi/sqlite-graph-memory -->
+
 **Your agent forgets everything between sessions, and plain vector search gives it back
-flat, unrelated chunks. This gives it associative recall over your own markdown notes —
-one SQLite file, no graph database, no ETL pass, no server.**
+flat, unrelated chunks. This gives it associative recall over your own markdown notes:
+vector search finds the entry points, the `[[wikilinks]]` you already wrote are the graph.
+One SQLite file, no graph database, no ETL pass, no server.**
+
+## Three commands
 
 ```bash
-pip install sqlite-graph-memory
+pip install 'sqlite-graph-memory[embeddings]'
+sgm-index ./notes
+sgm-ask --ab "In which programming language is the tool behind Project Ouzel written?"
 ```
+
+`./notes` is any folder of markdown notes. To get exactly the output below, use the
+202-note synthetic vault from this repo (it is not inside the pip package):
+
+```bash
+git clone --depth 1 https://github.com/tonydzi/sqlite-graph-memory && cp -R sqlite-graph-memory/bench/vault ./notes
+```
+
+Real output, top 5 of 12:
+
+```
+--- DIRECT memory (vector) ---
+ 1. [  1.66] project-ouzel
+ 2. [ -1.33] project-avocet
+ 3. [ -1.79] tool-cobbleset
+ 4. [ -2.44] meeting-2025-10-21-lighthouse-sync
+ 5. [ -2.70] person-severin-ibarrondo
+
+--- ASSOCIATIVE memory (vector+graph) ---
+ 1. [  1.66] project-ouzel
+ 2. [  1.14] tool-lanternfish  <== +graph
+ 3. [ -1.33] project-avocet
+ 4. [ -1.79] tool-cobbleset
+ 5. [ -2.44] meeting-2025-10-21-lighthouse-sync
+```
+
+The answer lives in `tool-lanternfish` ("Lanternfish is written in Elixir"). The question
+never names Lanternfish, so the vector pass does not find it in the top 12 at all.
+`project-ouzel` links to it, so one graph hop puts it second.
+
+That is the idea in one query, and it is not a blanket win. On this same vault vector-only
+ranks ahead of graph mode overall; the numbers are in [`bench/`](bench/README.md). `--ab`
+exists so you can measure which one wins on your own notes.
+
+**From any MCP client** (Claude Desktop, Cursor, Zed, Windsurf): `sgm-mcp` after the install
+above, or `uvx --with 'sqlite-graph-memory[embeddings]' sqlite-graph-memory`. Set
+`BRAIN_INDEX_DIR` to the `index` folder `sgm-index` wrote. Config:
+[`examples/mcp-config.json`](examples/mcp-config.json).
+
+## What it is
 
 Graph RAG on SQLite for AI agents — a working pilot, not a framework. It is the extracted
 memory layer of a personal "second brain" agent setup: vector search finds the entry

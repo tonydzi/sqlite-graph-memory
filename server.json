@@ -1,0 +1,45 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.tonydzi/sqlite-graph-memory",
+  "title": "sqlite-graph-memory",
+  "description": "Recall over your markdown notes: vector search plus your [[wikilinks]] as a graph, in SQLite.",
+  "repository": {
+    "url": "https://github.com/tonydzi/sqlite-graph-memory",
+    "source": "github"
+  },
+  "version": "0.3.1",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "registryBaseUrl": "https://pypi.org",
+      "identifier": "sqlite-graph-memory",
+      "version": "0.3.1",
+      "runtimeHint": "uvx",
+      "runtimeArguments": [
+        {
+          "type": "named",
+          "name": "--with",
+          "value": "sqlite-graph-memory[embeddings]==0.3.1",
+          "description": "Recall needs the embedding and reranker models; the base package leaves them out to stay small."
+        }
+      ],
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "BRAIN_INDEX_DIR",
+          "description": "Directory holding the index. Build it once with `sgm-index /path/to/notes`.",
+          "format": "filepath",
+          "isRequired": true
+        },
+        {
+          "name": "TURNSTATE_DB",
+          "description": "SQLite file for recall telemetry.",
+          "format": "filepath",
+          "default": "./turnstate.db"
+        }
+      ]
+    }
+  ]
+}
