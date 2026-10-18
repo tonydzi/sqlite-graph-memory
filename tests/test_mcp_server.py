@@ -12,6 +12,11 @@ from sqlite_graph_memory import mcp_server
 
 
 
+def test_server_info_version_tracks_package():
+    from sqlite_graph_memory import __version__
+    assert SERVER_INFO["version"] == __version__
+
+
 def test_mcp_initialize():
     req = {
         "jsonrpc": "2.0",

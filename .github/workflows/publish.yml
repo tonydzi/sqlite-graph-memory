@@ -83,8 +83,8 @@ jobs:
       - name: server.json must describe the version being released
         run: |
           pkg=$(python3 -c "import tomllib;print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
-          srv=$(python3 -c "import json;d=json.load(open('server.json'));print(d['version'], d['packages'][0]['version'])")
-          [ "$srv" = "$pkg $pkg" ] || { echo "::error::server.json says '$srv', pyproject says $pkg"; exit 1; }
+          srv=$(python3 -c "import json;d=json.load(open('server.json'));p=d['packages'][0];print(d['version'], p['version'], p['runtimeArguments'][0]['value'])")
+          [ "$srv" = "$pkg $pkg sqlite-graph-memory[embeddings]==$pkg" ] || { echo "::error::server.json says '$srv', pyproject says $pkg"; exit 1; }
           grep -q "mcp-name: $(python3 -c "import json;print(json.load(open('server.json'))['name'])")" README.md \
             || { echo "::error::README.md lacks the mcp-name line the registry verifies"; exit 1; }
       - name: Wait until PyPI serves this version
