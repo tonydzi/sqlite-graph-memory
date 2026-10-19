@@ -46,7 +46,7 @@ dependencies = ["numpy>=1.24"]
 # of pulling ~2 GB of torch on a machine that only wants to read the graph.
 # Intel Macs top out at torch 2.2.x, which is built against NumPy 1.x and dies on
 # NumPy 2 with "RuntimeError: Numpy is not available" (measured 2026-10-15 on an
-# x86_64 Mac, Python 3.9: sgm-index crashed; with numpy<2 it indexed cleanly).
+# x86_64 Mac, Python 3.9: sgm-index crashed; with numpy<3 it indexed cleanly).
 # The same ceiling bites one layer up: transformers 5.x needs torch >= 2.6, so on
 # torch 2.2 it disables torch and sgm-index dies with "NameError: name 'nn' is not
 # defined" inside transformers/integrations/accelerate.py (measured 2026-10-15 on
@@ -54,7 +54,7 @@ dependencies = ["numpy>=1.24"]
 # 6.x in turn requires transformers 5.x, so both are capped there.
 embeddings = [
   "sentence-transformers>=2.6",
-  "numpy<2; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+  "numpy<3; sys_platform == 'darwin' and platform_machine == 'x86_64'",
   "transformers<4.50; sys_platform == 'darwin' and platform_machine == 'x86_64'",
   "sentence-transformers<5; sys_platform == 'darwin' and platform_machine == 'x86_64'",
 ]
