@@ -346,6 +346,16 @@ Questions, war stories, or you want to run this on your own fleet:
 - 🌐 [palo-alto.ai](https://palo-alto.ai) · [Palo Alto AI Research Lab](https://github.com/tonydzi)
 - 🧪 **Engineers: want to test-drive this setup?** Message me — I hand out free starter seeds to engineers who test and report back.
 
+## Tell us what is missing
+
+You tried this on your own notes and something was missing or broke. That is the most useful
+thing anyone can tell us.
+
+- **You started and it did not work:** [open the 3-question form](https://github.com/tonydzi/sqlite-graph-memory/issues/new?template=feature_request.yml) (what you tried, what broke, which machine).
+- **Not sure it is a bug, or just an idea:** [Discussions → Ideas](https://github.com/tonydzi/sqlite-graph-memory/discussions/categories/ideas).
+
+Nothing in this package phones home. There is no telemetry, so we only know what you write to us.
+
 ## Contributors welcome — and there is a queue
 
 Issues labelled [`accepted`](https://github.com/tonydzi/sqlite-graph-memory/issues?q=is%3Aissue+is%3Aopen+label%3Aaccepted)
