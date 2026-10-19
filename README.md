@@ -2,6 +2,8 @@
 
 <!-- mcp-name: io.github.tonydzi/sqlite-graph-memory -->
 
+[![PyPI](https://img.shields.io/pypi/v/sqlite-graph-memory)](https://pypi.org/project/sqlite-graph-memory/) [![tests](https://img.shields.io/github/actions/workflow/status/tonydzi/sqlite-graph-memory/tests.yml?label=tests)](https://github.com/tonydzi/sqlite-graph-memory/actions/workflows/tests.yml) [![MCP Registry](https://img.shields.io/badge/MCP%20Registry-io.github.tonydzi%2Fsqlite--graph--memory-blue)](https://registry.modelcontextprotocol.io/v0/servers?search=sqlite-graph-memory) [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 **Your agent forgets everything between sessions, and plain vector search gives it back
 flat, unrelated chunks. This gives it associative recall over your own markdown notes:
 vector search finds the entry points, the `[[wikilinks]]` you already wrote are the graph.
@@ -138,7 +140,7 @@ an edge table only when hop depth or corpus size demands it.
 
 - No entity lane. The production setup has an extra retrieval lane over people/project
   cards; it is too entangled with personal data to publish.
-- No incremental indexing and no packaging. There IS an eval suite now — see
+- No incremental indexing (tracked in the issues). Packaging exists since v0.3.0 (`pip install sqlite-graph-memory`). There IS an eval suite now — see
   [Measure before you swap](#measure-before-you-swap--eval) — but it scores retrieval on
   wikilink-derived gold, which is weak supervision and says so out loud. Test coverage is uneven:
   `index_notes.py`, `brain_ask.py` and `mcp_server.py` have unit tests, `turnstate_hook.py`
@@ -325,7 +327,7 @@ while the metric is broken never tested the metric.
 
 ## Roadmap
 
-**Now — [v0.1.1](https://github.com/tonydzi/sqlite-graph-memory/releases).**
+**Now — [latest release](https://github.com/tonydzi/sqlite-graph-memory/releases/latest)** (v0.3.1 on PyPI and in the MCP Registry as of 2026-10-19).
 The pilot as it runs daily: retrieval pipeline, per-turn ledger and A/B telemetry, all in
 `brain_ask.py` and `turnstate_hook.py`, plus the bi-temporal design note. Known defects live in
 the [tracker](https://github.com/tonydzi/sqlite-graph-memory/issues) rather than in footnotes
@@ -363,9 +365,10 @@ Both are set as constants (`E5_MODEL`, `RERANK_MODEL`) in `brain_ask.py` and sma
 to run on a laptop GPU; swap freely, since nothing in the pipeline depends on these
 specific models.
 
-## Cite this work
+## Maintainers
 
-If this repo shows up in your research, cite it via [CITATION.cff](CITATION.cff) (GitHub's "Cite this repository" button). Academic identity: Anton Dzyatkovsky publishes as **Anton Dziatkovskii** ([ORCID 0000-0001-7408-3054](https://orcid.org/0000-0001-7408-3054)).
+- **Anton Dziatkovskii** ([@tonydzi](https://github.com/tonydzi)): retrieval pipeline, ledger, bench, releases.
+- **Vardhman Gupta** ([@Kaap10](https://github.com/Kaap10)): the MCP server (`sgm-mcp`, PRs #8, #10, #14) and its tests; reviews on `mcp_server.py` route to him via CODEOWNERS.
 
 ## AI contributors
 
@@ -377,7 +380,7 @@ content** — no decorative credits. Lab-wide policy, one source for every repo:
 
 ## Cite this work
 
-The paper about this system — retrieval design, pilot telemetry, and the query-class-stratified evaluation protocol — is published: [DOI 10.5281/zenodo.22639718](https://doi.org/10.5281/zenodo.22639718) (preprint, CC BY 4.0). Machine-readable citation: [CITATION.cff](CITATION.cff).
+The paper about this system — retrieval design, pilot telemetry, and the query-class-stratified evaluation protocol — is published: [DOI 10.5281/zenodo.22639718](https://doi.org/10.5281/zenodo.22639718) (preprint, CC BY 4.0). Machine-readable citation: [CITATION.cff](CITATION.cff) (GitHub's "Cite this repository" button). Academic identity: Anton Dzyatkovsky publishes as **Anton Dziatkovskii** ([ORCID 0000-0001-7408-3054](https://orcid.org/0000-0001-7408-3054)).
 
 ## License
 

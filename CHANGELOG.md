@@ -4,7 +4,7 @@ What shipped, in plain words. Entries below v0.1.3 were written on 2026-09-05 fr
 release notes that already existed — the file itself did not exist until then, so those three are
 recorded after the fact rather than backdated to look contemporaneous.
 
-## v0.3.1 — unreleased
+## v0.3.1 — 2026-10-19
 
 **Credit where it is due.** The MCP server that ships as `sgm-mcp` was written by Vardhman Gupta
 ([@Kaap10](https://github.com/Kaap10)) in PR #8: the server, its tests and its docs. His
