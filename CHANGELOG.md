@@ -20,10 +20,11 @@ Cursor and Codex over your own markdown notes.
 
 **One star request, earned and once.** After a successful `sgm-ask --ab` in a terminal, one
 stderr line asks for a GitHub star. It is printed once per machine (a marker file in
-`~/.config/sqlite-graph-memory`, or `SGM_CONFIG_DIR`), never under `CI`, never when stdout is
-piped, never when `BRAIN_AB_JSON` is set, and never with `SGM_NO_STAR_PROMPT=1`.
-`tests/test_star_prompt.py` covers each of those and goes red if the marker write or either
-guard is removed.
+`~/.config/sqlite-graph-memory`, or `SGM_CONFIG_DIR`, created exclusively so two first runs
+at once still print one line), never under `CI`, never when stdout or stderr is piped, never
+when `BRAIN_AB_JSON` is set, and never with `SGM_NO_STAR_PROMPT=1`. If the line cannot be
+written, the marker is removed so the next run asks again. `tests/test_star_prompt.py` covers
+each guard and the call from `main()`, and goes red when any of them is removed.
 
 ## v0.3.1 — 2026-10-19
 

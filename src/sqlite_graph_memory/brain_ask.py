@@ -204,7 +204,7 @@ def _config_dir(env=None):
     """Per-user config folder: SGM_CONFIG_DIR, else $XDG_CONFIG_HOME or ~/.config."""
     env = os.environ if env is None else env
     if env.get('SGM_CONFIG_DIR'):
-        return Path(env['SGM_CONFIG_DIR'])
+        return Path(os.path.expanduser(env['SGM_CONFIG_DIR']))
     base = env.get('XDG_CONFIG_HOME') or os.path.join(os.path.expanduser('~'), '.config')
     return Path(base) / 'sqlite-graph-memory'
 
@@ -212,27 +212,42 @@ def _config_dir(env=None):
 def maybe_star_prompt(stream=None, env=None, interactive=None):
     """After a successful --ab run, ask for a star once per machine, on stderr.
 
-    Silent when SGM_NO_STAR_PROMPT=1, when CI is set, when stdout is not a terminal
-    (piped or machine-readable use), or when the marker file already exists.
+    Silent when SGM_NO_STAR_PROMPT is set (anything but '' or '0'), when CI is set
+    (anything but '', '0' or 'false'), when BRAIN_AB_JSON is set (a machine reads the
+    result), when stdout or stderr is not a terminal, or when the marker file exists.
+    The marker is created with O_EXCL, so two first runs at once print one line.
     CRASH-SAFETY: any failure here is swallowed; the answer was already printed.
     Returns True only if the line was printed.
     """
     env = os.environ if env is None else env
     stream = sys.stderr if stream is None else stream
     try:
-        if env.get('SGM_NO_STAR_PROMPT', '') not in ('', '0') or env.get('CI'):
+        if env.get('SGM_NO_STAR_PROMPT', '') not in ('', '0'):
+            return False
+        if env.get('CI', '').strip().lower() not in ('', '0', 'false'):
+            return False
+        if env.get('BRAIN_AB_JSON'):
             return False
         if interactive is None:
-            interactive = sys.stdout.isatty()
+            interactive = sys.stdout.isatty() and stream.isatty()
         if not interactive:
             return False
         marker = _config_dir(env) / STAR_MARKER
-        if marker.exists():
-            return False
         marker.parent.mkdir(parents=True, exist_ok=True)
-        marker.write_text(time.strftime('%Y-%m-%d %H:%M:%S') + '\n', encoding='utf-8')
-        stream.write('\nIf the A/B diff above was useful, a star helps other people find it: '
-                     '%s (shown once; SGM_NO_STAR_PROMPT=1 silences it)\n' % STAR_URL)
+        try:
+            fd = os.open(str(marker), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+        except FileExistsError:
+            return False
+        with os.fdopen(fd, 'w', encoding='utf-8') as f:
+            f.write(time.strftime('%Y-%m-%d %H:%M:%S') + '\n')
+        try:
+            stream.write('\nIf the A/B diff above was useful, a star helps other people find it: '
+                         '%s (shown once; SGM_NO_STAR_PROMPT=1 silences it)\n' % STAR_URL)
+            stream.flush()
+        except Exception:
+            try: marker.unlink()          # the user never saw it: ask again next time
+            except Exception: pass
+            return False
         return True
     except Exception:
         return False
@@ -325,8 +340,7 @@ def main():
                 pass
         _out = Path(os.getenv('BRAIN_ANSWER_OUT', '_brain_answer.txt'))
         _out.write_text(text, encoding='utf-8'); print(text)
-        if not jpath:   # a JSON consumer is a machine, not a person to ask
-            maybe_star_prompt()
+        maybe_star_prompt()
         return
 
     # GATE: wiki-graph helps THEME queries, hurts ENTITY/name queries -> skip graph for entities.
