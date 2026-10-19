@@ -351,6 +351,7 @@ Questions, war stories, or you want to run this on your own fleet:
 You tried this on your own notes and something was missing or broke. That is the most useful
 thing anyone can tell us.
 
+- **Install or first run gone wrong:** run `sgm-doctor` first. It checks Python, numpy, torch, the models and your index in plain words and prints the fix for each.
 - **You started and it did not work:** [open the 3-question form](https://github.com/tonydzi/sqlite-graph-memory/issues/new?template=feature_request.yml) (what you tried, what broke, which machine).
 - **Not sure it is a bug, or just an idea:** [Discussions → Ideas](https://github.com/tonydzi/sqlite-graph-memory/discussions/categories/ideas).
 
