@@ -6,6 +6,11 @@ recorded after the fact rather than backdated to look contemporaneous.
 
 ## Unreleased
 
+**`sgm-doctor`: one command that checks a fresh install in plain words.** Python, SQLite, numpy,
+torch and sentence-transformers, the two models in the local cache, and your index, each with an
+ok/warn/fail verdict and the fix printed next to it; exit 1 when anything fails. On an Intel Mac
+with NumPy 2 it names the pairing that crashes indexing instead of a bare import error.
+
 **Credit, written down at last.** Four outside pull requests merged since 19.10 and none was named
 here. Thanks to [@Kaap10](https://github.com/Kaap10): the MCP server now answers non-object JSON
 payloads with `-32600 Invalid Request` instead of failing (#32, closes #22), and finds its
