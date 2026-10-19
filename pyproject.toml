@@ -64,6 +64,7 @@ sgm-ask = "sqlite_graph_memory.brain_ask:main"
 sgm-turnstate-hook = "sqlite_graph_memory.turnstate_hook:main"
 sgm-turnstate-show = "sqlite_graph_memory.turnstate_show:main"
 sgm-mcp = "sqlite_graph_memory.mcp_server:main"
+sgm-doctor = "sqlite_graph_memory.doctor:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/sqlite_graph_memory"]
