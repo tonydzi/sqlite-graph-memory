@@ -168,7 +168,7 @@ def ppr_file_order(meta, sims, base_order, graph=None, topm=None, seed_topk=None
             u = g.idx.get(st)
             if u is None:
                 continue
-            seed[u] = max(seed[u], float(sims[i]) + 1.0)
+            seed[u] = max(seed[u], float(sims[i]) + 1.0)   # seed starts at 0: never negative
             used += 1
             if used >= seed_topk:
                 break
@@ -195,45 +195,33 @@ def rrf_fuse(*ranked_lists, k=RRF_K):
     return order
 
 
-def fuse_with_rerank(ranked_stems, ppr_stems, head=None):
-    """Fuse the reranker's order with the PPR order by RRF, leaving the first `head` untouched.
-
-    Positions, not names, go into RRF, so a tie breaks toward the reranker's earlier position
-    instead of alphabetical order of file names.
-    """
-    if not ppr_stems:
-        return ranked_stems
-    head = PPR_HEAD if head is None else head
-    try:
-        keep, rest = ranked_stems[:head], ranked_stems[head:]
-        kept = set(keep)
-        pos = {s: i for i, s in enumerate(rest)}
-        ppr_pos = [pos[s] for s in ppr_stems if s in pos and s not in kept]
-        if not ppr_pos:
-            return ranked_stems
-        fused = rrf_fuse(list(range(len(rest))), ppr_pos)
-        return keep + [rest[p] for p in fused]
-    except Exception as e:
-        sys.stderr.write('RRF fusion failed (%s) -> reranker order\n' % str(e)[:120])
-        return ranked_stems
-
-
 def fuse_after_rerank(ranked_idx, meta, ppr_stems, topn, head=None):
     """Pipeline hook: reorder [(chunk index, score)] from the reranker, then cut to topn.
 
     `ranked_idx` must be the FULL reranked list, not the top-12: the point is to lift the right
     neighbour out of the tail, which a fusion that only sees the top-12 cannot do. Empty PPR
     returns the first topn exactly as given.
+
+    Every item is kept: two notes with the same file name in different folders are one graph
+    node (wikilinks address notes by name) but stay two results, so the output is never
+    shorter than the input. Positions, not names, go into RRF, so a tie breaks toward the
+    reranker's earlier position instead of the alphabetical order of file names.
     """
     if not ppr_stems or not ranked_idx:
         return list(ranked_idx)[:topn]
     try:
-        by_stem = {}
-        for i, sc in ranked_idx:
-            by_stem.setdefault(Path(meta[i]['path']).stem.lower(), (i, sc))
-        stems = list(by_stem)
-        order = fuse_with_rerank(stems, ppr_stems, head=head)
-        return [by_stem[s] for s in order][:topn]
+        items = list(ranked_idx)
+        head = PPR_HEAD if head is None else head
+        stems = [Path(meta[i]['path']).stem.lower() for i, _ in items]
+        kept = set(stems[:head])
+        first = {}
+        for p in range(head, len(items)):
+            first.setdefault(stems[p], p - head)
+        ppr_pos = [first[s] for s in ppr_stems if s in first and s not in kept]
+        if not ppr_pos:
+            return items[:topn]
+        fused = rrf_fuse(list(range(len(items) - head)), ppr_pos)
+        return (items[:head] + [items[head + p] for p in fused])[:topn]
     except Exception as e:
         sys.stderr.write('PPR fusion failed (%s) -> reranker order\n' % str(e)[:140])
         return list(ranked_idx)[:topn]

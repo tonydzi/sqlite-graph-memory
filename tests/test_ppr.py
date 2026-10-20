@@ -106,6 +106,16 @@ def test_fusion_never_brings_files_from_outside_the_pool():
     assert [i for i, _ in out][:2] == [0, 1]
 
 
+def test_same_name_in_two_folders_stays_two_results():
+    # Wikilinks address notes by name, so a/x.md and b/x.md are one graph node, but they are
+    # two results and the fused list must not be shorter than the reranker's.
+    meta = [{'path': '/v/%s.md' % s} for s in ('h0', 'h1', 'a/x', 'b/x', 'y', 'z')]
+    ranked = [(i, float(-i)) for i in range(6)]
+    out = ppr.fuse_after_rerank(ranked, meta, ['x', 'z'], 12, head=2)
+    assert sorted(i for i, _ in out) == list(range(6))
+    assert len(ppr.fuse_after_rerank(ranked, meta, ['x'], 5, head=2)) == 5
+
+
 # ------------------------------------------------------------------ off by default
 @pytest.mark.parametrize('env,want', [({}, False), ({'SGM_PPR': ''}, False),
                                       ({'SGM_PPR': '0'}, False), ({'SGM_PPR': '1'}, True),

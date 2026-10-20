@@ -138,7 +138,7 @@ def score_gold(gold, progress=True, ppr=False):
     by_base = ba.index_by_basename(meta)
     stem_of = lambda i: Path(meta[i]['path']).stem.lower()
 
-    rows, t0 = [], time.time()
+    rows, t0, ppr_ran = [], time.time(), False
     for k, g in enumerate(gold):
         tq = time.time()
         sims = ba.query_sims(enc, emb, g['query'])
@@ -150,7 +150,9 @@ def score_gold(gold, progress=True, ppr=False):
             # what rerank_candidates(topn=12) returns, and `ppr` fuses the FULL list.
             full = ba.rerank_candidates(ce, g['query'], base + added, meta, topn=None)
             lists['graph'] = full[:TOPN]
-            lists['ppr'] = ba.fuse_ppr(full, meta, ba.ppr_lane(meta, sims, base), TOPN)
+            lane = ba.ppr_lane(meta, sims, base)
+            ppr_ran = ppr_ran or bool(lane)
+            lists['ppr'] = ba.fuse_ppr(full, meta, lane, TOPN)
         else:
             lists['graph'] = ba.rerank_candidates(ce, g['query'], base + added, meta)
         res = {}
@@ -175,6 +177,11 @@ def score_gold(gold, progress=True, ppr=False):
         sys.stderr.write('!! the graph added no neighbours to ANY question — link resolution or '
                          'the index is broken, not the graph. The graph rows below are the '
                          'vector rows.\n')
+    # Same silence, PPR lane: an empty lane falls back to the reranker order, so the ppr rows
+    # would equal the graph rows and read as "PPR adds nothing" when it never ran.
+    if ppr and rows and not ppr_ran:
+        sys.stderr.write('!! the PPR lane returned no files for ANY question (no edges, or it '
+                         'failed). The ppr rows below are the graph rows.\n')
     return rows, cfg
 
 
