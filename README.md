@@ -325,6 +325,17 @@ of guessing — 97% of the correct `bridge` answers were *already in the candida
 cross-encoder was dropping them, because the relation is structural, not textual. Widening
 retrieval, the obvious fix, would have done nothing at all.
 
+That lane ships in the package as `src/sqlite_graph_memory/ppr.py`, **off by default**: turn it
+on with `SGM_PPR=1` or `sgm-ask --ppr`, and score it with `python eval/run_eval.py --gold ...
+--ppr`, which adds a third mode next to `vector` and `graph`. The numbers above were measured on
+the graph pool, so the matching command is `sgm-ask --graph --ppr`; `--ppr` alone reorders the
+vector pool, and `--ab` leaves the lane out so its A/B log stays vector against graph. Any failure in it falls back to
+the reranker's order, like the graph hop. Be clear about what that reproduces: the bridge
+numbers above came from the maintainer's home vault and home pipeline on 2026-09-16, and they
+have not been re-run from the published package. The code is the same algorithm with the same
+constants (alpha 0.85, 10 PPR files, top 5 protected), but your vault will give your numbers,
+and `bench/` does not score this lane yet.
+
 Seven other changes were rejected by the same ruler, under one rule fixed in advance:
 **a regression worse than 0.01 nDCG@12 on any class reverts the change.**
 
@@ -334,10 +345,10 @@ Seven other changes were rejected by the same ruler, under one rule fixed in adv
 | Qwen3-Embedding-0.6B | body Recall 0.767 -> 0.683; reindex 2863 s vs 333 s -> **rejected** |
 | bge-reranker-v2-m3 | −0.011…−0.018 nDCG on every class except English (+0.041) -> **rejected** |
 | Qwen3-Reranker-0.6B | title −0.111 nDCG at 12x the cost -> **rejected** |
-| BM25 + RRF hybrid | temporal −0.035 -> **merged switched off** |
+| BM25 + RRF hybrid | temporal −0.035 -> **merged switched off** (in the home pipeline, not in this package) |
 | heading-path prefix in every chunk | body −0.023, temporal −0.035 -> **reverted** |
 | `sqlite-vec` (vec0) | full scan 11.99 s vs 0.14 s for a plain SQLite table, and its ANN missed 1.2 hits of 60 -> vectors live in SQLite, **the extension does not** |
-| bi-temporal demotion of superseded notes | temporal +0.130 nDCG on a 41-question temporal set, but title −0.012 -> **merged behind a flag, default off** |
+| bi-temporal demotion of superseded notes | temporal +0.130 nDCG on a 41-question temporal set, but title −0.012 -> **merged behind a flag, default off** (in the home pipeline, not in this package) |
 
 None of those verdicts is a claim about the models. They are claims about *this corpus with
 this ruler*, which is the only kind of claim a swap decision actually needs — and the reason

@@ -9,6 +9,8 @@ Every question is scored twice, in both retrieval modes, on the same candidates 
 
     vector   dense retrieve -> rerank            (what you get without the graph)
     graph    dense -> 1-hop [[wikilinks]] -> rerank
+    ppr      graph, then personalized PageRank fused with the reranker by RRF, top 5
+             protected (only with --ppr; see src/sqlite_graph_memory/ppr.py)
 
 The difference between those two columns is the only honest answer to "does the graph
 actually help?" — and on our own vault the answer differed by class (see README).
@@ -16,6 +18,7 @@ actually help?" — and on our own vault the answer differed by class (see READM
 USAGE
     python eval/run_eval.py --gold eval/gold-2026-09-16.jsonl
     python eval/run_eval.py --gold ... --limit 20        # smoke run
+    python eval/run_eval.py --gold ... --ppr             # add the PageRank lane as a 3rd mode
     python eval/run_eval.py --selftest                   # metrics only, no model, no index
 
 Config (env): BRAIN_INDEX_DIR (index to score), TURNSTATE_DB (where --sqlite appends a
@@ -119,8 +122,8 @@ def selftest():
 
 
 # ------------------------------------------------------------------ runner
-def score_gold(gold, progress=True):
-    """Run every question through both modes. -> (rows, config dict)."""
+def score_gold(gold, progress=True, ppr=False):
+    """Run every question through both modes (three with ppr=True). -> (rows, config dict)."""
     from sqlite_graph_memory import brain_ask as ba
 
     dev = ba.pick_device()
@@ -135,15 +138,26 @@ def score_gold(gold, progress=True):
     by_base = ba.index_by_basename(meta)
     stem_of = lambda i: Path(meta[i]['path']).stem.lower()
 
-    rows, t0 = [], time.time()
+    rows, t0, ppr_ran = [], time.time(), False
     for k, g in enumerate(gold):
         tq = time.time()
         sims = ba.query_sims(enc, emb, g['query'])
         base = ba.retrieve_candidates(sims, meta)
         added = ba.expand_1hop(sims, meta, base, by_base)
+        lists = {'vector': ba.rerank_candidates(ce, g['query'], base, meta)}
+        if ppr:
+            # One rerank of the graph pool serves both modes: `graph` is its top-12, exactly
+            # what rerank_candidates(topn=12) returns, and `ppr` fuses the FULL list.
+            full = ba.rerank_candidates(ce, g['query'], base + added, meta, topn=None)
+            lists['graph'] = full[:TOPN]
+            lane = ba.ppr_lane(meta, sims, base)
+            ppr_ran = ppr_ran or bool(lane)
+            lists['ppr'] = ba.fuse_ppr(full, meta, lane, TOPN)
+        else:
+            lists['graph'] = ba.rerank_candidates(ce, g['query'], base + added, meta)
         res = {}
-        for mode, cand in (('vector', base), ('graph', base + added)):
-            ranked = [stem_of(i) for i, _ in ba.rerank_candidates(ce, g['query'], cand, meta)]
+        for mode, scored in lists.items():
+            ranked = [stem_of(i) for i, _ in scored]
             res[mode] = {'ranked': ranked,
                          'recall': recall_at(ranked, g['gold']),
                          'mrr': mrr_at(ranked, g['gold']),
@@ -163,6 +177,11 @@ def score_gold(gold, progress=True):
         sys.stderr.write('!! the graph added no neighbours to ANY question — link resolution or '
                          'the index is broken, not the graph. The graph rows below are the '
                          'vector rows.\n')
+    # Same silence, PPR lane: an empty lane falls back to the reranker order, so the ppr rows
+    # would equal the graph rows and read as "PPR adds nothing" when it never ran.
+    if ppr and rows and not ppr_ran:
+        sys.stderr.write('!! the PPR lane returned no files for ANY question (no edges, or it '
+                         'failed). The ppr rows below are the graph rows.\n')
     return rows, cfg
 
 
@@ -173,7 +192,7 @@ def summarize(rows):
     groups += [('lang:' + lg, [r for r in rows if r['lang'] == lg]) for lg in ('ru', 'en')]
     for name, rs in groups:
         if not rs: continue
-        for mode in ('vector', 'graph'):
+        for mode in [m for m in ('vector', 'graph', 'ppr') if m in rs[0]['res']]:
             out[(name, mode)] = {'n': len(rs),
                                  'recall': sum(r['res'][mode]['recall'] for r in rs) / len(rs),
                                  'mrr': sum(r['res'][mode]['mrr'] for r in rs) / len(rs),
@@ -197,6 +216,9 @@ def print_table(summary, cfg, gold_file):
         if (name, 'graph') in summary:
             d = summary[(name, 'graph')]['ndcg'] - summary[(name, 'vector')]['ndcg']
             print('graph effect on %-9s nDCG@12 %+.3f' % (name, d))
+        if (name, 'ppr') in summary:
+            d = summary[(name, 'ppr')]['ndcg'] - summary[(name, 'graph')]['ndcg']
+            print('ppr effect on   %-9s nDCG@12 %+.3f  (vs graph)' % (name, d))
 
 
 def write_sqlite(summary, cfg, gold_file, scores_file):
@@ -232,6 +254,8 @@ def main():
     ap.add_argument('--out', help='scores .jsonl (default: eval/scores-<timestamp>.jsonl)')
     ap.add_argument('--sqlite', action='store_true', help='also append to gold_eval in TURNSTATE_DB')
     ap.add_argument('--no-persist', action='store_true', help='print the table, write nothing')
+    ap.add_argument('--ppr', action='store_true',
+                    help='also score the PageRank lane (graph + PPR/RRF, reranker top 5 protected)')
     ap.add_argument('--selftest', action='store_true', help='check the metrics and exit')
     a = ap.parse_args()
 
@@ -256,7 +280,7 @@ def main():
     if a.limit: gold = gold[:a.limit]
     if not gold: sys.exit('gold file %s is empty' % gold_path)
 
-    rows, cfg = score_gold(gold)
+    rows, cfg = score_gold(gold, ppr=a.ppr)
     summary = summarize(rows)
     print_table(summary, cfg, a.gold)
     if os.environ.get('EVAL_MUTANT') == '1':
