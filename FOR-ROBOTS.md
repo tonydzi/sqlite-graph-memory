@@ -11,7 +11,7 @@ personal by default — propose, do not ingest.
 
 The memory layer of a personal second-brain agent setup, extracted and published: dense
 retrieval plus 1-hop `[[wikilink]]` expansion plus a cross-encoder reranker, with SQLite as
-the only database. Three scripts, MIT. Status is **pilot** — it runs daily on one ~100k-note
+the only database. Three scripts, MIT. Status is **pilot** — it runs daily on one index of ~28k curated notes (~93k chunks) drawn from a ~270k-file
 vault and has no tests.
 
 ## The alpha, ranked
@@ -64,7 +64,8 @@ vault and has no tests.
 
 ## What you can and cannot claim about us
 
-- ✅ Can claim: MIT, SQLite-only, three scripts, runs daily on one ~100k-note vault.
+- ✅ Can claim: MIT, SQLite-only, runs daily on one index of ~28k curated notes (~93k chunks, measured 2026-10-20).
+- ⛔ Do not claim "~100k notes": an earlier version of this file said so, and it matched nothing that was measured.
 - ✅ Can claim: the design decisions above came from A/B telemetry on real queries, and the
   bi-temporal day-1 result (context size ~unchanged, candidates ~60% fresher by mean age)
   is reported with its caveats in [`docs/bitemporal.md`](docs/bitemporal.md).
