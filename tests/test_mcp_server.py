@@ -3,7 +3,7 @@
 
 Runs offline with no model download or network.
 """
-import sys, json, io
+import sys, os, json, io, subprocess, pytest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
@@ -316,5 +316,71 @@ def test_stdio_loop_handles_non_object_json_and_continues(monkeypatch):
     assert resp3["jsonrpc"] == "2.0"
     assert resp3["id"] == 42
     assert resp3["result"] == {}
+def test_brain_ask_cmd_prefers_sibling_script():
+    """Verify _brain_ask_cmd resolves sibling brain_ask.py when it exists."""
+    cmd = mcp_server._brain_ask_cmd()
+    expected_sibling = str(mcp_server.ROOT_DIR / "brain_ask.py")
+    assert cmd == [sys.executable, expected_sibling]
 
+
+def test_run_recall_injects_pythonpath(tmp_path, monkeypatch):
+    """Verify run_recall includes src/ in PYTHONPATH so child process can resolve package imports."""
+    stub = tmp_path / "stub_env_check.py"
+    stub.write_text(
+        "import os, sys\n"
+        "from pathlib import Path\n"
+        "pp = os.environ.get('PYTHONPATH', '')\n"
+        "src_dir = sys.argv[1]\n"
+        "if src_dir not in pp.split(os.pathsep):\n"
+        "    sys.stderr.write('src_dir not in PYTHONPATH: ' + pp)\n"
+        "    sys.exit(2)\n"
+        "ans = os.environ.get('BRAIN_ANSWER_OUT')\n"
+        "if ans:\n"
+        "    Path(ans).write_text('OK', encoding='utf-8')\n"
+        "sys.exit(0)\n",
+        encoding="utf-8"
+    )
+    src_dir = str(mcp_server.ROOT_DIR.parent)
+    monkeypatch.setattr(mcp_server, "_brain_ask_cmd", lambda: [sys.executable, str(stub), src_dir])
+
+    text, is_err = mcp_server.run_recall("test query")
+    assert is_err is False
+    assert text == "OK"
+
+
+def test_main_cli_test_mode_exits_nonzero_on_error(monkeypatch):
+    """Verify sgm-mcp --test exits with non-zero code when recall returns an error."""
+    monkeypatch.setattr(mcp_server, "run_recall", lambda q, mode="associative": ("Recall error details", True))
+    monkeypatch.setattr(sys, "argv", ["sgm-mcp", "--test", "error query"])
+
+    with pytest.raises(SystemExit) as exc_info:
+        mcp_server.main()
+    assert exc_info.value.code == 1
+
+
+def test_main_cli_test_mode_exits_zero_on_success(monkeypatch, capsys):
+    """Verify sgm-mcp --test exits cleanly (code 0) when recall succeeds."""
+    monkeypatch.setattr(mcp_server, "run_recall", lambda q, mode="associative": ("Found memories", False))
+    monkeypatch.setattr(sys, "argv", ["sgm-mcp", "--test", "ok query"])
+
+    mcp_server.main()
+    captured = capsys.readouterr()
+    assert "Found memories" in captured.out
+
+def test_mcp_server_script_execution_without_installed_package():
+    """Verify invoking mcp_server.py directly by path without PYTHONPATH succeeds past import."""
+    script_path = mcp_server.ROOT_DIR / "mcp_server.py"
+    env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
+    res = subprocess.run(
+        [sys.executable, str(script_path), "--test", "smoke"],
+        cwd=str(mcp_server.ROOT_DIR.parent.parent),
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=15,
+    )
+    assert "ModuleNotFoundError: No module named 'sqlite_graph_memory'" not in res.stderr
+    assert "ModuleNotFoundError: No module named 'sqlite_graph_memory'" not in res.stdout
+    assert res.returncode == 1
+    assert "=== MCP Test Query: smoke (mode=associative) ===" in res.stdout
 

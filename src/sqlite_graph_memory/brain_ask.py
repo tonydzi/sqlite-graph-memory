@@ -9,12 +9,15 @@ USAGE:
   python brain_ask.py --graph "question"      # vector + graph expansion (Associative)
   python brain_ask.py --ab "question"         # run BOTH, diff, log to SQLite (ab_recall)
   python brain_ask.py --ask "question"        # emit a context bundle for an LLM agent
+  python brain_ask.py --ppr --graph "question"  # + PageRank lane in the ORDERING (see ppr.py)
 
 Config (env, all optional):
   BRAIN_INDEX_DIR   dir holding the embedding index (default: ./index)
   TURNSTATE_DB      SQLite db for A/B telemetry (default: ./turnstate.db)
   BRAIN_ANSWER_OUT  file to mirror the answer into (default: ./_brain_answer.txt)
   BRAIN_AB_JSON     if set, --ab also writes a structured JSON diff to this path
+  SGM_PPR=1         same as --ppr: fuse personalized PageRank over [[wikilinks]] with the
+                    reranker by RRF, reranker top 5 protected (off by default)
   SGM_NO_STAR_PROMPT=1  never print the one-time GitHub star line after --ab
   SGM_CONFIG_DIR    where that line's once-per-machine marker lives
                     (default: $XDG_CONFIG_HOME or ~/.config, /sqlite-graph-memory)
@@ -190,10 +193,45 @@ def expand_1hop(sims, meta, base_order, by_base=None, ghops=GHOPS, gmax=GMAX):
 
 
 def rerank_candidates(ce, query, cand, meta, topn=TOPN):
-    """Cross-encoder rerank of candidate chunks -> [(chunk index, score)], best first."""
+    """Cross-encoder rerank of candidate chunks -> [(chunk index, score)], best first.
+    topn=None returns the whole reranked list (the PPR fusion needs the tail)."""
     pairs = [(query, meta[i]['title'] + '. ' + meta[i]['snippet']) for i in cand]
     sc = ce.predict(pairs) if len(pairs) else []
     return sorted(zip(cand, sc), key=lambda x: -x[1])[:topn]
+
+
+def _ppr():
+    try:
+        from sqlite_graph_memory import ppr
+    except ImportError:                       # run as a loose script next to ppr.py
+        import ppr
+    return ppr
+
+
+def ppr_enabled(env=None):
+    """True when SGM_PPR asks for the PageRank lane. Never raises."""
+    try:
+        return _ppr().enabled(env)
+    except Exception:
+        return False
+
+
+def ppr_lane(meta, sims, base_order):
+    """PPR file order for this query, or [] (lane off) on ANY failure, including import."""
+    try:
+        return _ppr().ppr_file_order(meta, sims, base_order)
+    except Exception as e:
+        sys.stderr.write('PPR lane fell back to reranker order (%s)\n' % str(e)[:140])
+        return []
+
+
+def fuse_ppr(ranked_full, meta, ppr_stems, topn=TOPN):
+    """Reranker list fused with the PPR order, top `topn`. Any failure: reranker top `topn`."""
+    try:
+        return _ppr().fuse_after_rerank(ranked_full, meta, ppr_stems, topn)
+    except Exception as e:
+        sys.stderr.write('PPR fusion fell back to reranker order (%s)\n' % str(e)[:140])
+        return list(ranked_full)[:topn]
 
 
 STAR_URL = 'https://github.com/tonydzi/sqlite-graph-memory'
@@ -257,7 +295,7 @@ def main():
     args = sys.argv[1:]
     ask = '--ask' in args
     graph = '--graph' in args; ab = '--ab' in args
-    flags = {'--ask', '--graph', '--ab'}
+    flags = {'--ask', '--graph', '--ab', '--ppr'}
     query = ' '.join(a for a in args if a not in flags)
     if not query or not EMB.exists():
         sys.stderr.write('need an embedding index (%s) and a query — run index_notes.py first\n' % EMB)
@@ -284,10 +322,23 @@ def main():
         added = expand_1hop(sims, meta, base_order)
     graph_order = base_order + added; graph_set = set(added)
 
+    # PageRank lane (opt-in): a second ORDERING, not a candidate source. Crash-safe like the
+    # hop: any failure leaves ppr_stems empty and every list below keeps the reranker's order.
+    # Not in --ab: the A/B answers "does the 1-hop graph help?", and its rows in ab_recall
+    # carry no PPR column, so a lane on both arms would be logged as plain vector vs graph.
+    ppr_stems = []
+    if ab and ('--ppr' in args or ppr_enabled()):
+        sys.stderr.write('PPR lane is not applied in --ab (score it with eval/run_eval.py --ppr)\n')
+    elif order and ('--ppr' in args or ppr_enabled()):
+        ppr_stems = ppr_lane(meta, sims, base_order)
+
     # rerank on the matched chunk (precise)
     ce = load_reranker(dev)
     def rerank(cand):
-        return rerank_candidates(ce, query, cand, meta)
+        if not ppr_stems:
+            return rerank_candidates(ce, query, cand, meta)
+        full = rerank_candidates(ce, query, cand, meta, topn=None)   # fusion needs the tail
+        return fuse_ppr(full, meta, ppr_stems, TOPN)
 
     # --ab: run BOTH paths in ONE process, diff, log. Answers "does graph REALLY help?"
     if ab:
@@ -349,7 +400,7 @@ def main():
         sys.stderr.write("wiki-graph gated OFF (entity-like query) -> Direct only\n")
     order = graph_order if (graph and not gated) else base_order
     reranked = rerank(order)
-    scope = 'all' + (' /graph+%d' % len(graph_set) if graph else '')
+    scope = 'all' + (' /graph+%d' % len(graph_set) if graph else '') + (' /ppr' if ppr_stems else '')
     lines = [f'QUERY: {query}', f'(scope={scope}; e5 {len(order)} files -> rerank; {len(meta)} chunks)', '']
     if ask:
         lines.append('=== CONTEXT BUNDLE (paste to your agent) ===\n')

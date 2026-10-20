@@ -22,26 +22,25 @@ Config (env, optional):
 import sys, os, json, subprocess, tempfile
 from pathlib import Path
 
+# Where the recall subprocess runs and where the package root resides.
+# The server deliberately shells out instead of importing brain_ask: a model load
+# that segfaults or runs out of memory then kills a child process and returns an
+# MCP error, rather than taking the server down mid-session.
+ROOT_DIR = Path(__file__).resolve().parent
 
-def _package_version():
-    """Version of the package this file belongs to.
+# Ensure the package root (src/) is on sys.path when invoked directly as a script
+# from a source checkout without an active editable install.
+_SRC_DIR = str(ROOT_DIR.parent)
+if _SRC_DIR not in sys.path:
+    sys.path.insert(0, _SRC_DIR)
 
-    Imported normally when loaded as part of the package (installed wheel,
-    editable install, tests). Run as a plain script
-    (``python src/sqlite_graph_memory/mcp_server.py``) the package is not on
-    sys.path, so read the sibling __init__.py instead of touching sys.path.
-    """
-    if __package__:
-        from sqlite_graph_memory import __version__ as v
-        return v
-    import re
-    init = Path(__file__).resolve().parent / "__init__.py"
-    m = re.search(r'^__version__\s*=\s*["\']([^"\']+)["\']',
-                  init.read_text(encoding="utf-8"), re.M)
-    return m.group(1) if m else "0+unknown"
-
-
-__version__ = _package_version()
+try:
+    from sqlite_graph_memory import __version__
+except ImportError:
+    try:
+        from . import __version__
+    except (ImportError, ValueError):
+        __version__ = "0.3.1"
 
 # Ensure UTF-8 for stdio communication on all platforms (including Windows console)
 try:
@@ -51,15 +50,12 @@ try:
 except Exception:
     pass
 
-# This package's directory. The server deliberately shells out instead
-# of importing brain_ask: a model load that segfaults or runs out of memory then
-# kills a child process and returns an MCP error, rather than taking the server
-# down mid-session.
-ROOT_DIR = Path(__file__).resolve().parent
-
 
 def _brain_ask_cmd():
-    """How to invoke brain_ask — a guaranteed sibling module inside this package."""
+    """How to invoke brain_ask — prefers the sibling script when present, falls back to module."""
+    sibling = ROOT_DIR / "brain_ask.py"
+    if sibling.exists():
+        return [sys.executable, str(sibling)]
     return [sys.executable, "-m", "sqlite_graph_memory.brain_ask"]
 
 SERVER_INFO = {
@@ -103,10 +99,6 @@ def run_recall(query: str, mode: str = "associative") -> tuple[str, bool]:
 
     An empty answer file means no notes matched; stdout is never promoted to an answer
     because it carries startup notices, load reports, and tokenizer warnings.
-
-    The child inherits the server's working directory (no cwd=), so relative
-    BRAIN_INDEX_DIR / TURNSTATE_DB resolve where the user launched the server,
-    not inside site-packages/sqlite_graph_memory.
     """
     base_cmd = _brain_ask_cmd()
     if base_cmd is None:
@@ -134,6 +126,9 @@ def run_recall(query: str, mode: str = "associative") -> tuple[str, bool]:
 
     try:
         call_env = {**os.environ, "BRAIN_ANSWER_OUT": str(temp_ans_file)}
+        src_dir = str(ROOT_DIR.parent)
+        existing_pp = call_env.get("PYTHONPATH", "")
+        call_env["PYTHONPATH"] = f"{src_dir}{os.pathsep}{existing_pp}" if existing_pp else src_dir
         res = subprocess.run(
             cmd,
             env=call_env,
@@ -276,9 +271,11 @@ def main():
             mode = "ab"
         query_parts = [a for a in sys.argv[1:] if a not in flags]
         q = " ".join(query_parts) if query_parts else "agent memory"
-        text, _ = run_recall(q, mode=mode)
+        text, is_err = run_recall(q, mode=mode)
         print(f"=== MCP Test Query: {q} (mode={mode}) ===")
         print(text)
+        if is_err:
+            sys.exit(1)
         return
 
 

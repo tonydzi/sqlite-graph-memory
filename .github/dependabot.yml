@@ -1,11 +1,34 @@
+# Dependabot for sqlite-graph-memory.
+#
+# github-actions: ONE grouped PR a week instead of one per action. The pins are commit SHAs
+# (#37) and publish.yml is the PyPI release path, so these land together after one look.
+#
+# pip: no major bumps for the embedding stack. bench/ reproduces its committed baseline
+# exactly (CI job `reproduce`), and on Intel Macs torch stops at 2.2, transformers 5.x needs
+# torch >= 2.6, and sentence-transformers 6.x needs transformers 5.x (see pyproject.toml).
+# A major here is a deliberate migration with a re-baselined bench, not a weekly bot PR.
+# Measured 2026-10-20: the first run opened #44 (transformers 5.20.1) and #45
+# (sentence-transformers 6.1.0), and both failed `reproduce`.
 version: 2
 updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      actions:
+        patterns: ["*"]
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 3
+    ignore:
+      - dependency-name: "torch"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "transformers"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "sentence-transformers"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "numpy"
+        update-types: ["version-update:semver-major"]

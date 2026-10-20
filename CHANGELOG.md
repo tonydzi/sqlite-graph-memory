@@ -6,6 +6,21 @@ recorded after the fact rather than backdated to look contemporaneous.
 
 ## Unreleased
 
+**The PageRank lane the README credits is now in the package** (#51). `ppr.py` runs
+personalized PageRank over the `[[wikilink]]` graph, seeded by the dense hits, and fuses it with
+the reranker by RRF while the reranker's top 5 stay where they are. Off by default (`SGM_PPR=1`
+or `sgm-ask --ppr`); `eval/run_eval.py --ppr` scores it as its own mode. Any failure returns the
+reranker's order. `tests/test_ppr.py` builds a hub note that pushes the reranker's rank-1 hit to
+position 11 when the guard is removed, and goes red if it is.
+
+**`sgm-stats <notes_dir>`: four health numbers for the link graph.** Orphan rate, links per
+page, share of pages in the main connected component, and share of concept pages whose
+`updated` date is older than 90 days, each with an ok/warn/fail verdict and a `--threshold-*`
+flag. Exit code 0/1/2 for cron. Reuses the indexer's note filter and the recall wikilink parser,
+so it measures the graph recall walks. On `bench/vault`: 26.2% orphans (fail), 4.65 links per
+page, 100% in one component. `tests/test_vault_stats.py` crosses every threshold on a synthetic
+vault and goes red when inbound links stop being counted.
+
 **A spec you can paste.** `BITEMPORAL.md` turns the close-don't-delete rule from
 `docs/bitemporal.md` into a block for any agent's `CLAUDE.md` or `AGENTS.md`: three fields
 (`valid_from`, `valid_to`, `superseded_by`), five rules, and a one-line attribution as the
