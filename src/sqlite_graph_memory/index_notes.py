@@ -12,9 +12,9 @@ USAGE:
   python index_notes.py <notes_dir>
 Config (env, optional):
   BRAIN_INDEX_DIR     output dir (default: ./index)
-  BRAIN_INDEX_HIDDEN  1 = also index dot-directories (default: skip them,
-                      so .stversions/.obsidian/.git and Syncthing conflict
-                      copies never enter the index)
+  BRAIN_INDEX_HIDDEN  1 = also index dot-files and dot-directories (default:
+                      skip them, so .draft.md, .stversions/.obsidian/.git and
+                      Syncthing conflict copies never enter the index)
 """
 import os, re, sys, pickle
 from pathlib import Path

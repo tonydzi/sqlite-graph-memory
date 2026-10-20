@@ -109,7 +109,7 @@ All components share standard configuration variables:
 | `BRAIN_INDEX_DIR` | `./index` | Directory where `index_notes.py` writes and `brain_ask.py` reads `_brain_e5.npy` and metadata. |
 | `TURNSTATE_DB` | `./turnstate.db` | SQLite database holding per-turn ledger (`turns`) and A/B telemetry (`ab_recall`). |
 | `BRAIN_ANSWER_OUT` | `./_brain_answer.txt` | File where the formatted context bundle or answer is mirrored. |
-| `BRAIN_INDEX_HIDDEN` | `0` | If `1`, indexes hidden dot-directories too (by default skipped). |
+| `BRAIN_INDEX_HIDDEN` | `0` | If `1`, indexes hidden dot-files (`.draft.md`) and dot-directories too (by default both are skipped). |
 | `BRAIN_AB_JSON` | `None` | If set, `--ab` mode writes a structured JSON diff to this file path. |
 | `AB_SOURCE` | `work` | Telemetry label written to `ab_recall.source` (`work`, `eval`, etc.). |
 

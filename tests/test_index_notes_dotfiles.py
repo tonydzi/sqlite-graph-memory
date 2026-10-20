@@ -35,7 +35,10 @@ def _vault(tmp_path: Path) -> Path:
 
 
 def _names(root: Path) -> set[str]:
-    return {str(p.relative_to(root)) for p in iter_notes(root)}
+    # as_posix(): the assertions spell paths with "/". str() gives a backslash on
+    # Windows, so "sub/.trash.md" would never match and the skip test would pass
+    # for the wrong reason.
+    return {p.relative_to(root).as_posix() for p in iter_notes(root)}
 
 
 def test_dot_file_in_root_is_skipped(tmp_path, monkeypatch):
@@ -61,3 +64,18 @@ def test_hidden_flag_admits_dot_files_and_dot_dirs(tmp_path, monkeypatch):
     monkeypatch.setenv("BRAIN_INDEX_HIDDEN", "1")
     names = _names(_vault(tmp_path))
     assert {"ok.md", ".draft.md", "sub/.trash.md", ".drafts/inside.md"} <= names
+
+
+def test_vault_root_that_is_itself_a_dot_directory_is_indexed(tmp_path, monkeypatch):
+    """Only path components BELOW the vault root decide what is hidden.
+
+    A vault kept at ``~/.vault`` or ``~/.notes`` is ordinary. A filter that checks
+    the absolute path (``p.parts``) instead of the relative one (``rel.parts``)
+    sees ``.vault`` in every path and silently returns nothing.
+    """
+    monkeypatch.delenv("BRAIN_INDEX_HIDDEN", raising=False)
+    root = tmp_path / ".vault"
+    root.mkdir()
+    names = _names(_vault(root))
+    assert "ok.md" in names
+    assert ".draft.md" not in names and ".drafts/inside.md" not in names

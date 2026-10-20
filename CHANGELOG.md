@@ -6,6 +6,14 @@ recorded after the fact rather than backdated to look contemporaneous.
 
 ## Unreleased
 
+**Hidden note files are skipped like hidden folders.** A note whose filename starts with a
+dot, such as `.ideas.md` or `.draft.md`, used to be indexed when it sat in the vault root or a
+visible folder, while the same file inside `.drafts/` was skipped. Now both are skipped, so
+after re-indexing those notes stop showing up in answers. `BRAIN_INDEX_HIDDEN=1` brings back
+the old behaviour and indexes hidden files and folders alike. `eval/build_gold.py` now walks the
+vault with the indexer's own filter, so it follows the same rule and the same variable instead
+of keeping its own copy (issue #25).
+
 **`sgm-stats <notes_dir>`: four health numbers for the link graph.** Orphan rate, links per
 page, share of pages in the main connected component, and share of concept pages whose
 `updated` date is older than 90 days, each with an ok/warn/fail verdict and a `--threshold-*`
