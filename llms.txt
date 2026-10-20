@@ -1,0 +1,70 @@
+# sqlite-graph-memory
+
+> Persistent memory for Claude Code, Cursor, Codex and any MCP client, built over a folder of markdown notes you already keep (Obsidian vaults included). Vector search finds entry points, the [[wikilinks]] in the notes are the graph, a cross-encoder reranks. One SQLite file for telemetry and the per-turn ledger, no graph database, no extraction pass. MIT, Python >= 3.9, version 0.3.1 on PyPI. Status: pilot.
+
+Who it is for: one person or one agent setup with a markdown knowledge base that wants associative recall without running a graph database. Not a framework, not multi-tenant.
+
+## Three commands
+
+```bash
+pip install 'sqlite-graph-memory[embeddings]'
+sgm-index ./notes
+sgm-ask --ab "In which programming language is the tool behind Project Ouzel written?"
+```
+
+`--ab` runs vector-only and vector+graph side by side and logs the difference to SQLite (`ab_recall` table). Other modes: `sgm-ask "q"` (vector only), `sgm-ask --graph "q"`, `sgm-ask --ask "q"` (context bundle to paste into an agent). The base install without `[embeddings]` explains the missing extra instead of failing with a traceback.
+
+## MCP server
+
+Command: `sgm-mcp` (also installed as `sqlite-graph-memory`, so `uvx --with 'sqlite-graph-memory[embeddings]' sqlite-graph-memory` works). Registry name: `io.github.tonydzi/sqlite-graph-memory`. One tool: `memory_recall`.
+
+JSON clients (Claude Desktop, Cursor, Zed, Windsurf):
+
+```json
+{"mcpServers": {"sqlite-graph-memory": {"command": "sgm-mcp",
+  "env": {"BRAIN_INDEX_DIR": "/path/to/your/index", "TURNSTATE_DB": "/path/to/your/turnstate.db"}}}}
+```
+
+Claude Code: `claude mcp add sqlite-graph-memory -e BRAIN_INDEX_DIR=/path/to/index -- sgm-mcp`
+
+Codex (`~/.codex/config.toml`):
+
+```toml
+[mcp_servers.sqlite-graph-memory]
+command = "sgm-mcp"
+env = { BRAIN_INDEX_DIR = "/path/to/your/index" }
+```
+
+## Benchmark (memory-bench v0.1, bench/)
+
+Synthetic 202-note vault, 91 questions (69 answerable, 22 with no answer in the vault). Every number is recomputed by CI from per-question outputs.
+
+- sqlite-graph-memory, vector only (0.3.0): R@5 0.88, R@10 0.92
+- sqlite-graph-memory, vector+graph (0.3.0): R@5 0.85, R@10 0.91
+- bm25 reference: R@5 0.77, R@10 0.79
+
+On this vault vector-only ranks ahead of graph mode overall. Run it: `python bench/run.py --system bm25` (stdlib only).
+
+## Eval on your own notes (eval/)
+
+The wikilinks you wrote are the relevance labels: no labelling budget, no LLM calls. Four question classes: title, body, bridge, temporal. Each scored in vector-only and vector+graph mode.
+
+```bash
+python eval/run_eval.py --selftest
+python eval/build_gold.py /path/to/notes --n-per-class 60
+python eval/run_eval.py --gold eval/gold-<date>.jsonl --sqlite
+```
+
+## Configuration (env only)
+
+BRAIN_INDEX_DIR (index folder, default ./index), TURNSTATE_DB (default ./turnstate.db), BRAIN_ANSWER_OUT, BRAIN_AB_JSON (structured A/B output), AB_SOURCE, SGM_NO_STAR_PROMPT=1 (silence the one-time star line after --ab), SGM_CONFIG_DIR. Full list: .env.example.
+
+## Links
+
+- README: https://github.com/tonydzi/sqlite-graph-memory/blob/main/README.md
+- Benchmark and leaderboard: https://github.com/tonydzi/sqlite-graph-memory/blob/main/bench/LEADERBOARD.md
+- Bi-temporal memory spec to paste into CLAUDE.md or AGENTS.md: https://github.com/tonydzi/sqlite-graph-memory/blob/main/BITEMPORAL.md
+- Design note: https://github.com/tonydzi/sqlite-graph-memory/blob/main/docs/bitemporal.md
+- Paper: https://doi.org/10.5281/zenodo.22639718
+- PyPI: https://pypi.org/project/sqlite-graph-memory/
+- Changelog: https://github.com/tonydzi/sqlite-graph-memory/blob/main/CHANGELOG.md

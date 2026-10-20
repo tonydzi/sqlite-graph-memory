@@ -22,6 +22,8 @@ Config (env, optional):
 import sys, os, json, subprocess, tempfile
 from pathlib import Path
 
+from sqlite_graph_memory import __version__
+
 # Ensure UTF-8 for stdio communication on all platforms (including Windows console)
 try:
     sys.stdin.reconfigure(encoding='utf-8')
@@ -43,7 +45,7 @@ def _brain_ask_cmd():
 
 SERVER_INFO = {
     "name": "sqlite-graph-memory",
-    "version": "0.3.0"
+    "version": __version__
 }
 
 TOOLS = [
@@ -147,6 +149,15 @@ def run_recall(query: str, mode: str = "associative") -> tuple[str, bool]:
 
 def handle_request(req: dict) -> dict:
     """Handle a single JSON-RPC 2.0 MCP request."""
+    if not isinstance(req, dict):
+        return {
+            "jsonrpc": "2.0",
+            "id": None,
+            "error": {
+                "code": -32600,
+                "message": "Invalid Request: expected JSON object"
+            }
+        }
     method = req.get("method")
     req_id = req.get("id")
 

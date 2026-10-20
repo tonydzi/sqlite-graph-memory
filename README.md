@@ -1,12 +1,73 @@
-# sqlite-graph-memory
+# sqlite-graph-memory: persistent memory for Claude Code, Cursor and Codex over your own markdown notes
+
+<!-- mcp-name: io.github.tonydzi/sqlite-graph-memory -->
+
+[![PyPI](https://img.shields.io/pypi/v/sqlite-graph-memory)](https://pypi.org/project/sqlite-graph-memory/) [![tests](https://img.shields.io/github/actions/workflow/status/tonydzi/sqlite-graph-memory/tests.yml?label=tests)](https://github.com/tonydzi/sqlite-graph-memory/actions/workflows/tests.yml) [![MCP Registry](https://img.shields.io/badge/MCP%20Registry-io.github.tonydzi%2Fsqlite--graph--memory-blue)](https://registry.modelcontextprotocol.io/v0/servers?search=sqlite-graph-memory) [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
+Long-term memory for coding agents that lives in the notes you already keep: an MCP server
+and a CLI over any folder of markdown, Obsidian vaults included. `pip install`, point it at
+the folder, and Claude Code, Cursor, Codex or any other MCP client can recall from it.
 
 **Your agent forgets everything between sessions, and plain vector search gives it back
-flat, unrelated chunks. This gives it associative recall over your own markdown notes —
-one SQLite file, no graph database, no ETL pass, no server.**
+flat, unrelated chunks. This gives it associative recall over your own markdown notes:
+vector search finds the entry points, the `[[wikilinks]]` you already wrote are the graph.
+One SQLite file, no graph database, no ETL pass, no server.**
+
+## Three commands
 
 ```bash
-pip install sqlite-graph-memory
+pip install 'sqlite-graph-memory[embeddings]'
+sgm-index ./notes
+sgm-ask --ab "In which programming language is the tool behind Project Ouzel written?"
 ```
+
+`./notes` is any folder of markdown notes. To get exactly the output below, use the
+202-note synthetic vault from this repo (it is not inside the pip package):
+
+```bash
+git clone --depth 1 https://github.com/tonydzi/sqlite-graph-memory && cp -R sqlite-graph-memory/bench/vault ./notes
+```
+
+Real output, top 5 of 12:
+
+```
+--- DIRECT memory (vector) ---
+ 1. [  1.66] project-ouzel
+ 2. [ -1.33] project-avocet
+ 3. [ -1.79] tool-cobbleset
+ 4. [ -2.44] meeting-2025-10-21-lighthouse-sync
+ 5. [ -2.70] person-severin-ibarrondo
+
+--- ASSOCIATIVE memory (vector+graph) ---
+ 1. [  1.66] project-ouzel
+ 2. [  1.14] tool-lanternfish  <== +graph
+ 3. [ -1.33] project-avocet
+ 4. [ -1.79] tool-cobbleset
+ 5. [ -2.44] meeting-2025-10-21-lighthouse-sync
+```
+
+The answer lives in `tool-lanternfish` ("Lanternfish is written in Elixir"). The question
+never names Lanternfish, so the vector pass does not find it in the top 12 at all.
+`project-ouzel` links to it, so one graph hop puts it second.
+
+If that hop found something your vector search missed, a
+[star](https://github.com/tonydzi/sqlite-graph-memory) is how other people with a notes
+folder find this repo. `sgm-ask --ab` asks the same once per machine, in a terminal only;
+`SGM_NO_STAR_PROMPT=1` turns it off.
+
+That is the idea in one query, and it is not a blanket win. On this same vault vector-only
+ranks ahead of graph mode overall; the numbers are in [`bench/`](bench/README.md). `--ab`
+exists so you can measure which one wins on your own notes.
+
+**From any MCP client** (Claude Desktop, Cursor, Zed, Windsurf): `sgm-mcp` after the install
+above, or `uvx --with 'sqlite-graph-memory[embeddings]' sqlite-graph-memory`. Set
+`BRAIN_INDEX_DIR` to the `index` folder `sgm-index` wrote. Config:
+[`examples/mcp-config.json`](examples/mcp-config.json). Claude Code:
+`claude mcp add sqlite-graph-memory -e BRAIN_INDEX_DIR=/path/to/index -- sgm-mcp`.
+Codex: a `[mcp_servers.sqlite-graph-memory]` table in `~/.codex/config.toml` with
+`command = "sgm-mcp"`. Agents that read files first: [`llms.txt`](llms.txt).
+
+## What it is
 
 Graph RAG on SQLite for AI agents — a working pilot, not a framework. It is the extracted
 memory layer of a personal "second brain" agent setup: vector search finds the entry
@@ -91,7 +152,7 @@ an edge table only when hop depth or corpus size demands it.
 
 - No entity lane. The production setup has an extra retrieval lane over people/project
   cards; it is too entangled with personal data to publish.
-- No incremental indexing and no packaging. There IS an eval suite now — see
+- No incremental indexing (tracked in the issues). Packaging exists since v0.3.0 (`pip install sqlite-graph-memory`). There IS an eval suite now — see
   [Measure before you swap](#measure-before-you-swap--eval) — but it scores retrieval on
   wikilink-derived gold, which is weak supervision and says so out loud. Test coverage is uneven:
   `index_notes.py`, `brain_ask.py` and `mcp_server.py` have unit tests, `turnstate_hook.py`
@@ -278,7 +339,7 @@ while the metric is broken never tested the metric.
 
 ## Roadmap
 
-**Now — [v0.1.1](https://github.com/tonydzi/sqlite-graph-memory/releases).**
+**Now — [latest release](https://github.com/tonydzi/sqlite-graph-memory/releases/latest)** (v0.3.1 on PyPI and in the MCP Registry as of 2026-10-19).
 The pilot as it runs daily: retrieval pipeline, per-turn ledger and A/B telemetry, all in
 `brain_ask.py` and `turnstate_hook.py`, plus the bi-temporal design note. Known defects live in
 the [tracker](https://github.com/tonydzi/sqlite-graph-memory/issues) rather than in footnotes
@@ -316,9 +377,10 @@ Both are set as constants (`E5_MODEL`, `RERANK_MODEL`) in `brain_ask.py` and sma
 to run on a laptop GPU; swap freely, since nothing in the pipeline depends on these
 specific models.
 
-## Cite this work
+## Maintainers
 
-If this repo shows up in your research, cite it via [CITATION.cff](CITATION.cff) (GitHub's "Cite this repository" button). Academic identity: Anton Dzyatkovsky publishes as **Anton Dziatkovskii** ([ORCID 0000-0001-7408-3054](https://orcid.org/0000-0001-7408-3054)).
+- **Anton Dziatkovskii** ([@tonydzi](https://github.com/tonydzi)): retrieval pipeline, ledger, bench, releases.
+- **Vardhman Gupta** ([@Kaap10](https://github.com/Kaap10)): the MCP server (`sgm-mcp`, PRs #8, #10, #14) and its tests; reviews on `mcp_server.py` route to him via CODEOWNERS.
 
 ## AI contributors
 
@@ -330,7 +392,7 @@ content** — no decorative credits. Lab-wide policy, one source for every repo:
 
 ## Cite this work
 
-The paper about this system — retrieval design, pilot telemetry, and the query-class-stratified evaluation protocol — is published: [DOI 10.5281/zenodo.22639718](https://doi.org/10.5281/zenodo.22639718) (preprint, CC BY 4.0). Machine-readable citation: [CITATION.cff](CITATION.cff).
+The paper about this system — retrieval design, pilot telemetry, and the query-class-stratified evaluation protocol — is published: [DOI 10.5281/zenodo.22639718](https://doi.org/10.5281/zenodo.22639718) (preprint, CC BY 4.0). Machine-readable citation: [CITATION.cff](CITATION.cff) (GitHub's "Cite this repository" button). Academic identity: Anton Dzyatkovsky publishes as **Anton Dziatkovskii** ([ORCID 0000-0001-7408-3054](https://orcid.org/0000-0001-7408-3054)).
 
 ## License
 

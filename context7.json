@@ -1,0 +1,12 @@
+{
+  "$schema": "https://context7.com/schema/context7.json",
+  "projectTitle": "sqlite-graph-memory",
+  "description": "Graph RAG memory for AI agents on one SQLite file: vector retrieval, hand-curated wikilink graph, cross-encoder rerank, zero-token per-turn ledger, MCP server, and memory-bench v0.1.",
+  "folders": ["docs", "bench", "examples"],
+  "excludeFolders": ["tests", "eval"],
+  "rules": [
+    "Install with pip install sqlite-graph-memory; indexing and rerank need the [embeddings] extra.",
+    "The MCP server entry point is sgm-mcp; it exposes one tool, memory_recall.",
+    "Markdown notes are canonical; the SQLite file holds derived state (turns ledger, ab_recall telemetry)."
+  ]
+}

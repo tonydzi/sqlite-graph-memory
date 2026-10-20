@@ -15,6 +15,9 @@ Config (env, all optional):
   TURNSTATE_DB      SQLite db for A/B telemetry (default: ./turnstate.db)
   BRAIN_ANSWER_OUT  file to mirror the answer into (default: ./_brain_answer.txt)
   BRAIN_AB_JSON     if set, --ab also writes a structured JSON diff to this path
+  SGM_NO_STAR_PROMPT=1  never print the one-time GitHub star line after --ab
+  SGM_CONFIG_DIR    where that line's once-per-machine marker lives
+                    (default: $XDG_CONFIG_HOME or ~/.config, /sqlite-graph-memory)
 """
 import os, re, sys, pickle, datetime, sqlite3, time
 from pathlib import Path
@@ -194,6 +197,63 @@ def rerank_candidates(ce, query, cand, meta, topn=TOPN):
     return sorted(zip(cand, sc), key=lambda x: -x[1])[:topn]
 
 
+STAR_URL = 'https://github.com/tonydzi/sqlite-graph-memory'
+STAR_MARKER = 'star_prompt_shown'
+
+
+def _config_dir(env=None):
+    """Per-user config folder: SGM_CONFIG_DIR, else $XDG_CONFIG_HOME or ~/.config."""
+    env = os.environ if env is None else env
+    if env.get('SGM_CONFIG_DIR'):
+        return Path(os.path.expanduser(env['SGM_CONFIG_DIR']))
+    base = env.get('XDG_CONFIG_HOME') or os.path.join(os.path.expanduser('~'), '.config')
+    return Path(base) / 'sqlite-graph-memory'
+
+
+def maybe_star_prompt(stream=None, env=None, interactive=None):
+    """After a successful --ab run, ask for a star once per machine, on stderr.
+
+    Silent when SGM_NO_STAR_PROMPT is set (anything but '' or '0'), when CI is set
+    (anything but '', '0' or 'false'), when BRAIN_AB_JSON is set (a machine reads the
+    result), when stdout or stderr is not a terminal, or when the marker file exists.
+    The marker is created with O_EXCL, so two first runs at once print one line.
+    CRASH-SAFETY: any failure here is swallowed; the answer was already printed.
+    Returns True only if the line was printed.
+    """
+    env = os.environ if env is None else env
+    stream = sys.stderr if stream is None else stream
+    try:
+        if env.get('SGM_NO_STAR_PROMPT', '') not in ('', '0'):
+            return False
+        if env.get('CI', '').strip().lower() not in ('', '0', 'false'):
+            return False
+        if env.get('BRAIN_AB_JSON'):
+            return False
+        if interactive is None:
+            interactive = sys.stdout.isatty() and stream.isatty()
+        if not interactive:
+            return False
+        marker = _config_dir(env) / STAR_MARKER
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            fd = os.open(str(marker), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+        except FileExistsError:
+            return False
+        with os.fdopen(fd, 'w', encoding='utf-8') as f:
+            f.write(time.strftime('%Y-%m-%d %H:%M:%S') + '\n')
+        try:
+            stream.write('\nIf the A/B diff above was useful, a star helps other people find it: '
+                         '%s (shown once; SGM_NO_STAR_PROMPT=1 silences it)\n' % STAR_URL)
+            stream.flush()
+        except Exception:
+            try: marker.unlink()          # the user never saw it: ask again next time
+            except Exception: pass
+            return False
+        return True
+    except Exception:
+        return False
+
+
 def main():
     args = sys.argv[1:]
     ask = '--ask' in args
@@ -201,10 +261,10 @@ def main():
     flags = {'--ask', '--graph', '--ab'}
     query = ' '.join(a for a in args if a not in flags)
     if not query or not EMB.exists():
-        print('need an embedding index (%s) and a query — run index_notes.py first' % EMB)
+        sys.stderr.write('need an embedding index (%s) and a query — run index_notes.py first\n' % EMB)
         if query and not EMB.exists():
             print('Stuck? Tell us what you were trying to do: %s' % FEEDBACK_URL, file=sys.stderr)
-        return
+        raise SystemExit(1)
 
     dev = pick_device()
     emb, meta = load_index()
@@ -283,6 +343,7 @@ def main():
                 pass
         _out = Path(os.getenv('BRAIN_ANSWER_OUT', '_brain_answer.txt'))
         _out.write_text(text, encoding='utf-8'); print(text)
+        maybe_star_prompt()
         return
 
     # GATE: wiki-graph helps THEME queries, hurts ENTITY/name queries -> skip graph for entities.

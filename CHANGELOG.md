@@ -6,11 +6,50 @@ recorded after the fact rather than backdated to look contemporaneous.
 
 ## Unreleased
 
+**A spec you can paste.** `BITEMPORAL.md` turns the close-don't-delete rule from
+`docs/bitemporal.md` into a block for any agent's `CLAUDE.md` or `AGENTS.md`: three fields
+(`valid_from`, `valid_to`, `superseded_by`), five rules, and a one-line attribution as the
+whole licence.
+
+**`llms.txt` for agents that read before they install.** One page: what this is, the three
+commands, MCP config for JSON clients, Claude Code and Codex, the bench numbers as they stand
+on the leaderboard, the eval commands, every environment variable.
+
+**The README says what it is for in its first line**: persistent memory for Claude Code,
+Cursor and Codex over your own markdown notes.
+
+**One star request, earned and once.** After a successful `sgm-ask --ab` in a terminal, one
+stderr line asks for a GitHub star. It is printed once per machine (a marker file in
+`~/.config/sqlite-graph-memory`, or `SGM_CONFIG_DIR`, created exclusively so two first runs
+at once still print one line), never under `CI`, never when stdout or stderr is piped, never
+when `BRAIN_AB_JSON` is set, and never with `SGM_NO_STAR_PROMPT=1`. If the line cannot be
+written, the marker is removed so the next run asks again. `tests/test_star_prompt.py` covers
+each guard and the call from `main()`, and goes red when any of them is removed.
+
+## v0.3.1 — 2026-10-19
+
 **Credit where it is due.** The MCP server that ships as `sgm-mcp` was written by Vardhman Gupta
 ([@Kaap10](https://github.com/Kaap10)) in PR #8: the server, its tests and its docs. His
 follow-up fixes are the shared answer-file race (commit 3ce7061), the stdout fallback (PR #10)
 and the swallowed read errors (PR #14).
 He is now listed in the `authors` field of `pyproject.toml`, which is the attribution he asked for.
+
+**Indexing works on Intel Macs again.** A fresh `pip install 'sqlite-graph-memory[embeddings]'`
+on an x86_64 Mac with Python 3.12 crashed `sgm-index` with `NameError: name 'nn' is not
+defined`. Torch stops at 2.2 there, transformers 5.x needs 2.6 and quietly disables torch,
+and sentence-transformers 6.x requires transformers 5.x. The embeddings extra now caps
+transformers below 4.50 and sentence-transformers below 5 on that one platform. Measured
+both ways on the same machine: 0.3.0 from PyPI crashes, this build indexes the 202-note
+bench vault cleanly (204 chunks).
+
+**Listed in the official MCP Registry.** `server.json` describes the server as
+`io.github.tonydzi/sqlite-graph-memory`, the README carries the `mcp-name` line the registry
+checks, and the publish workflow lists the release after PyPI has it. The package also
+installs the MCP server under its own name, `sqlite-graph-memory`, so registry clients can
+start it with `uvx`.
+
+**The README opens with three commands and their real output** on the bench vault, including
+the honest caveat that vector-only ranks ahead of graph mode on that vault overall.
 
 ## bench-v0.1 — 2026-10-09
 

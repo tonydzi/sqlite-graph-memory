@@ -3,13 +3,18 @@
 
 Runs offline with no model download or network.
 """
-import sys, json
+import sys, json, io
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from sqlite_graph_memory.mcp_server import handle_request, TOOLS, SERVER_INFO
 from sqlite_graph_memory import mcp_server
 
+
+
+def test_server_info_version_tracks_package():
+    from sqlite_graph_memory import __version__
+    assert SERVER_INFO["version"] == __version__
 
 
 def test_mcp_initialize():
@@ -266,4 +271,50 @@ def test_handle_request_read_text_error_is_mcp_error(tmp_path, monkeypatch):
     assert resp["id"] == 11
     assert resp["result"]["isError"] is True
     assert "Recall error: failed to read answer file: Disk I/O failure" in resp["result"]["content"][0]["text"]
+
+
+def test_handle_request_non_object_json():
+    """Verify handle_request returns -32600 error for non-dict requests."""
+    for payload in ([1, 2, 3], "literal_string", 123, True):
+        resp = handle_request(payload)
+        assert resp["jsonrpc"] == "2.0"
+        assert resp["id"] is None
+        assert resp["error"]["code"] == -32600
+        assert "Invalid Request" in resp["error"]["message"]
+
+
+def test_stdio_loop_handles_non_object_json_and_continues(monkeypatch):
+    """Verify stdio loop handles array and bare literal payloads with -32600 and keeps running."""
+    input_lines = [
+        "[1, 2, 3]\n",
+        '"bare literal"\n',
+        json.dumps({"jsonrpc": "2.0", "id": 42, "method": "ping"}) + "\n"
+    ]
+    fake_stdin = io.StringIO("".join(input_lines))
+    fake_stdout = io.StringIO()
+
+    monkeypatch.setattr(sys, "stdin", fake_stdin)
+    monkeypatch.setattr(sys, "stdout", fake_stdout)
+    monkeypatch.setattr(sys, "argv", ["sgm-mcp"])
+
+    mcp_server.main()
+
+    output_lines = [line.strip() for line in fake_stdout.getvalue().strip().splitlines() if line.strip()]
+    assert len(output_lines) == 3
+
+    resp1 = json.loads(output_lines[0])
+    assert resp1["jsonrpc"] == "2.0"
+    assert resp1["id"] is None
+    assert resp1["error"]["code"] == -32600
+
+    resp2 = json.loads(output_lines[1])
+    assert resp2["jsonrpc"] == "2.0"
+    assert resp2["id"] is None
+    assert resp2["error"]["code"] == -32600
+
+    resp3 = json.loads(output_lines[2])
+    assert resp3["jsonrpc"] == "2.0"
+    assert resp3["id"] == 42
+    assert resp3["result"] == {}
+
 

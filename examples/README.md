@@ -47,17 +47,26 @@ Add the server to your MCP client config (e.g. `claude_desktop_config.json` or C
 {
   "mcpServers": {
     "sqlite-graph-memory": {
-      "command": "python",
-      "args": [
-        "/absolute/path/to/sqlite-graph-memory/sgm-mcp"
-      ],
+      "command": "sgm-mcp",
       "env": {
-        "BRAIN_INDEX_DIR": "/absolute/path/to/sqlite-graph-memory/index",
-        "TURNSTATE_DB": "/absolute/path/to/sqlite-graph-memory/turnstate.db"
+        "BRAIN_INDEX_DIR": "/path/to/your/index",
+        "TURNSTATE_DB": "/path/to/your/turnstate.db"
       }
     }
   }
 }
+```
+
+The same file is checked in as [`mcp-config.json`](mcp-config.json). `sgm-mcp` is on PATH after `pip install 'sqlite-graph-memory[embeddings]'`; if your client does not inherit that venv, use the absolute path to its `bin/sgm-mcp`.
+
+Two copy-paste doors that need no JSON editing:
+
+```bash
+# Claude Code
+claude mcp add sqlite-graph-memory -e BRAIN_INDEX_DIR=/path/to/your/index -e TURNSTATE_DB=/path/to/your/turnstate.db -- sgm-mcp
+
+# any client that speaks uvx (registry name io.github.tonydzi/sqlite-graph-memory)
+uvx --with 'sqlite-graph-memory[embeddings]' sqlite-graph-memory
 ```
 
 ### Direct CLI Verification

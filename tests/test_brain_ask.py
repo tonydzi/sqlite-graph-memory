@@ -9,6 +9,8 @@ Addresses issue #4:
 - _links_in(): table-driven parsing of wikilinks in markdown files using tmp_path,
   including aliases, anchors, multiple links per line, fenced code blocks, and no links.
 """
+import os
+import subprocess
 import sys
 from pathlib import Path
 import pytest
@@ -109,3 +111,27 @@ def test_links_in_content_cases(tmp_path, content, expected):
 def test_links_in_nonexistent_file(tmp_path):
     missing_file = tmp_path / "does_not_exist.md"
     assert _links_in(missing_file) == []
+
+
+def test_missing_embedding_index_reports_error_and_exits_nonzero(tmp_path):
+    """A missing index must reach CLI callers as an error, not empty results."""
+    repo_root = Path(__file__).resolve().parents[1]
+    env = os.environ.copy()
+    env["BRAIN_INDEX_DIR"] = str(tmp_path / "missing-index")
+    env["PYTHONPATH"] = os.pathsep.join(
+        filter(None, [str(repo_root / "src"), env.get("PYTHONPATH")])
+    )
+
+    result = subprocess.run(
+        [sys.executable, "-m", "sqlite_graph_memory.brain_ask", "agent memory"],
+        cwd=repo_root,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 1
+    assert result.stdout == ""
+    assert "need an embedding index" in result.stderr
+    assert "index_notes.py first" in result.stderr

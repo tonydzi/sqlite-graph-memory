@@ -29,8 +29,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.12"
       - name: Build sdist and wheel
@@ -44,10 +44,10 @@ jobs:
         run: |
           python -m venv /tmp/clean
           /tmp/clean/bin/pip install dist/*.whl
-          for cmd in sgm-index sgm-ask sgm-mcp sgm-turnstate-hook sgm-turnstate-show; do
+          for cmd in sgm-index sgm-ask sgm-mcp sgm-turnstate-hook sgm-turnstate-show sqlite-graph-memory; do
             test -x "/tmp/clean/bin/$cmd" || { echo "::error::$cmd missing from wheel"; exit 1; }
           done
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: dist
           path: dist/
@@ -59,10 +59,44 @@ jobs:
     permissions:
       id-token: write   # the whole point: OIDC instead of a stored token
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: dist
           path: dist/
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
         with:
           skip-existing: true   # the package may already be uploaded before the GitHub release object exists
+
+  # List the server in the official MCP Registry once PyPI has the release.
+  # Auth is GitHub OIDC (no stored secret): the registry grants the
+  # io.github.tonydzi/* namespace to workflows running in tonydzi's repos.
+  # Ownership is proven by the `mcp-name:` line in README.md, which PyPI shows
+  # as the package description, so this job must run AFTER the PyPI upload.
+  mcp-registry:
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: server.json must describe the version being released
+        run: |
+          pkg=$(python3 -c "import tomllib;print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          srv=$(python3 -c "import json;d=json.load(open('server.json'));p=d['packages'][0];print(d['version'], p['version'], p['runtimeArguments'][0]['value'])")
+          [ "$srv" = "$pkg $pkg sqlite-graph-memory[embeddings]==$pkg" ] || { echo "::error::server.json says '$srv', pyproject says $pkg"; exit 1; }
+          grep -q "mcp-name: $(python3 -c "import json;print(json.load(open('server.json'))['name'])")" README.md \
+            || { echo "::error::README.md lacks the mcp-name line the registry verifies"; exit 1; }
+      - name: Wait until PyPI serves this version
+        run: |
+          v=$(python3 -c "import json;print(json.load(open('server.json'))['version'])")
+          for i in $(seq 1 30); do
+            curl -sf "https://pypi.org/pypi/sqlite-graph-memory/$v/json" >/dev/null && exit 0
+            sleep 20
+          done
+          echo "::error::PyPI never served $v"; exit 1
+      - name: Install mcp-publisher
+        run: |
+          curl -sL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" | tar xz mcp-publisher
+      - run: ./mcp-publisher login github-oidc
+      - run: ./mcp-publisher publish
