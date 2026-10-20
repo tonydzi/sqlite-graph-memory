@@ -22,7 +22,26 @@ Config (env, optional):
 import sys, os, json, subprocess, tempfile
 from pathlib import Path
 
-from sqlite_graph_memory import __version__
+
+def _package_version():
+    """Version of the package this file belongs to.
+
+    Imported normally when loaded as part of the package (installed wheel,
+    editable install, tests). Run as a plain script
+    (``python src/sqlite_graph_memory/mcp_server.py``) the package is not on
+    sys.path, so read the sibling __init__.py instead of touching sys.path.
+    """
+    if __package__:
+        from sqlite_graph_memory import __version__ as v
+        return v
+    import re
+    init = Path(__file__).resolve().parent / "__init__.py"
+    m = re.search(r'^__version__\s*=\s*["\']([^"\']+)["\']',
+                  init.read_text(encoding="utf-8"), re.M)
+    return m.group(1) if m else "0+unknown"
+
+
+__version__ = _package_version()
 
 # Ensure UTF-8 for stdio communication on all platforms (including Windows console)
 try:
@@ -32,7 +51,7 @@ try:
 except Exception:
     pass
 
-# Where the recall subprocess runs. The server deliberately shells out instead
+# This package's directory. The server deliberately shells out instead
 # of importing brain_ask: a model load that segfaults or runs out of memory then
 # kills a child process and returns an MCP error, rather than taking the server
 # down mid-session.
@@ -84,6 +103,10 @@ def run_recall(query: str, mode: str = "associative") -> tuple[str, bool]:
 
     An empty answer file means no notes matched; stdout is never promoted to an answer
     because it carries startup notices, load reports, and tokenizer warnings.
+
+    The child inherits the server's working directory (no cwd=), so relative
+    BRAIN_INDEX_DIR / TURNSTATE_DB resolve where the user launched the server,
+    not inside site-packages/sqlite_graph_memory.
     """
     base_cmd = _brain_ask_cmd()
     if base_cmd is None:
@@ -113,7 +136,6 @@ def run_recall(query: str, mode: str = "associative") -> tuple[str, bool]:
         call_env = {**os.environ, "BRAIN_ANSWER_OUT": str(temp_ans_file)}
         res = subprocess.run(
             cmd,
-            cwd=str(ROOT_DIR),
             env=call_env,
             capture_output=True,
             text=True,
