@@ -325,6 +325,15 @@ of guessing — 97% of the correct `bridge` answers were *already in the candida
 cross-encoder was dropping them, because the relation is structural, not textual. Widening
 retrieval, the obvious fix, would have done nothing at all.
 
+That lane ships in the package as `src/sqlite_graph_memory/ppr.py`, **off by default**: turn it
+on with `SGM_PPR=1` or `sgm-ask --ppr`, and score it with `python eval/run_eval.py --gold ...
+--ppr`, which adds a third mode next to `vector` and `graph`. Any failure in it falls back to
+the reranker's order, like the graph hop. Be clear about what that reproduces: the bridge
+numbers above came from the maintainer's home vault and home pipeline on 2026-09-16, and they
+have not been re-run from the published package. The code is the same algorithm with the same
+constants (alpha 0.85, 10 PPR files, top 5 protected), but your vault will give your numbers,
+and `bench/` does not score this lane yet.
+
 Seven other changes were rejected by the same ruler, under one rule fixed in advance:
 **a regression worse than 0.01 nDCG@12 on any class reverts the change.**
 

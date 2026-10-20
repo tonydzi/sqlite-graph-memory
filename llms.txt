@@ -57,7 +57,7 @@ python eval/run_eval.py --gold eval/gold-<date>.jsonl --sqlite
 
 ## Configuration (env only)
 
-BRAIN_INDEX_DIR (index folder, default ./index), TURNSTATE_DB (default ./turnstate.db), BRAIN_ANSWER_OUT, BRAIN_AB_JSON (structured A/B output), AB_SOURCE, SGM_NO_STAR_PROMPT=1 (silence the one-time star line after --ab), SGM_CONFIG_DIR. Full list: .env.example.
+BRAIN_INDEX_DIR (index folder, default ./index), TURNSTATE_DB (default ./turnstate.db), BRAIN_ANSWER_OUT, BRAIN_AB_JSON (structured A/B output), AB_SOURCE, SGM_NO_STAR_PROMPT=1 (silence the one-time star line after --ab), SGM_CONFIG_DIR, SGM_PPR=1 (PageRank lane in the ordering, off by default). Full list: .env.example.
 
 ## Links
 
