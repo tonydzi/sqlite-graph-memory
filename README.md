@@ -244,6 +244,26 @@ board with one adapter file and a pull request: [bench/CONTRIBUTING.md](bench/CO
 CI recomputes every submitted number from the per-question outputs, so a typed-in number
 cannot get onto the board.
 
+## Health check — `sgm-stats`
+
+Four numbers about the link graph itself, no model and no index needed. It reads the notes with
+the same filter and the same `[[wikilink]]` parser as recall, so it measures the graph `--graph`
+actually walks. Thresholds follow [second-brain-os metrics](https://github.com/undefined-ui/second-brain-os/blob/main/docs/05-graphs/metrics.md);
+each is a `--threshold-*` flag. Exit code 0 ok, 1 warn, 2 fail, so it can sit in cron.
+
+```text
+$ sgm-stats bench/vault --today 2026-10-20
+202 pages in bench/vault
+
+FAIL  orphan_rate       26.2%   53 of 202 pages have no inbound link
+OK    avg_degree         4.65   940 resolved links over 202 pages
+OK    main_component   100.0%   202 of 202 pages; 1 component
+WARN  stale_concepts   100.0%   12 of 12 dated concept pages older than 90 days (as of 2026-10-20)
+```
+
+The synthetic bench vault fails the orphan check for a plain reason: its 40 meeting and 12 decision notes link out and nothing
+links back to them. `--json` gives the same report with the first orphan and stale page names.
+
 ## Measure before you swap — `eval/`
 
 Every "obvious" upgrade to a RAG pipeline — a newer embedder, a stronger reranker, hybrid

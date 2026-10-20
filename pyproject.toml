@@ -68,6 +68,7 @@ Issues = "https://github.com/tonydzi/sqlite-graph-memory/issues"
 [project.scripts]
 sgm-index = "sqlite_graph_memory.index_notes:main"
 sgm-ask = "sqlite_graph_memory.brain_ask:main"
+sgm-stats = "sqlite_graph_memory.vault_stats:main"
 sgm-turnstate-hook = "sqlite_graph_memory.turnstate_hook:main"
 sgm-turnstate-show = "sqlite_graph_memory.turnstate_show:main"
 sgm-mcp = "sqlite_graph_memory.mcp_server:main"
