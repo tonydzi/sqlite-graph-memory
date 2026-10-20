@@ -258,7 +258,7 @@ $ sgm-stats bench/vault --today 2026-10-20
 FAIL  orphan_rate       26.2%   53 of 202 pages have no inbound link
 OK    avg_degree         4.65   940 resolved links over 202 pages
 OK    main_component   100.0%   202 of 202 pages; 1 component
-WARN  stale_concepts   100.0%   12 of 12 dated concept pages older than 90 days (as of 2026-10-20)
+WARN  stale_concepts   100.0%   12 of 12 concept pages older than 90 days (as of 2026-10-20)
 ```
 
 The synthetic bench vault fails the orphan check for a plain reason: its 40 meeting and 12 decision notes link out and nothing

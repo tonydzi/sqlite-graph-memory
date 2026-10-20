@@ -15,9 +15,14 @@ A second parser would report on a graph recall never sees.
   stale concepts   concept pages whose `updated`       warn >50%
                    (or `date`) is older than 90 days
 
-Links to pages that do not exist and links from a page to itself are not edges.
-A concept page is one with ``type: concept`` in its frontmatter or one that lives in a
-folder named ``concepts``.
+Pages are keyed by their path inside the vault, so two notes with the same name in
+different folders stay two pages; a ``[[name]]`` link reaches every page with that name,
+the same candidates ``brain_ask.index_by_basename`` keeps. Links to pages that do not
+exist and links from a page to itself are not edges. A concept page is one with
+``type: concept`` in its frontmatter or one that lives in a folder named ``concepts``
+inside the vault. Stale share is over all concept pages; undated ones (no date, or a
+date that is not a real day) are named in the detail and never count as stale.
+Verdicts are taken on the same rounded value the report prints.
 
 Exit code: 0 all ok, 1 any warn, 2 any fail -- so it can sit in cron as a watchdog.
 Zero model calls, zero network, stdlib + the two sibling modules.
@@ -42,22 +47,30 @@ DEFAULTS = {
 }
 RANK = {'ok': 0, 'warn': 1, 'fail': 2, 'n/a': 0}
 
-TYPE_RX = re.compile(r'(?m)^type:\s*"?([^"\n]+?)"?\s*$')
-UPDATED_RX = re.compile(r'(?m)^updated:\s*"?(\d{4}-\d{2}-\d{2})')
-DATE_RX = re.compile(r'(?m)^date:\s*"?(\d{4}-\d{2}-\d{2})')
+TYPE_RX = re.compile(r"""(?m)^type:\s*["']?([^"'\n]+?)["']?\s*$""")
+UPDATED_RX = re.compile(r"""(?m)^updated:\s*["']?(\d{4}-\d{2}-\d{2})""")
+DATE_RX = re.compile(r"""(?m)^date:\s*["']?(\d{4}-\d{2}-\d{2})""")
+
+
+class EmptyVault(Exception):
+    """No note under the folder: an unmounted or wrong path, reported as fail."""
 
 
 def build_graph(notes_dir):
-    """(pages, edges): pages = {stem_lower: Path}, edges = {(src, dst)} between real pages."""
-    pages = {}
-    for p in iter_notes(notes_dir):
-        pages.setdefault(p.stem.lower(), p)
+    """(pages, edges): pages = {relative path without .md: Path},
+    edges = {(src, dst)} between real pages."""
+    root = Path(notes_dir)
+    pages, by_stem = {}, defaultdict(list)
+    for p in iter_notes(root):
+        key = p.relative_to(root).with_suffix('').as_posix()
+        pages[key] = p
+        by_stem[p.stem.lower()].append(key)
     edges = set()
     for src, path in pages.items():
         for tgt in _links_in(path):
-            dst = tgt.lower()
-            if dst in pages and dst != src:
-                edges.add((src, dst))
+            for dst in by_stem.get(tgt.lower(), ()):
+                if dst != src:
+                    edges.add((src, dst))
     return pages, edges
 
 
@@ -81,20 +94,27 @@ def largest_component(pages, edges):
     return max(sizes.values()) if sizes else 0, len(sizes)
 
 
+def _parse_day(s):
+    try:
+        return datetime.date.fromisoformat(s)
+    except ValueError:              # 2026-02-30: date-shaped, not a day
+        return None
+
+
 def concept_dates(pages):
-    """[(stem, date or None)] for every concept page."""
+    """[(key, date or None)] for every concept page."""
     out = []
-    for stem, path in pages.items():
+    for key, path in pages.items():
         text = read_note(path) or ''
         m = FM_RX.match(text)
         fm = m.group(1) if m else ''
         t = TYPE_RX.search(fm)
         is_concept = (t and t.group(1).strip().lower() == 'concept') or \
-            any(part.lower() == 'concepts' for part in path.parent.parts)
+            any(part.lower() == 'concepts' for part in Path(key).parent.parts)
         if not is_concept:
             continue
         d = UPDATED_RX.search(fm) or DATE_RX.search(fm)
-        out.append((stem, datetime.date.fromisoformat(d.group(1)) if d else None))
+        out.append((key, _parse_day(d.group(1)) if d else None))
     return out
 
 
@@ -116,42 +136,42 @@ def compute(notes_dir, today=None, th=None):
     pages, edges = build_graph(notes_dir)
     n = len(pages)
     if n == 0:
-        raise SystemExit(f"sgm-stats: no notes under {notes_dir}")
+        raise EmptyVault(f"sgm-stats: no notes under {notes_dir}")
 
     indeg = defaultdict(int)
     for _, dst in edges:
         indeg[dst] += 1
     orphans = sorted(p for p in pages if indeg[p] == 0)
-    orphan_pct = 100.0 * len(orphans) / n
-    degree = len(edges) / n
+    orphan_pct = round(100.0 * len(orphans) / n, 1)
+    degree = round(len(edges) / n, 2)
     main, n_comp = largest_component(pages, edges)
-    main_pct = 100.0 * main / n
+    main_pct = round(100.0 * main / n, 1)
 
     concepts = concept_dates(pages)
     dated = [(s, d) for s, d in concepts if d is not None]
     cutoff = today - datetime.timedelta(days=int(th['stale_days']))
     stale = sorted(s for s, d in dated if d < cutoff)
-    if dated:
-        stale_pct = 100.0 * len(stale) / len(dated)
+    if concepts:
+        stale_pct = round(100.0 * len(stale) / len(concepts), 1)
         stale_v = 'warn' if stale_pct > th['stale_warn'] else 'ok'
     else:
         stale_pct, stale_v = None, 'n/a'
 
     metrics = [
-        {'name': 'orphan_rate', 'value': round(orphan_pct, 1), 'unit': '%',
+        {'name': 'orphan_rate', 'value': orphan_pct, 'unit': '%',
          'verdict': verdict_orphan(orphan_pct, th),
          'detail': f"{len(orphans)} of {n} pages have no inbound link",
          'examples': orphans[:5]},
-        {'name': 'avg_degree', 'value': round(degree, 2), 'unit': 'links/page',
+        {'name': 'avg_degree', 'value': degree, 'unit': 'links/page',
          'verdict': verdict_degree(degree, th),
          'detail': f"{len(edges)} resolved links over {n} pages"},
-        {'name': 'main_component', 'value': round(main_pct, 1), 'unit': '%',
+        {'name': 'main_component', 'value': main_pct, 'unit': '%',
          'verdict': 'ok' if main_pct >= th['component_ok'] else 'warn',
          'detail': f"{main} of {n} pages; {n_comp} component{'' if n_comp == 1 else 's'}"},
         {'name': 'stale_concepts',
-         'value': None if stale_pct is None else round(stale_pct, 1), 'unit': '%',
+         'value': stale_pct, 'unit': '%',
          'verdict': stale_v,
-         'detail': (f"{len(stale)} of {len(dated)} dated concept pages older than "
+         'detail': (f"{len(stale)} of {len(concepts)} concept pages older than "
                     f"{int(th['stale_days'])} days (as of {today.isoformat()})"
                     + (f"; {len(concepts) - len(dated)} undated" if len(dated) < len(concepts) else '')
                     if concepts else "no concept pages"),
@@ -184,7 +204,11 @@ def main(argv=None):
     if not Path(a.notes_dir).is_dir():
         ap.error(f"not a directory: {a.notes_dir}")
     th = {k: getattr(a, k) for k in DEFAULTS}
-    report = compute(a.notes_dir, today=a.today, th=th)
+    try:
+        report = compute(a.notes_dir, today=a.today, th=th)
+    except EmptyVault as e:
+        print(e, file=sys.stderr)
+        return 2
     print(json.dumps(report, indent=2, ensure_ascii=False) if a.json else render(report))
     return report['exit_code']
 

@@ -171,3 +171,59 @@ def test_bench_vault_numbers(tmp_path):
     assert r["pages"] == 202
     assert _metric(r, "orphan_rate")["value"] == 26.2
     assert _metric(r, "main_component")["value"] == 100.0
+
+
+# ------------------------------------------------------------------ review regressions (PR #50)
+
+def test_same_name_in_two_folders_is_two_pages(tmp_path):
+    (tmp_path / "a").mkdir(); (tmp_path / "b").mkdir()
+    _write(tmp_path / "a", "x", ["y"])
+    _write(tmp_path / "b", "x", ["y"])
+    _write(tmp_path, "y", ["x"])            # reaches both x pages
+    r = _run(tmp_path)
+    assert r["pages"] == 3
+    assert _metric(r, "orphan_rate")["value"] == 0.0
+
+
+def test_concepts_folder_above_the_vault_does_not_count(tmp_path):
+    vault = tmp_path / "concepts" / "vault"
+    vault.mkdir(parents=True)
+    _write(vault, "note", fm="date: 2020-01-01")
+    m = _metric(_run(vault), "stale_concepts")
+    assert m["verdict"] == "n/a" and m["detail"] == "no concept pages"
+
+
+def test_stale_share_is_over_all_concepts_and_names_undated(tmp_path):
+    _write(tmp_path, "c0", fm="type: concept\nupdated: 2020-01-01")
+    for i in range(1, 10):
+        _write(tmp_path, f"c{i}", fm="type: concept")
+    m = _metric(_run(tmp_path), "stale_concepts")
+    assert m["value"] == 10.0 and m["verdict"] == "ok"
+    assert "9 undated" in m["detail"]
+
+
+def test_printed_value_and_verdict_agree_at_the_boundary(tmp_path):
+    # 5 orphans of 101 pages = 4.95%, printed as 5.0: must be warn, like 5.0 is.
+    for i in range(96):
+        _write(tmp_path, f"p{i}", [f"p{(i + k) % 96}" for k in range(1, 5)])
+    for i in range(5):
+        _write(tmp_path, f"o{i}", ["p0", "p1", "p2", "p3"])
+    m = _metric(_run(tmp_path), "orphan_rate")
+    assert m["value"] == 5.0 and m["verdict"] == "warn"
+
+
+def test_impossible_date_is_undated_not_a_crash(tmp_path):
+    _write(tmp_path, "c", fm="type: concept\nupdated: 2026-02-30")
+    m = _metric(_run(tmp_path), "stale_concepts")
+    assert m["value"] == 0.0 and "1 undated" in m["detail"]
+
+
+def test_empty_vault_exits_with_fail_code(tmp_path, capsys):
+    assert vault_stats.main([str(tmp_path)]) == 2
+    assert "no notes" in capsys.readouterr().err
+
+
+def test_single_quoted_frontmatter(tmp_path):
+    _write(tmp_path, "c", fm="type: 'concept'\nupdated: '2020-01-01'")
+    m = _metric(_run(tmp_path), "stale_concepts")
+    assert m["value"] == 100.0
