@@ -2,7 +2,8 @@
 """ppr.py: personalized PageRank over the [[wikilink]] graph, fused with the reranker by RRF.
 
 WHY IT EXISTS. On the home vault's frozen gold set (2026-09-16, 60 bridge questions) 97% of
-the correct bridge answers were already in the candidate pool, and Recall@12 was still 0.225:
+the correct bridge answers were already in the candidate pool, and Recall@12 in that diagnosis
+run was 0.225 (the README's 0.251 is the graph-mode baseline of the final measurement):
 the cross-encoder dropped them, because the relation is structural, not textual. Adding more
 candidates (more hops, larger GMAX) cannot fix that. This module gives the graph a vote in the
 ORDERING instead: PPR seeded by the dense hits yields a structural file order, and that order
@@ -114,7 +115,11 @@ def _fingerprint(meta):
 
 
 def build(meta):
-    """Build the file graph from the notes' outgoing [[wikilinks]] (self-links and dups dropped)."""
+    """Build the file graph from the notes' outgoing [[wikilinks]] (self-links and dups dropped).
+
+    A node is a file NAME, because that is what a wikilink addresses: a/index.md and
+    b/index.md are one node, and the outgoing links of both files become its edges.
+    """
     try:
         fp = _fingerprint(meta)
     except Exception:
@@ -124,21 +129,23 @@ def build(meta):
     stems, paths, idx = [], [], {}
     for m in meta:
         st = Path(m['path']).stem.lower()
-        if st in idx:
-            continue
-        idx[st] = len(stems)
-        stems.append(st)
-        paths.append(m['path'])
+        if st not in idx:
+            idx[st] = len(stems)
+            stems.append(st)
+            paths.append([])
+        if m['path'] not in paths[idx[st]]:
+            paths[idx[st]].append(m['path'])
     indptr = np.zeros(len(stems) + 1, dtype='int64')
     indices = []
-    for u, p in enumerate(paths):
+    for u, files in enumerate(paths):
         seen = set()
-        for tgt in _links_in(p):
-            v = idx.get(tgt.strip().lower())
-            if v is None or v == u or v in seen:
-                continue
-            seen.add(v)
-            indices.append(v)
+        for p in files:
+            for tgt in _links_in(p):
+                v = idx.get(tgt.strip().lower())
+                if v is None or v == u or v in seen:
+                    continue
+                seen.add(v)
+                indices.append(v)
         indptr[u + 1] = len(indices)
     g = Graph(stems, idx, indptr, np.asarray(indices, dtype='int64'))
     if fp:

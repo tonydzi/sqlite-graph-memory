@@ -324,8 +324,12 @@ def main():
 
     # PageRank lane (opt-in): a second ORDERING, not a candidate source. Crash-safe like the
     # hop: any failure leaves ppr_stems empty and every list below keeps the reranker's order.
+    # Not in --ab: the A/B answers "does the 1-hop graph help?", and its rows in ab_recall
+    # carry no PPR column, so a lane on both arms would be logged as plain vector vs graph.
     ppr_stems = []
-    if order and ('--ppr' in args or ppr_enabled()):
+    if ab and ('--ppr' in args or ppr_enabled()):
+        sys.stderr.write('PPR lane is not applied in --ab (score it with eval/run_eval.py --ppr)\n')
+    elif order and ('--ppr' in args or ppr_enabled()):
         ppr_stems = ppr_lane(meta, sims, base_order)
 
     # rerank on the matched chunk (precise)

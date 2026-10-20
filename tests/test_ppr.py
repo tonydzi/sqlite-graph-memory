@@ -116,6 +116,30 @@ def test_same_name_in_two_folders_stays_two_results():
     assert len(ppr.fuse_after_rerank(ranked, meta, ['x'], 5, head=2)) == 5
 
 
+def test_second_file_with_the_same_name_contributes_its_links(tmp_path):
+    (tmp_path / 'a').mkdir(); (tmp_path / 'b').mkdir()
+    meta = []
+    for rel, body in (('a/index.md', '[[x]]'), ('b/index.md', '[[y]]'), ('x.md', ''), ('y.md', '')):
+        f = tmp_path / rel
+        f.write_text(body + '\n', encoding='utf-8')
+        meta.append({'path': str(f), 'sha': rel})
+    g = ppr.build(meta)
+    u = g.idx['index']
+    out = {g.stems[int(v)] for v in g.indices[g.indptr[u]:g.indptr[u + 1]]}
+    assert out == {'x', 'y'}
+
+
+def test_empty_lane_equals_the_graph_mode_exactly():
+    # The ppr column must not differ from graph when PPR has nothing to say, or the printed
+    # "ppr effect" would credit the lane with something it did not do.
+    meta = [{'path': '/v/%s.md' % s} for s in ('a/index', 'b/index', 'c', 'd')]
+    ranked = [(0, 5.0), (1, 4.0), (2, 3.0), (3, 2.0)]
+    assert ppr.fuse_after_rerank(ranked, meta, [], 12) == ranked
+    assert ba.fuse_ppr(ranked, meta, [], 12) == ranked
+    assert ppr.fuse_after_rerank(ranked, meta, ['c', 'd', 'index'], 12) == ranked
+    assert sorted(ppr.fuse_after_rerank(ranked, meta, ['d', 'c'], 12, head=0)) == sorted(ranked)
+
+
 # ------------------------------------------------------------------ off by default
 @pytest.mark.parametrize('env,want', [({}, False), ({'SGM_PPR': ''}, False),
                                       ({'SGM_PPR': '0'}, False), ({'SGM_PPR': '1'}, True),
