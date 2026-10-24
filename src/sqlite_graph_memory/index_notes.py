@@ -12,9 +12,9 @@ USAGE:
   python index_notes.py <notes_dir>
 Config (env, optional):
   BRAIN_INDEX_DIR     output dir (default: ./index)
-  BRAIN_INDEX_HIDDEN  1 = also index dot-directories (default: skip them,
-                      so .stversions/.obsidian/.git and Syncthing conflict
-                      copies never enter the index)
+  BRAIN_INDEX_HIDDEN  1 = also index dot-files and dot-directories (default:
+                      skip them, so .draft.md, .stversions/.obsidian/.git and
+                      Syncthing conflict copies never enter the index)
 """
 import os, re, sys, pickle
 from pathlib import Path
@@ -77,15 +77,15 @@ CONFLICT_MARKER = 'sync-conflict'
 def iter_notes(notes_dir):
     """Files that count as a note under ``notes_dir``.
 
-    Skips dot-directories and Syncthing conflict copies. Set ``BRAIN_INDEX_HIDDEN=1``
-    to index hidden folders too — someone will legitimately keep notes in one.
+    Skips dot-directories, dot-files (``.draft.md``) and Syncthing conflict copies.
+    Set ``BRAIN_INDEX_HIDDEN=1`` to index hidden paths too — someone will legitimately keep notes in one.
     """
     root = Path(notes_dir)
     include_hidden = os.getenv('BRAIN_INDEX_HIDDEN', '') not in ('', '0', 'false', 'no')
     out = []
     for p in root.rglob('*.md'):
         rel = p.relative_to(root)
-        if not include_hidden and any(part.startswith('.') for part in rel.parts[:-1]):
+        if not include_hidden and any(part.startswith('.') for part in rel.parts):
             continue
         if CONFLICT_MARKER in p.name:
             continue

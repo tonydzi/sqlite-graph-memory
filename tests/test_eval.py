@@ -158,6 +158,25 @@ def test_a_bridge_question_records_how_many_links_were_cut(tmp_path):
     assert bridge['gold_truncated'] == 4
 
 
+def test_gold_skips_hidden_notes_exactly_like_the_indexer(tmp_path, monkeypatch):
+    """build_gold walks the vault with the indexer's own filter (issue #25).
+
+    A root-level `.draft.md` is never indexed, so it must never become a question either,
+    even when a stale index still lists its stem. `BRAIN_INDEX_HIDDEN=1` lets it into the
+    index, so it must let it into the gold set too: one rule, one place.
+    """
+    vault = _vault(tmp_path)
+    (vault / '.draft.md').write_text('---\ntitle: "Hidden draft"\n---\n\n' + PARA + '\n',
+                                     encoding='utf-8')
+    stems = INDEXED | {'.draft'}
+
+    monkeypatch.delenv('BRAIN_INDEX_HIDDEN', raising=False)
+    assert '.draft' not in {n['stem'] for n in read_notes(vault, stems)}
+
+    monkeypatch.setenv('BRAIN_INDEX_HIDDEN', '1')
+    assert '.draft' in {n['stem'] for n in read_notes(vault, stems)}
+
+
 def test_a_filename_living_in_two_folders_is_reported_as_ambiguous(tmp_path):
     """Found by the review panel: `[[foo]]` names both files, so neither can be gold."""
     vault = _vault(tmp_path)

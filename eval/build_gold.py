@@ -40,6 +40,9 @@ import sys
 from collections import Counter
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
+from sqlite_graph_memory.index_notes import iter_notes  # noqa: E402
+
 WIKILINK_RX = re.compile(r'\[\[([^\]\|#]+)(?:[|#][^\]]*)?\]\]')
 CYRILLIC_RX = re.compile(r'[а-яё]', re.I)
 
@@ -121,10 +124,10 @@ def read_notes(notes_dir, stems, folders=None):
     """Every indexed note, parsed into the fields the four classes need."""
     root = Path(notes_dir)
     paths = []
-    for p in sorted(root.rglob('*.md')):
+    # The indexer's own walk: hidden files and dirs, conflict copies and BRAIN_INDEX_HIDDEN
+    # are decided in one place, so a gold answer is never a note the indexer would skip.
+    for p in iter_notes(root):
         rel = p.relative_to(root)
-        if any(part.startswith('.') for part in rel.parts[:-1]): continue
-        if 'sync-conflict' in p.name: continue
         if folders and (not rel.parts[:-1] or rel.parts[0] not in folders): continue
         if p.stem.lower() not in stems: continue
         paths.append(p)

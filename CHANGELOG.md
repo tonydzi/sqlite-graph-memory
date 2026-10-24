@@ -6,6 +6,14 @@ recorded after the fact rather than backdated to look contemporaneous.
 
 ## v0.3.2 — 2026-10-24
 
+**Hidden note files are skipped like hidden folders.** A note whose filename starts with a
+dot, such as `.ideas.md` or `.draft.md`, used to be indexed when it sat in the vault root or a
+visible folder, while the same file inside `.drafts/` was skipped. Now both are skipped, so
+after re-indexing those notes stop showing up in answers. `BRAIN_INDEX_HIDDEN=1` brings back
+the old behaviour and indexes hidden files and folders alike. `eval/build_gold.py` now walks the
+vault with the indexer's own filter, so it follows the same rule and the same variable instead
+of keeping its own copy (issue #25).
+
 **The PageRank lane the README credits is now in the package** (#51). `ppr.py` runs
 personalized PageRank over the `[[wikilink]]` graph, seeded by the dense hits, and fuses it with
 the reranker by RRF while the reranker's top 5 stay where they are. Off by default (`SGM_PPR=1`
