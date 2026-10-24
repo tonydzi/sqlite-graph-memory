@@ -140,7 +140,7 @@ has seen.
 
 ## Limits, stated up front
 
-- 202 notes is small. Dense retrieval at this size is easier than in a 100k-note vault,
+- 202 notes is small. Dense retrieval at this size is easier than in the ~28k-note production index,
   so the bench measures failure modes, and it does not show how a system scales.
 - The text is English only and comes from templates. The sentences are cleaner than real
   notes, and that flatters extractive systems.
