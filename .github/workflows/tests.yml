@@ -90,3 +90,26 @@ jobs:
           case "$out" in
             *Traceback*) echo "::error::base install printed a traceback"; exit 1 ;;
           esac
+      - name: the installed server must find an index relative to the user's directory
+        # The tests run from the source tree, and the steps above only check that
+        # the commands start. Neither reproduces how people actually launch the MCP
+        # server: from their OWN directory, with a relative BRAIN_INDEX_DIR, against
+        # the installed wheel. The recall child used to run with cwd set to the
+        # package directory inside site-packages, so "index" resolved there and the
+        # user's index was never found. CI stayed green on exactly that bug, so this
+        # step reproduces it: a minimal index in /tmp/userdir, launch from there.
+        # Index found => brain_ask gets past loading and stops at the missing
+        # [embeddings] extra. Index NOT found => "need an embedding index".
+        run: |
+          mkdir -p /tmp/userdir/index
+          cd /tmp/userdir
+          /tmp/clean/bin/python -c "import numpy as np, pickle; np.save('index/_brain_e5.npy', np.zeros((1, 4), dtype='float32')); pickle.dump([{'path': 'a.md', 'chunk_idx': 0}], open('index/_brain_e5_meta.pkl', 'wb'))"
+          out=$(env -u PYTHONPATH BRAIN_INDEX_DIR=index /tmp/clean/bin/sgm-mcp --test "agent memory" 2>&1 || true)
+          echo "$out"
+          case "$out" in
+            *"need an embedding index"*) echo "::error::installed server looked for the index outside the user's directory"; exit 1 ;;
+          esac
+          case "$out" in
+            *"sqlite-graph-memory[embeddings]"*) echo "index found from the user's directory" ;;
+            *) echo "::error::unexpected output from the installed server"; exit 1 ;;
+          esac

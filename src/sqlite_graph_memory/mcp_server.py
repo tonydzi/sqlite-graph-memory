@@ -131,7 +131,6 @@ def run_recall(query: str, mode: str = "associative") -> tuple[str, bool]:
         call_env["PYTHONPATH"] = f"{src_dir}{os.pathsep}{existing_pp}" if existing_pp else src_dir
         res = subprocess.run(
             cmd,
-            cwd=str(ROOT_DIR),
             env=call_env,
             capture_output=True,
             text=True,
