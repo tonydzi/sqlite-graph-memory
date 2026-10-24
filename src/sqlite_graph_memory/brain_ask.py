@@ -31,6 +31,7 @@ for _s in (sys.stdout, sys.stderr):
     try: _s.reconfigure(encoding='utf-8')
     except Exception: pass
 
+FEEDBACK_URL = 'https://github.com/tonydzi/sqlite-graph-memory/discussions/categories/ideas'
 INDEX_DIR = Path(os.getenv('BRAIN_INDEX_DIR', 'index'))
 AB_DB = Path(os.getenv('TURNSTATE_DB', 'turnstate.db'))
 EMB = INDEX_DIR / '_brain_e5.npy'
@@ -299,6 +300,8 @@ def main():
     query = ' '.join(a for a in args if a not in flags)
     if not query or not EMB.exists():
         sys.stderr.write('need an embedding index (%s) and a query — run index_notes.py first\n' % EMB)
+        if query and not EMB.exists():
+            print('Stuck? Tell us what you were trying to do: %s' % FEEDBACK_URL, file=sys.stderr)
         raise SystemExit(1)
 
     dev = pick_device()

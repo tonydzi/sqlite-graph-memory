@@ -1,0 +1,32 @@
+name: What do you need? (feature request)
+description: Tell us what you tried to do with sqlite-graph-memory and what was missing.
+title: "need: "
+labels: ["feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Three short answers are enough. A rough one beats a polished one that never gets written.
+        This project collects no telemetry; this form is how we learn what you need.
+  - type: textarea
+    id: tried
+    attributes:
+      label: What were you trying to do?
+      description: Your notes, your agent, what you wanted back.
+    validations:
+      required: true
+  - type: textarea
+    id: broke
+    attributes:
+      label: What broke or was missing?
+      description: Error text, a wrong result, a feature you looked for and did not find.
+    validations:
+      required: true
+  - type: input
+    id: machine
+    attributes:
+      label: Machine
+      description: OS, chip (Apple Silicon / Intel / x86), Python version, how you installed.
+      placeholder: "macOS 15, Apple Silicon, Python 3.12, pip install sqlite-graph-memory"
+    validations:
+      required: true
