@@ -21,6 +21,6 @@ the indexer and the reranker will tell you what is missing instead of failing
 on an ``ImportError`` at startup.
 """
 
-__version__ = "0.3.2"
+__version__ = "0.3.3"
 
 __all__ = ["__version__"]

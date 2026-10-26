@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sqlite-graph-memory"
-version = "0.3.2"
+version = "0.3.3"
 description = "Associative memory for LLM agents: Graph RAG over a folder of markdown notes, in one SQLite file, with no server to run."
 readme = "README.md"
 requires-python = ">=3.9"

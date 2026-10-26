@@ -4,7 +4,7 @@ What shipped, in plain words. Entries below v0.1.3 were written on 2026-09-05 fr
 release notes that already existed — the file itself did not exist until then, so those three are
 recorded after the fact rather than backdated to look contemporaneous.
 
-## v0.3.2 — 2026-10-24
+## v0.3.3 — 2026-10-26
 
 **Hidden note files are skipped like hidden folders.** A note whose filename starts with a
 dot, such as `.ideas.md` or `.draft.md`, used to be indexed when it sat in the vault root or a
@@ -13,6 +13,20 @@ after re-indexing those notes stop showing up in answers. `BRAIN_INDEX_HIDDEN=1`
 the old behaviour and indexes hidden files and folders alike. `eval/build_gold.py` now walks the
 vault with the indexer's own filter, so it follows the same rule and the same variable instead
 of keeping its own copy (issue #25).
+
+**The MCP server works from a source checkout and finds your index where you launch it**
+(issue #24, reported by @Kaap10). `sgm-mcp` used to run the recall child with its working
+directory set to the package folder, so a relative `BRAIN_INDEX_DIR=index` resolved inside
+site-packages and your own index was never found; from a plain clone without `pip install -e`,
+`python src/sqlite_graph_memory/mcp_server.py --test` failed with ModuleNotFoundError. Recall now
+runs in the server's own working directory, and CI reproduces the user's launch: installed wheel,
+relative index, started from another directory.
+
+**A three-question feedback form.** "What were you trying to do, what broke, which machine": an
+issue template, a README section, and a link printed next to the missing-index error, because
+this project collects no telemetry and that form is how we learn what is missing.
+
+## v0.3.2 — 2026-10-24
 
 **The PageRank lane the README credits is now in the package** (#51). `ppr.py` runs
 personalized PageRank over the `[[wikilink]]` graph, seeded by the dense hits, and fuses it with

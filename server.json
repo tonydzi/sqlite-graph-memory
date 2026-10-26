@@ -7,19 +7,19 @@
     "url": "https://github.com/tonydzi/sqlite-graph-memory",
     "source": "github"
   },
-  "version": "0.3.2",
+  "version": "0.3.3",
   "packages": [
     {
       "registryType": "pypi",
       "registryBaseUrl": "https://pypi.org",
       "identifier": "sqlite-graph-memory",
-      "version": "0.3.2",
+      "version": "0.3.3",
       "runtimeHint": "uvx",
       "runtimeArguments": [
         {
           "type": "named",
           "name": "--with",
-          "value": "sqlite-graph-memory[embeddings]==0.3.2",
+          "value": "sqlite-graph-memory[embeddings]==0.3.3",
           "description": "Recall needs the embedding and reranker models; the base package leaves them out to stay small."
         }
       ],
