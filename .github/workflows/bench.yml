@@ -8,7 +8,8 @@ name: bench
 #   reproduce  downloads the two models and reruns sqlite-graph-memory on CPU from a
 #              clean index. The committed baseline must come out the same. Systems that
 #              need a local Ollama (marked `needs: ollama` in ci_reproduced.txt) rerun
-#              against a pinned Ollama service container, from their own venv.
+#              against a pinned Ollama container restricted to one CPU kernel, from their
+#              own venv.
 
 on:
   push:
@@ -36,11 +37,6 @@ jobs:
   reproduce:
     runs-on: ubuntu-latest
     needs: validate
-    services:
-      ollama:
-        # pinned by digest: the embeddings must come from the same server build every run
-        image: ollama/ollama:0.40.4@sha256:926d40fd6eeeebd346b5c358a63de2a10ec995371cd93dd22f1843200694b1a6
-        ports: ['11434:11434']
     env:
       MEM0_TELEMETRY: 'false'
       ANONYMIZED_TELEMETRY: 'false'
@@ -64,12 +60,24 @@ jobs:
           python -m venv /tmp/venv-ollama
           /tmp/venv-ollama/bin/python -m pip install --upgrade pip
           /tmp/venv-ollama/bin/python -m pip install -r bench/requirements-ollama.txt
-          # steps can start before the service listens: wait up to 60 s, then fail loudly
+          # Ollama pinned by digest, and with ONE CPU kernel. Left alone it picks the kernel by
+          # the runner's CPU (zen4 on one run, haswell on the next), and the two round the
+          # scores differently in the 4th decimal: 3-12 of 91 rankings moved between runs.
+          # haswell (AVX2) runs on every GitHub runner, so every run computes the same floats.
+          docker run -d --name ollama -p 11434:11434 --entrypoint /bin/sh \
+            ollama/ollama:0.40.4@sha256:926d40fd6eeeebd346b5c358a63de2a10ec995371cd93dd22f1843200694b1a6 \
+            -c 'cd /usr/lib/ollama && for f in libggml-cpu-*.so; do [ "$f" = libggml-cpu-haswell.so ] || rm -f "$f"; done; ls libggml-cpu-*.so; exec /bin/ollama serve'
+          # wait up to 60 s for it to listen, then fail loudly
           for i in $(seq 1 60); do curl -sf http://localhost:11434/api/version && break; sleep 1; done
           curl -sf http://localhost:11434/api/version
           curl -sf http://localhost:11434/api/pull -d '{"model":"nomic-embed-text:latest","stream":false}'
           # exactly this tag, exactly the digest the committed results were produced with
           curl -sf http://localhost:11434/api/tags | python -c "import sys,json; t=json.load(sys.stdin)['models']; d=[m['digest'] for m in t if m['name']=='nomic-embed-text:latest']; print(d); sys.exit(0 if d==['0a109f422b47e3a30ba2b10eca18548e944e8a23073ee3f3e947efcf3c45e59f'] else 1)"
+          # load the model once and prove which kernel computed it
+          curl -sf http://localhost:11434/api/embed -d '{"model":"nomic-embed-text:latest","input":["warm up"]}' > /dev/null
+          docker logs ollama 2>&1 | grep 'loaded CPU backend'
+          test "$(docker logs ollama 2>&1 | grep 'loaded CPU backend' | grep -vc 'libggml-cpu-haswell.so')" = 0
+          docker logs ollama 2>&1 | grep -q 'loaded CPU backend from /usr/lib/ollama/libggml-cpu-haswell.so'
       - name: every system in bench/ci_reproduced.txt reproduces
         # the same list decides the "CI-reproduced: yes" column, so the badge and the
         # rerun can never disagree. BM25 is rerun exactly in the validate job.
