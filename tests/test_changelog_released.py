@@ -19,7 +19,9 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-HEADER = re.compile(r"^## (v\d+\.\d+\.\d+)\b", re.M)
+# The version must end the token: "## v0.4.0-rc1" or "## v0.3.3.post1" is a different
+# section, not a second copy of v0.4.0 / v0.3.3.
+HEADER = re.compile(r"^## (v\d+\.\d+\.\d+)(?=[ \t]|$)", re.M)
 OVERRIDE = "<!-- edited after release:"
 
 
@@ -32,6 +34,9 @@ def sections(text):
         chunk = text[m.start():end]
         h = HEADER.match(chunk)
         if h:
+            if h.group(1) in out:
+                out.setdefault("__duplicates__", []).append(h.group(1))
+                continue
             # The header line itself may change: v0.3.1 was tagged as "v0.3.1 — unreleased"
             # and got its date afterwards. Only the body is frozen.
             out[h.group(1)] = chunk.split("\n", 1)[1].strip() if "\n" in chunk else ""
@@ -41,7 +46,7 @@ def sections(text):
 def frozen_violations(head_text, tagged_texts):
     """Versions whose released section changed. tagged_texts: {tag: CHANGELOG at that tag}."""
     head = sections(head_text)
-    bad = []
+    bad = [f"{v}: header appears twice" for v in head.pop("__duplicates__", [])]
     for tag, old_text in tagged_texts.items():
         then = sections(old_text).get(tag)
         now = head.get(tag)
@@ -55,7 +60,7 @@ def frozen_violations(head_text, tagged_texts):
 
 
 def _git(*args):
-    return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True)
+    return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True, encoding="utf-8")
 
 
 def test_released_sections_are_frozen():
@@ -65,11 +70,22 @@ def test_released_sections_are_frozen():
             pytest.fail("no version tags in the checkout: CI must fetch tags (fetch-depth: 0), "
                         "otherwise this guard is blind")
         pytest.skip("no version tags in this checkout")
-    tagged = {}
+    tagged, unreadable = {}, []
     for t in tags:
+        # ls-tree tells "the file did not exist at this tag" (pre-2026-09-05 history, a
+        # legitimate skip) apart from "git could not read it" (a blind guard, a failure).
+        listed = _git("ls-tree", "--name-only", t, "--", "CHANGELOG.md")
+        if listed.returncode != 0:
+            unreadable.append(f"{t}: {listed.stderr.strip()[:120]}")
+            continue
+        if not listed.stdout.strip():
+            continue
         r = _git("show", f"{t}:CHANGELOG.md")
-        if r.returncode == 0:
-            tagged[t] = r.stdout
+        if r.returncode != 0:
+            unreadable.append(f"{t}: {r.stderr.strip()[:120]}")
+            continue
+        tagged[t] = r.stdout
+    assert not unreadable, "could not read CHANGELOG.md at these tags, the guard would be blind:\n  " + "\n  ".join(unreadable)
     head_text = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
     bad = frozen_violations(head_text, tagged)
     assert not bad, ("released CHANGELOG sections must not change; put new entries under an "
@@ -98,3 +114,33 @@ def test_release_date_filled_in_after_tag_is_fine():
 def test_marked_edit_is_allowed():
     head = OLD.replace("PPR lane.", "PPR lane (link fixed).\n<!-- edited after release: dead link -->")
     assert frozen_violations(head, {"v0.3.2": OLD}) == []
+
+
+def test_unreadable_tag_fails_instead_of_skipping():
+    calls = {"_git": _git}
+
+    def broken(*args):
+        if args[0] == "tag":
+            return subprocess.CompletedProcess(args, 0, "v0.3.2\n", "")
+        return subprocess.CompletedProcess(args, 128, "", "fatal: bad object v0.3.2")
+
+    globals()["_git"] = broken
+    try:
+        try:
+            test_released_sections_are_frozen()
+        except AssertionError as e:
+            assert "could not read" in str(e)
+        else:
+            raise AssertionError("an unreadable tag must fail the guard")
+    finally:
+        globals()["_git"] = calls["_git"]
+
+
+def test_prerelease_header_is_its_own_section():
+    head = OLD + "\n## v0.3.2-rc1\n\nCandidate notes kept below the release.\n"
+    assert frozen_violations(head, {"v0.3.2": OLD}) == []
+
+
+def test_duplicate_header_is_caught():
+    head = OLD + "\n## v0.3.2 — copy\n\nAnother body.\n"
+    assert frozen_violations(head, {"v0.3.2": OLD}) == ["v0.3.2: header appears twice"]
