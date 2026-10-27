@@ -1,0 +1,10 @@
+# The adapters that need a local Ollama (fidelis, mem0-local). Pinned to the versions the
+# committed results were produced with. Install into a separate venv: numpy 2.x here does
+# not belong next to the torch 2.4.1 stack of requirements.txt.
+#   ollama/ollama:0.40.4 serving nomic-embed-text (digest 0a109f422b47)
+fidelis-memory[hybrid]==0.2.0
+mem0ai==2.2.1
+chromadb==1.5.9
+qdrant-client==1.20.0
+bm25s==0.3.15
+ollama==0.6.3

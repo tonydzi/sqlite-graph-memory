@@ -86,3 +86,25 @@ def test_adapter_named_after_installed_package_is_refused(tmp_path):
     finally:
         sys.path.remove(str(tmp_path))
     assert all(run.shadowed_package(p) is None for p in (ROOT / 'bench' / 'adapters').glob('*.py'))
+
+
+def test_ci_needs_picks_only_marked_systems(tmp_path):
+    """The workflow chooses the interpreter per system from `needs:` notes; the badge ignores them."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('bench_ci_needs', ROOT / 'bench' / 'ci_needs.py')
+    cn = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(cn)
+    f = tmp_path / 'list.txt'
+    f.write_text('# header, needs: ollama is only prose here\n'
+                 'bm25\n'
+                 'fidelis   # needs: ollama\n'
+                 'both      # needs: torch, ollama\n'
+                 'other     # needs: torch\n'
+                 'prose     # not a needs: ollama line\n', encoding='utf-8')
+    assert cn.needing('ollama', f) == ['fidelis', 'both']
+    assert cn.needing('torch', f) == ['both', 'other']
+    assert cn.needing('gpu', f) == []
+    # the live list: the two Ollama systems are marked, and both carry the badge
+    live = set(cn.needing('ollama'))
+    assert live == {'fidelis', 'mem0-local'}
+    assert live <= bc.ci_reproduced()

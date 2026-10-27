@@ -6,7 +6,9 @@ name: bench
 #              exactly what leaderboard.py generates. Forgeries are proved to fail
 #              (--selftest), and the no-model BM25 row is rerun and must match exactly.
 #   reproduce  downloads the two models and reruns sqlite-graph-memory on CPU from a
-#              clean index. The committed baseline must come out the same.
+#              clean index. The committed baseline must come out the same. Systems that
+#              need a local Ollama (marked `needs: ollama` in ci_reproduced.txt) rerun
+#              against a pinned Ollama service container, from their own venv.
 
 on:
   push:
@@ -34,6 +36,14 @@ jobs:
   reproduce:
     runs-on: ubuntu-latest
     needs: validate
+    services:
+      ollama:
+        # pinned by digest: the embeddings must come from the same server build every run
+        image: ollama/ollama:0.40.4@sha256:926d40fd6eeeebd346b5c358a63de2a10ec995371cd93dd22f1843200694b1a6
+        ports: ['11434:11434']
+    env:
+      MEM0_TELEMETRY: 'false'
+      ANONYMIZED_TELEMETRY: 'false'
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
@@ -48,6 +58,18 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install torch==2.4.1 --index-url https://download.pytorch.org/whl/cpu
           python -m pip install -r bench/requirements.txt
+      - name: install the Ollama adapters (own venv) and pull the pinned embedding model
+        run: |
+          set -e
+          python -m venv /tmp/venv-ollama
+          /tmp/venv-ollama/bin/python -m pip install --upgrade pip
+          /tmp/venv-ollama/bin/python -m pip install -r bench/requirements-ollama.txt
+          # steps can start before the service listens: wait up to 60 s, then fail loudly
+          for i in $(seq 1 60); do curl -sf http://localhost:11434/api/version && break; sleep 1; done
+          curl -sf http://localhost:11434/api/version
+          curl -sf http://localhost:11434/api/pull -d '{"model":"nomic-embed-text:latest","stream":false}'
+          # exactly this tag, exactly the digest the committed results were produced with
+          curl -sf http://localhost:11434/api/tags | python -c "import sys,json; t=json.load(sys.stdin)['models']; d=[m['digest'] for m in t if m['name']=='nomic-embed-text:latest']; print(d); sys.exit(0 if d==['0a109f422b47e3a30ba2b10eca18548e944e8a23073ee3f3e947efcf3c45e59f'] else 1)"
       - name: every system in bench/ci_reproduced.txt reproduces
         # the same list decides the "CI-reproduced: yes" column, so the badge and the
         # rerun can never disagree. BM25 is rerun exactly in the validate job.
@@ -58,9 +80,13 @@ jobs:
           # would go green having rerun nothing.
           list=$(python -c "import sys; sys.path.insert(0, 'bench'); import bench_core as b; print(' '.join(sorted(b.ci_reproduced() - {'bm25'})))")
           test -n "$list" || { echo "::error::no neural system listed in bench/ci_reproduced.txt"; exit 1; }
+          # systems whose line in ci_reproduced.txt says `needs: ollama` run from the Ollama venv
+          ollama_list=$(python bench/ci_needs.py ollama)
           n=0
           for s in $list; do
-            python bench/validate.py --reproduce "$s" --tolerance 0.02
+            py=python
+            case " $ollama_list " in *" $s "*) py=/tmp/venv-ollama/bin/python ;; esac
+            $py bench/validate.py --reproduce "$s" --tolerance 0.02
             n=$((n+1))
           done
           echo "reran $n system(s): $list"

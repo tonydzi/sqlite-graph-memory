@@ -5,3 +5,5 @@ sqlite-graph-memory
 sqlite-graph-memory-vector
 sqlite-fts5
 second-brain   # git clone at a pinned commit, stdlib only
+fidelis        # needs: ollama (service container in the reproduce job)
+mem0-local     # needs: ollama (service container in the reproduce job)
