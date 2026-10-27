@@ -158,8 +158,11 @@ def reproduce(system, tol):
         new = json.loads(out.read_text(encoding='utf-8'))
         keep = os.environ.get('BENCH_KEEP_RERUNS')   # CI uploads these, so a failed rerun can be diffed
         if keep:
-            Path(keep).mkdir(parents=True, exist_ok=True)
-            shutil.copy(str(out), str(Path(keep) / out.name))
+            try:   # diagnostics only: a copy that fails must not change the verdict
+                Path(keep).mkdir(parents=True, exist_ok=True)
+                shutil.copy(str(out), str(Path(keep) / out.name))
+            except OSError as e:
+                print('warn could not keep the rerun in %s: %s' % (keep, e))
     worst, diffs = 0.0, []
     for scope, m in [('overall', old['metrics']['overall'])] + [('by_class.' + c, mm) for c, mm in old['metrics']['by_class'].items()]:
         nm = new['metrics']['overall'] if scope == 'overall' else new['metrics']['by_class'][scope.split('.', 1)[1]]
@@ -184,7 +187,8 @@ def reproduce(system, tol):
     diff_ids = sorted(i for i in olds.keys() | news.keys()
                       if i not in olds or i not in news or key(olds[i]) != key(news[i]))
     if diff_ids:
-        print('    changed questions: ' + ' '.join(diff_ids[:30]))
+        more = ' (+%d more)' % (len(diff_ids) - 30) if len(diff_ids) > 30 else ''
+        print('    changed questions: ' + ' '.join(diff_ids[:30]) + more)
     print('reproduce %s: worst metric drift %.4f (tolerance %.4f); %d/%d questions changed (max %d)'
           % (system, worst, tol, changed, len(new['per_question']), MAX_CHANGED))
     for d in diffs[:15]:

@@ -7,7 +7,7 @@ Synthetic vault: 202 notes · 91 questions (69 answerable, 22 with no answer in 
 | system | R@5 | R@10 | answer | verbatim cite | faithful quotes | abstains when absent | false abstain ↓ | CI-reproduced | by |
 |---|---:|---:|---:|---:|---:|---:|---:|:---:|---|
 | [sqlite-graph-memory-vector](https://github.com/tonydzi/sqlite-graph-memory) `0.3.0` | 0.88 | 0.92 | 0.33 | 0.33 | 1.00 | 0.45 | 0.26 | yes | tonydzi |
-| [mem0-local](https://github.com/mem0ai/mem0) `2.2.1` | 0.87 | 0.93 | 0.36 | 0.36 | 1.00 | 0.14 | 0.13 | yes | tonydzi |
+| [mem0-local](https://github.com/mem0ai/mem0) `2.2.1` | 0.87 | 0.92 | 0.36 | 0.36 | 1.00 | 0.14 | 0.13 | yes | tonydzi |
 | [fidelis](https://github.com/hermes-labs-ai/fidelis) `0.2.0` | 0.86 | 0.93 | 0.42 | 0.42 | 1.00 | 0.18 | 0.16 | yes | tonydzi |
 | [sqlite-graph-memory](https://github.com/tonydzi/sqlite-graph-memory) `0.3.0` | 0.85 | 0.91 | 0.33 | 0.33 | 1.00 | 0.45 | 0.26 | yes | tonydzi |
 | [bm25](https://en.wikipedia.org/wiki/Okapi_BM25) `reference` | 0.77 | 0.79 | 0.42 | 0.42 | 1.00 | 0.36 | 0.04 | yes | tonydzi |
@@ -41,8 +41,8 @@ Synthetic vault: 202 notes · 91 questions (69 answerable, 22 with no answer in 
 ## Notes from the submitters
 
 - **sqlite-graph-memory-vector** — Our own system, vector-only. Ranks ahead of graph mode on this vault (graph helps bridge, hurts paraphrase). Same answer-side weaknesses as graph mode.
-- **mem0-local** — mem0 2.x local: Ollama nomic-embed-text, embedded Qdrant, infer=False so notes are stored verbatim (extraction on would rewrite them). Pure dense search, no abstention rule. CI reruns it against a pinned Ollama container.
-- **fidelis** — fidelis-memory 0.2.0 zero_llm tier, BM25+dense+RRF with the hybrid extra on, Ollama nomic-embed-text, notes stored verbatim, embeddings memoized by the adapter (same vectors). No abstention rule at this tier. CI reruns it against a pinned Ollama container.
+- **mem0-local** — mem0 2.x local: Ollama nomic-embed-text, embedded Qdrant, infer=False so notes are stored verbatim (extraction on would rewrite them). Pure dense search, no abstention rule. Produced and rerun in CI on Linux against a pinned Ollama container (macOS gives the same answers, R@10 0.93 there).
+- **fidelis** — fidelis-memory 0.2.0 zero_llm tier, BM25+dense+RRF with the hybrid extra on, Ollama nomic-embed-text, notes stored verbatim, embeddings memoized by the adapter (same vectors). No abstention rule at this tier. Produced and rerun in CI on Linux against a pinned Ollama container (macOS gives the same answers, a few rank-8-to-10 swaps).
 - **sqlite-graph-memory** — Our own system, graph mode. Answers come from a simple extractor, not an LLM. Weakest spots: cites the superseded decision on 6/6 current-deadline questions; abstains on all 16 paraphrase questions, including the ones it retrieved; answers 55% of absent-fact questions anyway.
 - **bm25** — Keyword search with no model and an extractive answer: the floor every other row has to clear. Wins on names, scores 0.00 on paraphrase.
 - **second-brain** — Run from a clone at a pinned commit (not on PyPI). Raw questions are an FTS5 syntax error in SecondBrain.search(), so the adapter quotes and OR-joins the words. Pure FTS5 ranking, no entity check: answers all 22 absent questions.
