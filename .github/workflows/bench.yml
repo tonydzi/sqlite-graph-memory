@@ -82,11 +82,22 @@ jobs:
           test -n "$list" || { echo "::error::no neural system listed in bench/ci_reproduced.txt"; exit 1; }
           # systems whose line in ci_reproduced.txt says `needs: ollama` run from the Ollama venv
           ollama_list=$(python bench/ci_needs.py ollama)
-          n=0
+          n=0; failed=""
           for s in $list; do
             py=python
             case " $ollama_list " in *" $s "*) py=/tmp/venv-ollama/bin/python ;; esac
-            $py bench/validate.py --reproduce "$s" --tolerance 0.02
+            # every system runs even after a failure, so one red row does not hide the others
+            $py bench/validate.py --reproduce "$s" --tolerance 0.02 || failed="$failed $s"
             n=$((n+1))
           done
           echo "reran $n system(s): $list"
+          test -z "$failed" || { echo "::error::did not reproduce:$failed"; exit 1; }
+        env:
+          BENCH_KEEP_RERUNS: ${{ runner.temp }}/reruns
+      - name: keep the reruns for diffing
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: bench-reruns
+          path: ${{ runner.temp }}/reruns
+          if-no-files-found: ignore

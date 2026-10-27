@@ -21,6 +21,8 @@ result says whether CI reproduced it (`reproduce.in_ci`), and the board shows it
 import argparse
 import copy
 import json
+import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -154,6 +156,10 @@ def reproduce(system, tol):
         out = Path(td) / ('%s.json' % system)
         subprocess.run([sys.executable, str(HERE / 'run.py'), '--system', system, '--out', str(out)], check=True)
         new = json.loads(out.read_text(encoding='utf-8'))
+        keep = os.environ.get('BENCH_KEEP_RERUNS')   # CI uploads these, so a failed rerun can be diffed
+        if keep:
+            Path(keep).mkdir(parents=True, exist_ok=True)
+            shutil.copy(str(out), str(Path(keep) / out.name))
     worst, diffs = 0.0, []
     for scope, m in [('overall', old['metrics']['overall'])] + [('by_class.' + c, mm) for c, mm in old['metrics']['by_class'].items()]:
         nm = new['metrics']['overall'] if scope == 'overall' else new['metrics']['by_class'][scope.split('.', 1)[1]]
@@ -175,6 +181,10 @@ def reproduce(system, tol):
     news = {o['id']: o for o in new['per_question']}
     changed = sum(1 for i in olds.keys() | news.keys()
                   if i not in olds or i not in news or key(olds[i]) != key(news[i]))
+    diff_ids = sorted(i for i in olds.keys() | news.keys()
+                      if i not in olds or i not in news or key(olds[i]) != key(news[i]))
+    if diff_ids:
+        print('    changed questions: ' + ' '.join(diff_ids[:30]))
     print('reproduce %s: worst metric drift %.4f (tolerance %.4f); %d/%d questions changed (max %d)'
           % (system, worst, tol, changed, len(new['per_question']), MAX_CHANGED))
     for d in diffs[:15]:
