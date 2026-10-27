@@ -1,0 +1,3123 @@
+{
+ "schema": "memory-bench/result@1",
+ "bench_version": "0.1",
+ "system": {
+  "name": "sqlite-fts5",
+  "version": "reference",
+  "url": "https://www.sqlite.org/fts5.html",
+  "adapter": "bench/adapters/sqlite_fts5.py",
+  "config": {
+   "sqlite": "3.45.3",
+   "tokenizer": "unicode61 (FTS5 default)",
+   "rank": "bm25() (FTS5 default)",
+   "unit": "whole note",
+   "query": "every question word quoted, OR-joined",
+   "answer": "extractive: best-overlap sentence of top-3 notes",
+   "abstain": "no hit, or no sentence shares a content word"
+  }
+ },
+ "submitted_by": "tonydzi",
+ "date": "2026-10-27",
+ "vault_sha256": "f1b3cda731a93640fe2762aa9335e44059d2bb9c1e164593314c190aa42b8528",
+ "questions_sha256": "e203f965c33bfa94b05f8230d68661dad475dea416c6ebdf90194aad5604cd75",
+ "reproduce": {
+  "in_ci": true,
+  "command": "python bench/run.py --system sqlite-fts5"
+ },
+ "runtime": {
+  "setup_sec": 0.0,
+  "sec_per_question": 0.001,
+  "python": "3.13.0"
+ },
+ "notes": "FTS5 as shipped: SQLite's own bm25() rank over whole notes, question words OR-joined. No entity check, so it answers all 22 absent questions. Ties second-brain on every metric.",
+ "metrics": {
+  "overall": {
+   "n": 91,
+   "n_answerable": 69,
+   "n_unanswerable": 22,
+   "recall@5": 0.7609,
+   "recall@10": 0.7609,
+   "answer_acc": 0.4203,
+   "citation_verbatim": 0.4203,
+   "citation_faithful": 1.0,
+   "abstain_correct": 0.0,
+   "false_abstain": 0.0435
+  },
+  "by_class": {
+   "absent_attribute": {
+    "n": 12,
+    "n_answerable": 0,
+    "n_unanswerable": 12,
+    "recall@5": null,
+    "recall@10": null,
+    "answer_acc": null,
+    "citation_verbatim": null,
+    "citation_faithful": 1.0,
+    "abstain_correct": 0.0,
+    "false_abstain": null
+   },
+   "absent_entity": {
+    "n": 10,
+    "n_answerable": 0,
+    "n_unanswerable": 10,
+    "recall@5": null,
+    "recall@10": null,
+    "answer_acc": null,
+    "citation_verbatim": null,
+    "citation_faithful": 1.0,
+    "abstain_correct": 0.0,
+    "false_abstain": null
+   },
+   "bridge": {
+    "n": 15,
+    "n_answerable": 15,
+    "n_unanswerable": 0,
+    "recall@5": 0.9667,
+    "recall@10": 0.9667,
+    "answer_acc": 0.1333,
+    "citation_verbatim": 0.1333,
+    "citation_faithful": 1.0,
+    "abstain_correct": null,
+    "false_abstain": 0.0
+   },
+   "fact": {
+    "n": 28,
+    "n_answerable": 28,
+    "n_unanswerable": 0,
+    "recall@5": 1.0,
+    "recall@10": 1.0,
+    "answer_acc": 0.6071,
+    "citation_verbatim": 0.6071,
+    "citation_faithful": 1.0,
+    "abstain_correct": null,
+    "false_abstain": 0.0
+   },
+   "paraphrase": {
+    "n": 10,
+    "n_answerable": 10,
+    "n_unanswerable": 0,
+    "recall@5": 0.0,
+    "recall@10": 0.0,
+    "answer_acc": 0.0,
+    "citation_verbatim": 0.0,
+    "citation_faithful": 1.0,
+    "abstain_correct": null,
+    "false_abstain": 0.2
+   },
+   "paraphrase_bridge": {
+    "n": 6,
+    "n_answerable": 6,
+    "n_unanswerable": 0,
+    "recall@5": 0.0,
+    "recall@10": 0.0,
+    "answer_acc": 0.0,
+    "citation_verbatim": 0.0,
+    "citation_faithful": 1.0,
+    "abstain_correct": null,
+    "false_abstain": 0.1667
+   },
+   "temporal": {
+    "n": 10,
+    "n_answerable": 10,
+    "n_unanswerable": 0,
+    "recall@5": 1.0,
+    "recall@10": 1.0,
+    "answer_acc": 1.0,
+    "citation_verbatim": 1.0,
+    "citation_faithful": 1.0,
+    "abstain_correct": null,
+    "false_abstain": 0.0
+   }
+  }
+ },
+ "per_question": [
+  {
+   "id": "q001",
+   "retrieved": [
+    "person-rurik-pellegrin",
+    "team-willowherb",
+    "project-bittern",
+    "meeting-2025-11-14-willowherb-sync",
+    "meeting-2025-06-21-willowherb-sync",
+    "person-severin-ibarrondo",
+    "person-rurik-kalvaitis",
+    "team-granite",
+    "concept-idempotent-writes",
+    "project-redshank",
+    "person-elodie-pellegrin",
+    "meeting-2025-11-24-granite-sync",
+    "person-tomas-pellegrin",
+    "meeting-2025-10-21-granite-sync",
+    "person-talia-lindqvist",
+    "meeting-2025-06-10-cinder-sync",
+    "decision-2025-05-10-osprey-deadline",
+    "decision-2025-12-01-osprey-deadline",
+    "meeting-2025-12-08-cinder-sync",
+    "person-ottilie-strandberg"
+   ],
+   "answer": "Rurik Pellegrin works as a hardware technician on the Willowherb team.",
+   "citations": [
+    {
+     "note": "person-rurik-pellegrin",
+     "quote": "Rurik Pellegrin works as a hardware technician on the Willowherb team."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q002",
+   "retrieved": [
+    "project-redshank",
+    "person-ines-rautio",
+    "meeting-2025-02-13-saltmarsh-sync",
+    "meeting-2025-07-06-saltmarsh-sync",
+    "person-mirela-rautio",
+    "meeting-2025-02-02-saltmarsh-sync",
+    "person-oskar-rautio",
+    "person-elodie-ibarrondo",
+    "team-saltmarsh",
+    "meeting-2025-07-22-saltmarsh-sync",
+    "person-ines-wexley",
+    "project-bittern",
+    "concept-idempotent-writes",
+    "project-osprey",
+    "meeting-2025-12-23-ironbark-sync",
+    "person-severin-rautio",
+    "team-ironbark",
+    "meeting-2025-10-06-foxglove-sync",
+    "meeting-2025-05-21-foxglove-sync",
+    "meeting-2025-10-03-foxglove-sync"
+   ],
+   "answer": "Project Redshank is led by Ines Rautio.",
+   "citations": [
+    {
+     "note": "project-redshank",
+     "quote": "Project Redshank is led by Ines Rautio."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q003",
+   "retrieved": [
+    "person-bastian-marchetti",
+    "meeting-2025-04-27-bramble-sync",
+    "person-saskia-brannock",
+    "person-tomas-pellegrin",
+    "project-siskin",
+    "meeting-2025-01-11-meridian-sync",
+    "person-oskar-vestergaard",
+    "team-bramble",
+    "person-ottilie-brannock",
+    "person-brisa-brannock",
+    "decision-2025-04-11-dunlin-deadline",
+    "decision-2025-09-16-dunlin-deadline",
+    "meeting-2025-06-27-bramble-sync",
+    "meeting-2025-02-14-bramble-sync",
+    "meeting-2025-10-21-granite-sync",
+    "person-saskia-okafor-lind",
+    "person-ilsa-thorsby",
+    "person-anselm-tamberlane",
+    "person-ulrik-oyelaran",
+    "person-corvin-carrow"
+   ],
+   "answer": "Bastian Marchetti was mentored by Saskia Brannock.",
+   "citations": [
+    {
+     "note": "person-bastian-marchetti",
+     "quote": "Bastian Marchetti was mentored by Saskia Brannock."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q004",
+   "retrieved": [
+    "person-anselm-asturias",
+    "project-whimbrel",
+    "person-ulrik-asturias",
+    "decision-2025-03-06-gannet-deadline",
+    "decision-2025-04-26-bittern-deadline",
+    "decision-2025-06-17-curlew-deadline",
+    "team-saltmarsh",
+    "decision-2025-07-20-gannet-deadline",
+    "decision-2025-08-01-curlew-deadline",
+    "decision-2025-09-12-bittern-deadline",
+    "meeting-2025-08-25-tidewater-sync",
+    "meeting-2025-02-13-saltmarsh-sync",
+    "person-joran-tamberlane",
+    "team-tidewater",
+    "meeting-2025-12-16-tidewater-sync",
+    "project-bittern",
+    "person-emeric-moravec",
+    "concept-idempotent-writes",
+    "project-redshank",
+    "person-anselm-tamberlane"
+   ],
+   "answer": "Anselm Asturias works as a program manager on the Tidewater team.",
+   "citations": [
+    {
+     "note": "person-anselm-asturias",
+     "quote": "Anselm Asturias works as a program manager on the Tidewater team."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q005",
+   "retrieved": [
+    "person-bastian-marchetti",
+    "person-yara-thorsby",
+    "project-plover",
+    "person-marit-marchetti",
+    "person-mirela-marchetti",
+    "meeting-2025-05-17-granite-sync",
+    "meeting-2025-01-11-meridian-sync",
+    "team-meridian",
+    "meeting-2025-07-15-meridian-sync",
+    "person-brisa-brannock",
+    "meeting-2025-04-27-bramble-sync",
+    "meeting-2025-11-24-granite-sync",
+    "decision-2025-02-08-plover-deadline",
+    "decision-2025-12-14-plover-deadline",
+    "decision-2025-06-09-kestrel-deadline",
+    "decision-2025-10-26-kestrel-deadline",
+    "person-anselm-tamberlane",
+    "person-ulrik-oyelaran",
+    "person-corvin-carrow",
+    "person-ilsa-wexley"
+   ],
+   "answer": "Bastian Marchetti works as a technical writer on the Meridian team.",
+   "citations": [
+    {
+     "note": "person-bastian-marchetti",
+     "quote": "Bastian Marchetti works as a technical writer on the Meridian team."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q006",
+   "retrieved": [
+    "person-oskar-rautio",
+    "meeting-2025-10-06-foxglove-sync",
+    "meeting-2025-05-21-foxglove-sync",
+    "meeting-2025-10-03-foxglove-sync",
+    "team-foxglove",
+    "person-greta-oyelaran",
+    "decision-2025-03-06-gannet-deadline",
+    "decision-2025-07-20-gannet-deadline",
+    "concept-observability-budget",
+    "concept-backpressure",
+    "person-oskar-vestergaard",
+    "concept-data-lineage",
+    "person-mirela-rautio",
+    "person-ines-rautio",
+    "person-severin-rautio",
+    "meeting-2025-07-20-willowherb-sync",
+    "person-ulrik-asturias",
+    "meeting-2025-05-16-foxglove-sync",
+    "project-dunlin",
+    "meeting-2025-11-14-willowherb-sync"
+   ],
+   "answer": "Oskar Rautio grew up in Port Varen.",
+   "citations": [
+    {
+     "note": "person-oskar-rautio",
+     "quote": "Oskar Rautio grew up in Port Varen."
+    }
+   ],
+   "sec": 0.0
+  },
+  {
+   "id": "q007",
+   "retrieved": [
+    "person-talia-wexley",
+    "team-tidewater",
+    "project-kestrel",
+    "person-ines-rautio",
+    "decision-2025-05-06-merlin-deadline",
+    "decision-2025-12-17-merlin-deadline",
+    "meeting-2025-08-04-tidewater-sync",
+    "meeting-2025-08-25-tidewater-sync",
+    "meeting-2025-03-09-tidewater-sync",
+    "meeting-2025-12-16-tidewater-sync",
+    "person-talia-lindqvist",
+    "concept-observability-budget",
+    "concept-backpressure",
+    "person-ines-wexley",
+    "person-ilsa-wexley",
+    "concept-data-lineage",
+    "meeting-2025-07-20-willowherb-sync",
+    "meeting-2025-07-08-willowherb-sync",
+    "meeting-2025-12-23-ironbark-sync",
+    "team-willowherb"
+   ],
+   "answer": "Talia Wexley grew up in Tamsin Ford.",
+   "citations": [
+    {
+     "note": "person-talia-wexley",
+     "quote": "Talia Wexley grew up in Tamsin Ford."
+    }
+   ],
+   "sec": 0.0
+  },
+  {
+   "id": "q008",
+   "retrieved": [
+    "person-severin-ibarrondo",
+    "team-cinder",
+    "decision-2025-04-26-bittern-deadline",
+    "meeting-2025-11-09-cinder-sync",
+    "project-ouzel",
+    "decision-2025-09-12-bittern-deadline",
+    "meeting-2025-12-08-cinder-sync",
+    "meeting-2025-04-24-cinder-sync",
+    "project-bittern",
+    "person-severin-rautio",
+    "concept-idempotent-writes",
+    "project-redshank",
+    "person-brisa-ibarrondo",
+    "person-elodie-ibarrondo",
+    "project-garganey",
+    "meeting-2025-05-24-meridian-sync",
+    "team-lighthouse",
+    "meeting-2025-07-22-meridian-sync",
+    "project-nightjar",
+    "decision-2025-02-07-heron-deadline"
+   ],
+   "answer": "Severin Ibarrondo works as a statistician on the Cinder team.",
+   "citations": [
+    {
+     "note": "person-severin-ibarrondo",
+     "quote": "Severin Ibarrondo works as a statistician on the Cinder team."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q009",
+   "retrieved": [
+    "tool-sextantix",
+    "person-brisa-brannock",
+    "project-godwit",
+    "meeting-2025-10-06-foxglove-sync",
+    "meeting-2025-05-16-foxglove-sync",
+    "team-foxglove",
+    "person-vesna-thorsby",
+    "meeting-2025-10-03-foxglove-sync",
+    "concept-blameless-review",
+    "person-linnea-kalvaitis",
+    "person-corvin-strandberg",
+    "person-ottilie-brannock",
+    "person-mirela-rautio",
+    "person-ulrik-asturias",
+    "person-oskar-rautio",
+    "person-emeric-moravec",
+    "person-ilsa-thorsby",
+    "person-mirela-marchetti",
+    "tool-brindlewood",
+    "tool-fathomer"
+   ],
+   "answer": "The current release of Sextantix is version 9.7.7.",
+   "citations": [
+    {
+     "note": "tool-sextantix",
+     "quote": "The current release of Sextantix is version 9.7.7."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q010",
+   "retrieved": [
+    "tool-brindlewood",
+    "concept-idempotent-writes",
+    "person-linnea-kalvaitis",
+    "project-skua",
+    "person-ottilie-strandberg",
+    "person-talia-lindqvist",
+    "meeting-2025-07-15-meridian-sync",
+    "team-meridian",
+    "project-redshank",
+    "tool-fathomer",
+    "tool-ferrodb",
+    "tool-gristmill",
+    "tool-harrowby",
+    "tool-kilnworth",
+    "tool-lanternfish",
+    "tool-orreryx",
+    "tool-pennantry",
+    "tool-quillmark",
+    "tool-sextantix",
+    "tool-siltcore"
+   ],
+   "answer": "Brindlewood is written in Erlang.",
+   "citations": [
+    {
+     "note": "tool-brindlewood",
+     "quote": "Brindlewood is written in Erlang."
+    }
+   ],
+   "sec": 0.0
+  },
+  {
+   "id": "q011",
+   "retrieved": [
+    "tool-wickline",
+    "meeting-2025-12-08-cinder-sync",
+    "meeting-2025-06-10-cinder-sync",
+    "project-siskin",
+    "person-tomas-pellegrin",
+    "team-cinder",
+    "concept-blameless-review",
+    "person-linnea-kalvaitis",
+    "person-corvin-strandberg",
+    "person-ottilie-brannock",
+    "person-mirela-rautio",
+    "person-ulrik-asturias",
+    "person-brisa-brannock",
+    "person-oskar-rautio",
+    "person-emeric-moravec",
+    "person-ilsa-thorsby",
+    "person-mirela-marchetti",
+    "tool-brindlewood",
+    "tool-fathomer",
+    "tool-ferrodb"
+   ],
+   "answer": "The current release of Wickline is version 3.4.1.",
+   "citations": [
+    {
+     "note": "tool-wickline",
+     "quote": "The current release of Wickline is version 3.4.1."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q012",
+   "retrieved": [
+    "project-redshank",
+    "tool-mosscache",
+    "concept-idempotent-writes",
+    "meeting-2025-05-12-lighthouse-sync",
+    "project-heron",
+    "meeting-2025-10-21-lighthouse-sync",
+    "team-lighthouse",
+    "meeting-2025-12-05-lighthouse-sync",
+    "person-severin-ibarrondo",
+    "tool-brindlewood",
+    "tool-fathomer",
+    "tool-ferrodb",
+    "tool-gristmill",
+    "tool-harrowby",
+    "tool-kilnworth",
+    "tool-lanternfish",
+    "tool-orreryx",
+    "tool-pennantry",
+    "tool-quillmark",
+    "tool-sextantix"
+   ],
+   "answer": "Project Redshank is built on Mosscache.",
+   "citations": [
+    {
+     "note": "project-redshank",
+     "quote": "Project Redshank is built on Mosscache."
+    }
+   ],
+   "sec": 0.0
+  },
+  {
+   "id": "q013",
+   "retrieved": [
+    "tool-ferrodb",
+    "project-linnet",
+    "meeting-2025-11-14-willowherb-sync",
+    "person-brisa-ibarrondo",
+    "meeting-2025-07-08-willowherb-sync",
+    "team-willowherb",
+    "person-petra-fennimore",
+    "concept-blameless-review",
+    "person-linnea-kalvaitis",
+    "person-corvin-strandberg",
+    "person-ottilie-brannock",
+    "person-mirela-rautio",
+    "person-ulrik-asturias",
+    "person-brisa-brannock",
+    "person-oskar-rautio",
+    "person-emeric-moravec",
+    "person-ilsa-thorsby",
+    "person-mirela-marchetti",
+    "tool-brindlewood",
+    "tool-fathomer"
+   ],
+   "answer": "The current release of Ferrodb is version 6.7.6.",
+   "citations": [
+    {
+     "note": "tool-ferrodb",
+     "quote": "The current release of Ferrodb is version 6.7.6."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q014",
+   "retrieved": [
+    "tool-siltcore",
+    "person-emeric-moravec",
+    "project-avocet",
+    "person-greta-oyelaran",
+    "team-granite",
+    "person-ines-rautio",
+    "person-saskia-brannock",
+    "concept-blameless-review",
+    "person-linnea-kalvaitis",
+    "person-corvin-strandberg",
+    "person-ottilie-brannock",
+    "person-mirela-rautio",
+    "person-ulrik-asturias",
+    "person-brisa-brannock",
+    "person-oskar-rautio",
+    "person-ilsa-thorsby",
+    "person-mirela-marchetti",
+    "tool-brindlewood",
+    "tool-fathomer",
+    "tool-ferrodb"
+   ],
+   "answer": "The current release of Siltcore is version 1.2.3.",
+   "citations": [
+    {
+     "note": "tool-siltcore",
+     "quote": "The current release of Siltcore is version 1.2.3."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q015",
+   "retrieved": [
+    "concept-blameless-review",
+    "project-siskin",
+    "decision-2025-11-11-siskin-budget",
+    "tool-wickline",
+    "concept-schema-evolution",
+    "concept-cold-start-caching",
+    "meeting-2025-05-24-meridian-sync",
+    "meeting-2025-11-24-granite-sync",
+    "meeting-2025-10-21-ironbark-sync",
+    "meeting-2025-07-15-meridian-sync",
+    "person-saskia-brannock",
+    "home",
+    "tool-cobbleset",
+    "tool-corvex",
+    "tool-loamstack",
+    "tool-mosscache",
+    "tool-thimblerig",
+    "project-dunlin",
+    "project-smew",
+    "tool-brindlewood"
+   ],
+   "answer": "The goal of Project Siskin is to route night-shift alerts to the right on-call person.",
+   "citations": [
+    {
+     "note": "project-siskin",
+     "quote": "The goal of Project Siskin is to route night-shift alerts to the right on-call person."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q016",
+   "retrieved": [
+    "concept-blameless-review",
+    "project-dunlin",
+    "decision-2025-04-11-dunlin-deadline",
+    "decision-2025-09-16-dunlin-deadline",
+    "tool-pennantry",
+    "concept-rate-limiting",
+    "concept-chaos-drills",
+    "project-heron",
+    "meeting-2025-02-02-saltmarsh-sync",
+    "meeting-2025-10-21-granite-sync",
+    "person-oskar-vestergaard",
+    "meeting-2025-10-03-foxglove-sync",
+    "home",
+    "tool-cobbleset",
+    "tool-corvex",
+    "tool-loamstack",
+    "tool-mosscache",
+    "tool-thimblerig",
+    "project-smew",
+    "tool-brindlewood"
+   ],
+   "answer": "The goal of Project Dunlin is to detect sensor drift in the greenhouse arrays.",
+   "citations": [
+    {
+     "note": "project-dunlin",
+     "quote": "The goal of Project Dunlin is to detect sensor drift in the greenhouse arrays."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q017",
+   "retrieved": [
+    "concept-rate-limiting",
+    "person-anselm-asturias",
+    "person-talia-wexley",
+    "decision-2025-01-20-whimbrel-budget",
+    "project-whimbrel",
+    "concept-graceful-degradation",
+    "tool-loamstack",
+    "concept-chaos-drills",
+    "meeting-2025-11-14-willowherb-sync",
+    "meeting-2025-11-03-bramble-sync",
+    "meeting-2025-02-14-bramble-sync",
+    "meeting-2025-10-06-foxglove-sync",
+    "project-petrel",
+    "meeting-2025-07-08-willowherb-sync",
+    "person-kasimir-okafor-lind",
+    "person-marit-quintanar",
+    "person-brisa-ibarrondo",
+    "person-linnea-carrow",
+    "person-rurik-pellegrin",
+    "person-leopold-fennimore"
+   ],
+   "answer": "Projects that rely on it: Project Dunlin, Project Shrike, Project Linnet, Project Whimbrel.",
+   "citations": [
+    {
+     "note": "concept-rate-limiting",
+     "quote": "Projects that rely on it: Project Dunlin, Project Shrike, Project Linnet, Project Whimbrel."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q018",
+   "retrieved": [
+    "project-heron",
+    "decision-2025-02-07-heron-deadline",
+    "decision-2025-08-16-heron-deadline",
+    "concept-backpressure",
+    "project-redshank",
+    "tool-mosscache",
+    "concept-observability-budget",
+    "meeting-2025-05-21-foxglove-sync",
+    "person-petra-asturias",
+    "concept-blameless-review",
+    "meeting-2025-12-16-tidewater-sync",
+    "person-linnea-kalvaitis",
+    "person-corvin-strandberg",
+    "person-ottilie-brannock",
+    "person-mirela-rautio",
+    "person-ulrik-asturias",
+    "person-brisa-brannock",
+    "person-oskar-rautio",
+    "person-emeric-moravec",
+    "person-ilsa-thorsby"
+   ],
+   "answer": "The goal of Project Heron is to unify the three internal wikis into one.",
+   "citations": [
+    {
+     "note": "project-heron",
+     "quote": "The goal of Project Heron is to unify the three internal wikis into one."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q019",
+   "retrieved": [
+    "project-ouzel",
+    "decision-2025-06-26-ouzel-budget",
+    "concept-backpressure",
+    "tool-lanternfish",
+    "meeting-2025-08-25-tidewater-sync",
+    "concept-observability-budget",
+    "meeting-2025-01-02-ironbark-sync",
+    "person-severin-ibarrondo",
+    "concept-blameless-review",
+    "person-linnea-kalvaitis",
+    "person-corvin-strandberg",
+    "person-ottilie-brannock",
+    "person-mirela-rautio",
+    "person-ulrik-asturias",
+    "person-brisa-brannock",
+    "person-oskar-rautio",
+    "person-emeric-moravec",
+    "person-ilsa-thorsby",
+    "person-mirela-marchetti",
+    "home"
+   ],
+   "answer": "The goal of Project Ouzel is to automate desk booking across all sites.",
+   "citations": [
+    {
+     "note": "project-ouzel",
+     "quote": "The goal of Project Ouzel is to automate desk booking across all sites."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q020",
+   "retrieved": [
+    "concept-blameless-review",
+    "project-redshank",
+    "decision-2025-12-13-redshank-budget",
+    "concept-data-lineage",
+    "tool-mosscache",
+    "meeting-2025-06-27-bramble-sync",
+    "person-ines-rautio",
+    "person-linnea-kalvaitis",
+    "person-corvin-strandberg",
+    "person-ottilie-brannock",
+    "person-mirela-rautio",
+    "person-ulrik-asturias",
+    "person-brisa-brannock",
+    "person-oskar-rautio",
+    "person-emeric-moravec",
+    "person-ilsa-thorsby",
+    "person-mirela-marchetti",
+    "home",
+    "project-gannet",
+    "project-curlew"
+   ],
+   "answer": "Projects that rely on it: Project Bittern, Project Lapwing, Project Redshank, Project Smew.",
+   "citations": [
+    {
+     "note": "concept-blameless-review",
+     "quote": "Projects that rely on it: Project Bittern, Project Lapwing, Project Redshank, Project Smew."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q021",
+   "retrieved": [
+    "site-drumlin-cross",
+    "meeting-2025-02-02-saltmarsh-sync",
+    "site-ninefold",
+    "concept-chaos-drills",
+    "person-bastian-marchetti",
+    "site-calder-rise",
+    "person-bastian-oyelaran",
+    "team-saltmarsh",
+    "person-ilsa-thorsby",
+    "site-brackwater",
+    "site-ketterby",
+    "site-owlsgate",
+    "site-amsel-quay",
+    "site-holloway-reach",
+    "site-larkspur-basin",
+    "site-port-varen",
+    "site-sorrel-point",
+    "site-tamsin-ford",
+    "home",
+    "concept-rate-limiting"
+   ],
+   "answer": "The Drumlin Cross office has 69 desks.",
+   "citations": [
+    {
+     "note": "site-drumlin-cross",
+     "quote": "The Drumlin Cross office has 69 desks."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q022",
+   "retrieved": [
+    "site-holloway-reach",
+    "site-ninefold",
+    "meeting-2025-08-04-tidewater-sync",
+    "concept-chaos-drills",
+    "site-calder-rise",
+    "meeting-2025-12-16-tidewater-sync",
+    "person-corvin-strandberg",
+    "person-mirela-rautio",
+    "person-leopold-fennimore",
+    "site-brackwater",
+    "site-ketterby",
+    "site-owlsgate",
+    "team-tidewater",
+    "person-emeric-moravec",
+    "site-amsel-quay",
+    "site-drumlin-cross",
+    "site-larkspur-basin",
+    "site-port-varen",
+    "site-sorrel-point",
+    "site-tamsin-ford"
+   ],
+   "answer": "The Holloway Reach office has 185 desks.",
+   "citations": [
+    {
+     "note": "site-holloway-reach",
+     "quote": "The Holloway Reach office has 185 desks."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q023",
+   "retrieved": [
+    "site-ninefold",
+    "concept-chaos-drills",
+    "site-calder-rise",
+    "site-brackwater",
+    "site-ketterby",
+    "site-owlsgate",
+    "site-amsel-quay",
+    "site-drumlin-cross",
+    "site-holloway-reach",
+    "site-larkspur-basin",
+    "site-port-varen",
+    "site-sorrel-point",
+    "site-tamsin-ford",
+    "person-talia-lindqvist",
+    "person-petra-asturias",
+    "concept-rate-limiting",
+    "concept-observability-budget",
+    "project-shrike",
+    "home",
+    "person-anselm-tamberlane"
+   ],
+   "answer": "The Ninefold office has 113 desks.",
+   "citations": [
+    {
+     "note": "site-ninefold",
+     "quote": "The Ninefold office has 113 desks."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q024",
+   "retrieved": [
+    "site-sorrel-point",
+    "meeting-2025-10-06-foxglove-sync",
+    "meeting-2025-05-21-foxglove-sync",
+    "site-ninefold",
+    "concept-chaos-drills",
+    "site-calder-rise",
+    "person-saskia-okafor-lind",
+    "person-brisa-brannock",
+    "team-foxglove",
+    "person-mirela-marchetti",
+    "site-brackwater",
+    "site-ketterby",
+    "site-owlsgate",
+    "person-saskia-brannock",
+    "site-amsel-quay",
+    "site-drumlin-cross",
+    "site-holloway-reach",
+    "site-larkspur-basin",
+    "site-port-varen",
+    "site-tamsin-ford"
+   ],
+   "answer": "The Sorrel Point office has 27 desks.",
+   "citations": [
+    {
+     "note": "site-sorrel-point",
+     "quote": "The Sorrel Point office has 27 desks."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q025",
+   "retrieved": [
+    "decision-2025-09-26-lapwing-budget",
+    "decision-2025-01-01-godwit-budget",
+    "decision-2025-01-05-avocet-budget",
+    "decision-2025-01-20-whimbrel-budget",
+    "decision-2025-06-12-skua-budget",
+    "decision-2025-06-26-ouzel-budget",
+    "decision-2025-07-20-linnet-budget",
+    "decision-2025-08-16-dipper-budget",
+    "decision-2025-11-11-siskin-budget",
+    "decision-2025-11-22-tern-budget",
+    "decision-2025-12-04-petrel-budget",
+    "decision-2025-12-13-redshank-budget",
+    "project-lapwing",
+    "tool-tallyhoe",
+    "concept-blameless-review",
+    "concept-data-lineage",
+    "meeting-2025-11-12-ironbark-sync",
+    "concept-rate-limiting",
+    "concept-chaos-drills",
+    "concept-observability-budget"
+   ],
+   "answer": "On 26 September 2025, the steering group approved a budget of 10,000 compute credits for Project Lapwing.",
+   "citations": [
+    {
+     "note": "decision-2025-09-26-lapwing-budget",
+     "quote": "On 26 September 2025, the steering group approved a budget of 10,000 compute credits for Project Lapwing."
+    }
+   ],
+   "sec": 0.0
+  },
+  {
+   "id": "q026",
+   "retrieved": [
+    "decision-2025-06-12-skua-budget",
+    "decision-2025-01-01-godwit-budget",
+    "decision-2025-01-05-avocet-budget",
+    "decision-2025-01-20-whimbrel-budget",
+    "decision-2025-06-26-ouzel-budget",
+    "decision-2025-07-20-linnet-budget",
+    "decision-2025-08-16-dipper-budget",
+    "decision-2025-09-26-lapwing-budget",
+    "decision-2025-11-11-siskin-budget",
+    "decision-2025-11-22-tern-budget",
+    "decision-2025-12-04-petrel-budget",
+    "decision-2025-12-13-redshank-budget",
+    "project-skua",
+    "tool-brindlewood",
+    "concept-idempotent-writes",
+    "concept-graceful-degradation",
+    "project-bittern",
+    "concept-rate-limiting",
+    "concept-chaos-drills",
+    "concept-observability-budget"
+   ],
+   "answer": "On 12 June 2025, the steering group approved a budget of 91,000 compute credits for Project Skua.",
+   "citations": [
+    {
+     "note": "decision-2025-06-12-skua-budget",
+     "quote": "On 12 June 2025, the steering group approved a budget of 91,000 compute credits for Project Skua."
+    }
+   ],
+   "sec": 0.0
+  },
+  {
+   "id": "q027",
+   "retrieved": [
+    "decision-2025-07-20-linnet-budget",
+    "decision-2025-01-01-godwit-budget",
+    "decision-2025-01-05-avocet-budget",
+    "decision-2025-01-20-whimbrel-budget",
+    "decision-2025-06-12-skua-budget",
+    "decision-2025-06-26-ouzel-budget",
+    "decision-2025-08-16-dipper-budget",
+    "decision-2025-09-26-lapwing-budget",
+    "decision-2025-11-11-siskin-budget",
+    "decision-2025-11-22-tern-budget",
+    "decision-2025-12-04-petrel-budget",
+    "decision-2025-12-13-redshank-budget",
+    "concept-rate-limiting",
+    "concept-chaos-drills",
+    "project-linnet",
+    "tool-ferrodb",
+    "concept-observability-budget",
+    "project-tern",
+    "meeting-2025-02-13-saltmarsh-sync",
+    "meeting-2025-01-13-lighthouse-sync"
+   ],
+   "answer": "On 20 July 2025, the steering group approved a budget of 50,000 compute credits for Project Linnet.",
+   "citations": [
+    {
+     "note": "decision-2025-07-20-linnet-budget",
+     "quote": "On 20 July 2025, the steering group approved a budget of 50,000 compute credits for Project Linnet."
+    }
+   ],
+   "sec": 0.0
+  },
+  {
+   "id": "q028",
+   "retrieved": [
+    "decision-2025-12-04-petrel-budget",
+    "decision-2025-01-01-godwit-budget",
+    "decision-2025-01-05-avocet-budget",
+    "decision-2025-01-20-whimbrel-budget",
+    "decision-2025-06-12-skua-budget",
+    "decision-2025-06-26-ouzel-budget",
+    "decision-2025-07-20-linnet-budget",
+    "decision-2025-08-16-dipper-budget",
+    "decision-2025-09-26-lapwing-budget",
+    "decision-2025-11-11-siskin-budget",
+    "decision-2025-11-22-tern-budget",
+    "decision-2025-12-13-redshank-budget",
+    "project-petrel",
+    "tool-kilnworth",
+    "concept-schema-evolution",
+    "concept-cold-start-caching",
+    "concept-rate-limiting",
+    "concept-chaos-drills",
+    "concept-observability-budget",
+    "person-mirela-marchetti"
+   ],
+   "answer": "On 4 December 2025, the steering group approved a budget of 78,000 compute credits for Project Petrel.",
+   "citations": [
+    {
+     "note": "decision-2025-12-04-petrel-budget",
+     "quote": "On 4 December 2025, the steering group approved a budget of 78,000 compute credits for Project Petrel."
+    }
+   ],
+   "sec": 0.0
+  },
+  {
+   "id": "q029",
+   "retrieved": [
+    "person-oskar-rautio",
+    "person-greta-oyelaran",
+    "meeting-2025-10-06-foxglove-sync",
+    "meeting-2025-05-21-foxglove-sync",
+    "team-foxglove",
+    "meeting-2025-10-03-foxglove-sync",
+    "decision-2025-03-06-gannet-deadline",
+    "decision-2025-07-20-gannet-deadline",
+    "person-oskar-vestergaard",
+    "concept-blameless-review",
+    "person-mirela-rautio",
+    "person-severin-rautio",
+    "person-ines-rautio",
+    "person-ulrik-asturias",
+    "person-elodie-ibarrondo",
+    "team-willowherb",
+    "person-saskia-brannock",
+    "project-dunlin",
+    "meeting-2025-11-14-willowherb-sync",
+    "meeting-2025-07-20-willowherb-sync"
+   ],
+   "answer": "Oskar Rautio works as a data engineer on the Foxglove team.",
+   "citations": [
+    {
+     "note": "person-oskar-rautio",
+     "quote": "Oskar Rautio works as a data engineer on the Foxglove team."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q030",
+   "retrieved": [
+    "person-ines-rautio",
+    "person-elodie-ibarrondo",
+    "person-ines-wexley",
+    "team-saltmarsh",
+    "meeting-2025-02-02-saltmarsh-sync",
+    "project-redshank",
+    "meeting-2025-02-13-saltmarsh-sync",
+    "meeting-2025-07-06-saltmarsh-sync",
+    "meeting-2025-07-22-saltmarsh-sync",
+    "concept-blameless-review",
+    "person-mirela-rautio",
+    "person-oskar-rautio",
+    "person-severin-rautio",
+    "team-ironbark",
+    "person-greta-oyelaran",
+    "project-osprey",
+    "meeting-2025-12-23-ironbark-sync",
+    "person-saskia-brannock",
+    "team-foxglove",
+    "meeting-2025-10-06-foxglove-sync"
+   ],
+   "answer": "Ines Rautio works as a research scientist on the Saltmarsh team.",
+   "citations": [
+    {
+     "note": "person-ines-rautio",
+     "quote": "Ines Rautio works as a research scientist on the Saltmarsh team."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q031",
+   "retrieved": [
+    "person-anselm-tamberlane",
+    "person-joran-tamberlane",
+    "meeting-2025-02-02-saltmarsh-sync",
+    "team-saltmarsh",
+    "meeting-2025-07-06-saltmarsh-sync",
+    "meeting-2025-02-13-saltmarsh-sync",
+    "person-anselm-asturias",
+    "concept-blameless-review",
+    "person-ines-wexley",
+    "meeting-2025-07-22-saltmarsh-sync",
+    "decision-2025-02-08-plover-deadline",
+    "decision-2025-12-14-plover-deadline",
+    "team-tidewater",
+    "project-whimbrel",
+    "decision-2025-03-06-gannet-deadline",
+    "decision-2025-04-26-bittern-deadline",
+    "decision-2025-06-17-curlew-deadline",
+    "decision-2025-07-20-gannet-deadline",
+    "decision-2025-08-01-curlew-deadline",
+    "decision-2025-09-12-bittern-deadline"
+   ],
+   "answer": "Anselm Tamberlane works as a program manager on the Saltmarsh team.",
+   "citations": [
+    {
+     "note": "person-anselm-tamberlane",
+     "quote": "Anselm Tamberlane works as a program manager on the Saltmarsh team."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q032",
+   "retrieved": [
+    "person-ulrik-oyelaran",
+    "person-anselm-asturias",
+    "meeting-2025-10-21-lighthouse-sync",
+    "decision-2025-04-28-shrike-deadline",
+    "decision-2025-06-17-curlew-deadline",
+    "decision-2025-08-01-curlew-deadline",
+    "decision-2025-12-12-shrike-deadline",
+    "meeting-2025-12-05-lighthouse-sync",
+    "concept-blameless-review",
+    "person-ulrik-asturias",
+    "team-lighthouse",
+    "decision-2025-05-10-osprey-deadline",
+    "decision-2025-06-09-kestrel-deadline",
+    "decision-2025-10-26-kestrel-deadline",
+    "decision-2025-12-01-osprey-deadline",
+    "meeting-2025-01-13-lighthouse-sync",
+    "person-bastian-oyelaran",
+    "person-greta-oyelaran",
+    "person-greta-lindqvist",
+    "person-marit-marchetti"
+   ],
+   "answer": "Ulrik Oyelaran works as a ML engineer on the Lighthouse team.",
+   "citations": [
+    {
+     "note": "person-ulrik-oyelaran",
+     "quote": "Ulrik Oyelaran works as a ML engineer on the Lighthouse team."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q033",
+   "retrieved": [
+    "person-leopold-halloran",
+    "person-kasimir-okafor-lind",
+    "team-lighthouse",
+    "project-tern",
+    "meeting-2025-01-13-lighthouse-sync",
+    "meeting-2025-10-21-lighthouse-sync",
+    "meeting-2025-12-05-lighthouse-sync",
+    "person-leopold-fennimore",
+    "person-vesna-halloran",
+    "person-fabian-halloran",
+    "concept-blameless-review",
+    "team-ironbark",
+    "meeting-2025-12-23-ironbark-sync",
+    "person-elodie-pellegrin",
+    "team-willowherb",
+    "meeting-2025-07-08-willowherb-sync",
+    "meeting-2025-11-12-ironbark-sync",
+    "meeting-2025-06-21-willowherb-sync",
+    "meeting-2025-10-21-ironbark-sync",
+    "project-dipper"
+   ],
+   "answer": "Leopold Halloran works as a program manager on the Lighthouse team.",
+   "citations": [
+    {
+     "note": "person-leopold-halloran",
+     "quote": "Leopold Halloran works as a program manager on the Lighthouse team."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q034",
+   "retrieved": [
+    "concept-data-lineage",
+    "concept-observability-budget",
+    "team-tidewater",
+    "tool-thimblerig",
+    "person-ulrik-oyelaran",
+    "person-joran-tamberlane",
+    "person-leopold-fennimore",
+    "project-garganey",
+    "person-elodie-ibarrondo",
+    "project-plover",
+    "concept-schema-evolution",
+    "meeting-2025-03-09-tidewater-sync",
+    "concept-shadow-traffic",
+    "team-bramble",
+    "team-meridian",
+    "team-willowherb",
+    "team-foxglove",
+    "team-granite",
+    "team-ironbark",
+    "team-lighthouse"
+   ],
+   "answer": "The Tidewater team maintains Thimblerig and Corvex.",
+   "citations": [
+    {
+     "note": "team-tidewater",
+     "quote": "The Tidewater team maintains Thimblerig and Corvex."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q035",
+   "retrieved": [
+    "concept-data-lineage",
+    "concept-observability-budget",
+    "team-lighthouse",
+    "tool-loamstack",
+    "meeting-2025-01-13-lighthouse-sync",
+    "person-bastian-oyelaran",
+    "person-linnea-carrow",
+    "project-kestrel",
+    "project-whimbrel",
+    "concept-schema-evolution",
+    "meeting-2025-10-21-lighthouse-sync",
+    "concept-shadow-traffic",
+    "person-talia-wexley",
+    "team-bramble",
+    "team-meridian",
+    "team-willowherb",
+    "team-foxglove",
+    "team-granite",
+    "team-ironbark",
+    "team-saltmarsh"
+   ],
+   "answer": "The Lighthouse team maintains Loamstack and Mosscache.",
+   "citations": [
+    {
+     "note": "team-lighthouse",
+     "quote": "The Lighthouse team maintains Loamstack and Mosscache."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q036",
+   "retrieved": [
+    "team-willowherb",
+    "concept-data-lineage",
+    "concept-observability-budget",
+    "tool-lanternfish",
+    "project-ouzel",
+    "meeting-2025-07-20-willowherb-sync",
+    "meeting-2025-07-08-willowherb-sync",
+    "concept-schema-evolution",
+    "concept-shadow-traffic",
+    "team-bramble",
+    "team-meridian",
+    "team-foxglove",
+    "team-granite",
+    "team-ironbark",
+    "team-lighthouse",
+    "team-saltmarsh",
+    "concept-blameless-review",
+    "concept-backpressure",
+    "team-cinder",
+    "team-tidewater"
+   ],
+   "answer": "The Willowherb team maintains Ferrodb and Lanternfish.",
+   "citations": [
+    {
+     "note": "team-willowherb",
+     "quote": "The Willowherb team maintains Ferrodb and Lanternfish."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q037",
+   "retrieved": [
+    "concept-data-lineage",
+    "concept-observability-budget",
+    "team-cinder",
+    "tool-wickline",
+    "person-tomas-pellegrin",
+    "meeting-2025-12-08-cinder-sync",
+    "meeting-2025-06-10-cinder-sync",
+    "project-siskin",
+    "concept-schema-evolution",
+    "concept-shadow-traffic",
+    "team-bramble",
+    "team-meridian",
+    "team-willowherb",
+    "team-foxglove",
+    "team-granite",
+    "team-ironbark",
+    "team-lighthouse",
+    "team-saltmarsh",
+    "concept-blameless-review",
+    "concept-backpressure"
+   ],
+   "answer": "The Cinder team maintains Quillmark and Wickline.",
+   "citations": [
+    {
+     "note": "team-cinder",
+     "quote": "The Cinder team maintains Quillmark and Wickline."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q038",
+   "retrieved": [
+    "concept-data-lineage",
+    "concept-observability-budget",
+    "team-bramble",
+    "tool-fathomer",
+    "person-ilsa-wexley",
+    "meeting-2025-02-14-bramble-sync",
+    "project-curlew",
+    "meeting-2025-06-27-bramble-sync",
+    "concept-schema-evolution",
+    "concept-shadow-traffic",
+    "team-meridian",
+    "team-willowherb",
+    "team-foxglove",
+    "team-granite",
+    "team-ironbark",
+    "team-lighthouse",
+    "team-saltmarsh",
+    "concept-blameless-review",
+    "concept-backpressure",
+    "team-cinder"
+   ],
+   "answer": "The Bramble team maintains Cobbleset and Fathomer.",
+   "citations": [
+    {
+     "note": "team-bramble",
+     "quote": "The Bramble team maintains Cobbleset and Fathomer."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q039",
+   "retrieved": [
+    "tool-lanternfish",
+    "project-ouzel",
+    "decision-2025-06-26-ouzel-budget",
+    "concept-idempotent-writes",
+    "concept-backpressure",
+    "concept-observability-budget",
+    "project-redshank",
+    "meeting-2025-08-25-tidewater-sync",
+    "meeting-2025-01-02-ironbark-sync",
+    "person-severin-ibarrondo",
+    "home",
+    "tool-brindlewood",
+    "tool-fathomer",
+    "tool-ferrodb",
+    "tool-gristmill",
+    "tool-harrowby",
+    "tool-kilnworth",
+    "tool-orreryx",
+    "tool-pennantry",
+    "tool-quillmark"
+   ],
+   "answer": "Lanternfish is written in Elixir.",
+   "citations": [
+    {
+     "note": "tool-lanternfish",
+     "quote": "Lanternfish is written in Elixir."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q040",
+   "retrieved": [
+    "tool-sextantix",
+    "project-godwit",
+    "decision-2025-01-01-godwit-budget",
+    "concept-idempotent-writes",
+    "project-redshank",
+    "concept-shadow-traffic",
+    "concept-feature-flags",
+    "meeting-2025-05-12-lighthouse-sync",
+    "meeting-2025-07-06-saltmarsh-sync",
+    "project-curlew",
+    "person-ilsa-thorsby",
+    "meeting-2025-10-21-granite-sync",
+    "meeting-2025-07-22-meridian-sync",
+    "tool-brindlewood",
+    "tool-fathomer",
+    "tool-ferrodb",
+    "tool-gristmill",
+    "tool-harrowby",
+    "tool-kilnworth",
+    "tool-lanternfish"
+   ],
+   "answer": "Sextantix is written in Erlang.",
+   "citations": [
+    {
+     "note": "tool-sextantix",
+     "quote": "Sextantix is written in Erlang."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q041",
+   "retrieved": [
+    "project-redshank",
+    "tool-mosscache",
+    "decision-2025-12-13-redshank-budget",
+    "concept-idempotent-writes",
+    "concept-blameless-review",
+    "concept-data-lineage",
+    "meeting-2025-06-27-bramble-sync",
+    "person-ines-rautio",
+    "home",
+    "tool-brindlewood",
+    "tool-fathomer",
+    "tool-ferrodb",
+    "tool-gristmill",
+    "tool-harrowby",
+    "tool-kilnworth",
+    "tool-lanternfish",
+    "tool-orreryx",
+    "tool-pennantry",
+    "tool-quillmark",
+    "tool-sextantix"
+   ],
+   "answer": "The goal of Project Redshank is to predict which builds will fail before they run.",
+   "citations": [
+    {
+     "note": "project-redshank",
+     "quote": "The goal of Project Redshank is to predict which builds will fail before they run."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q042",
+   "retrieved": [
+    "concept-idempotent-writes",
+    "tool-siltcore",
+    "decision-2025-01-05-avocet-budget",
+    "project-avocet",
+    "person-vesna-thorsby",
+    "concept-graceful-degradation",
+    "project-redshank",
+    "project-gannet",
+    "meeting-2025-10-21-lighthouse-sync",
+    "home",
+    "tool-brindlewood",
+    "tool-fathomer",
+    "tool-ferrodb",
+    "tool-gristmill",
+    "tool-harrowby",
+    "tool-kilnworth",
+    "tool-lanternfish",
+    "tool-orreryx",
+    "tool-pennantry",
+    "tool-quillmark"
+   ],
+   "answer": "Projects that rely on it: Project Kestrel, Project Plover, Project Avocet, Project Skua, Project Nightjar.",
+   "citations": [
+    {
+     "note": "concept-idempotent-writes",
+     "quote": "Projects that rely on it: Project Kestrel, Project Plover, Project Avocet, Project Skua, Project Nightjar."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q043",
+   "retrieved": [
+    "concept-idempotent-writes",
+    "tool-loamstack",
+    "project-kestrel",
+    "decision-2025-06-09-kestrel-deadline",
+    "decision-2025-10-26-kestrel-deadline",
+    "project-redshank",
+    "concept-graceful-degradation",
+    "meeting-2025-02-13-saltmarsh-sync",
+    "meeting-2025-12-05-lighthouse-sync",
+    "person-talia-wexley",
+    "home",
+    "tool-brindlewood",
+    "tool-fathomer",
+    "tool-ferrodb",
+    "tool-gristmill",
+    "tool-harrowby",
+    "tool-kilnworth",
+    "tool-lanternfish",
+    "tool-orreryx",
+    "tool-pennantry"
+   ],
+   "answer": "Projects that rely on it: Project Kestrel, Project Plover, Project Avocet, Project Skua, Project Nightjar.",
+   "citations": [
+    {
+     "note": "concept-idempotent-writes",
+     "quote": "Projects that rely on it: Project Kestrel, Project Plover, Project Avocet, Project Skua, Project Nightjar."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q044",
+   "retrieved": [
+    "concept-idempotent-writes",
+    "project-redshank",
+    "concept-data-lineage",
+    "project-merlin",
+    "person-anselm-tamberlane",
+    "person-ulrik-oyelaran",
+    "person-corvin-carrow",
+    "person-ilsa-wexley",
+    "person-rurik-kalvaitis",
+    "person-tomas-pellegrin",
+    "person-yara-thorsby",
+    "person-oskar-vestergaard",
+    "person-petra-fennimore",
+    "person-severin-ibarrondo",
+    "person-bastian-marchetti",
+    "home",
+    "project-gannet",
+    "project-curlew",
+    "project-siskin",
+    "concept-blameless-review"
+   ],
+   "answer": "Record where every derived number came from, so a wrong figure can be traced back to its source.",
+   "citations": [
+    {
+     "note": "concept-data-lineage",
+     "quote": "Record where every derived number came from, so a wrong figure can be traced back to its source."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q045",
+   "retrieved": [
+    "concept-idempotent-writes",
+    "project-redshank",
+    "meeting-2025-04-27-bramble-sync",
+    "meeting-2025-11-09-cinder-sync",
+    "meeting-2025-11-14-willowherb-sync",
+    "meeting-2025-08-04-tidewater-sync",
+    "meeting-2025-01-11-meridian-sync",
+    "site-ninefold",
+    "meeting-2025-05-17-granite-sync",
+    "meeting-2025-11-24-granite-sync",
+    "meeting-2025-12-08-cinder-sync",
+    "site-calder-rise",
+    "meeting-2025-10-21-granite-sync",
+    "person-anselm-tamberlane",
+    "person-ulrik-oyelaran",
+    "person-corvin-carrow",
+    "person-ilsa-wexley",
+    "meeting-2025-07-20-willowherb-sync",
+    "meeting-2025-05-21-foxglove-sync",
+    "meeting-2025-10-06-foxglove-sync"
+   ],
+   "answer": null,
+   "citations": [],
+   "sec": 0.001
+  },
+  {
+   "id": "q046",
+   "retrieved": [
+    "project-redshank",
+    "concept-idempotent-writes",
+    "concept-graceful-degradation",
+    "person-kasimir-okafor-lind",
+    "person-marit-quintanar",
+    "person-talia-wexley",
+    "project-gannet",
+    "project-curlew",
+    "project-siskin",
+    "concept-backpressure",
+    "concept-blameless-review",
+    "concept-chaos-drills",
+    "concept-data-lineage",
+    "concept-shadow-traffic",
+    "project-linnet",
+    "project-nightjar",
+    "project-garganey",
+    "project-godwit",
+    "project-kestrel",
+    "project-shrike"
+   ],
+   "answer": null,
+   "citations": [],
+   "sec": 0.001
+  },
+  {
+   "id": "q047",
+   "retrieved": [
+    "concept-shadow-traffic",
+    "person-brisa-ibarrondo",
+    "person-yara-delacourt",
+    "project-dipper",
+    "concept-idempotent-writes",
+    "project-redshank",
+    "concept-schema-evolution",
+    "project-whimbrel",
+    "person-vesna-halloran",
+    "person-saskia-okafor-lind",
+    "person-joran-tamberlane",
+    "person-leopold-fennimore",
+    "person-elodie-ibarrondo",
+    "person-greta-oyelaran",
+    "person-ines-wexley",
+    "person-petra-asturias",
+    "person-ines-rautio",
+    "person-saskia-brannock",
+    "person-severin-ibarrondo",
+    "project-gannet"
+   ],
+   "answer": "Copy real requests to a new version that answers into the void, and compare it with the old one.",
+   "citations": [
+    {
+     "note": "concept-shadow-traffic",
+     "quote": "Copy real requests to a new version that answers into the void, and compare it with the old one."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q048",
+   "retrieved": [
+    "concept-chaos-drills",
+    "concept-shadow-traffic",
+    "concept-idempotent-writes",
+    "project-heron",
+    "project-redshank",
+    "person-talia-wexley",
+    "project-gannet",
+    "project-curlew",
+    "project-siskin",
+    "concept-blameless-review",
+    "concept-backpressure",
+    "concept-data-lineage",
+    "project-linnet",
+    "project-nightjar",
+    "project-garganey",
+    "project-godwit",
+    "project-kestrel",
+    "project-shrike",
+    "project-dipper",
+    "project-dunlin"
+   ],
+   "answer": "Break things on purpose, on a schedule, while people are watching, to learn how the system really fails.",
+   "citations": [
+    {
+     "note": "concept-chaos-drills",
+     "quote": "Break things on purpose, on a schedule, while people are watching, to learn how the system really fails."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q049",
+   "retrieved": [
+    "project-redshank",
+    "concept-idempotent-writes",
+    "project-godwit",
+    "concept-cold-start-caching",
+    "project-gannet",
+    "project-curlew",
+    "project-siskin",
+    "concept-blameless-review",
+    "concept-backpressure",
+    "concept-chaos-drills",
+    "concept-data-lineage",
+    "concept-shadow-traffic",
+    "project-linnet",
+    "project-nightjar",
+    "project-garganey",
+    "project-kestrel",
+    "project-shrike",
+    "project-dipper",
+    "project-dunlin",
+    "project-osprey"
+   ],
+   "answer": "The goal of Project Redshank is to predict which builds will fail before they run.",
+   "citations": [
+    {
+     "note": "project-redshank",
+     "quote": "The goal of Project Redshank is to predict which builds will fail before they run."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q050",
+   "retrieved": [
+    "concept-chaos-drills",
+    "concept-data-lineage",
+    "concept-observability-budget",
+    "concept-idempotent-writes",
+    "project-tern",
+    "concept-feature-flags",
+    "project-redshank",
+    "meeting-2025-10-21-granite-sync",
+    "meeting-2025-06-21-willowherb-sync",
+    "meeting-2025-07-22-meridian-sync",
+    "meeting-2025-06-27-bramble-sync",
+    "meeting-2025-01-02-ironbark-sync",
+    "meeting-2025-10-03-foxglove-sync",
+    "person-anselm-tamberlane",
+    "person-ulrik-oyelaran",
+    "person-corvin-carrow",
+    "person-ilsa-wexley",
+    "person-rurik-kalvaitis",
+    "person-tomas-pellegrin",
+    "person-yara-thorsby"
+   ],
+   "answer": "Break things on purpose, on a schedule, while people are watching, to learn how the system really fails.",
+   "citations": [
+    {
+     "note": "concept-chaos-drills",
+     "quote": "Break things on purpose, on a schedule, while people are watching, to learn how the system really fails."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q051",
+   "retrieved": [
+    "concept-idempotent-writes",
+    "project-redshank",
+    "project-garganey",
+    "project-ouzel",
+    "home",
+    "project-gannet",
+    "project-curlew",
+    "project-siskin",
+    "concept-blameless-review",
+    "concept-backpressure",
+    "concept-chaos-drills",
+    "concept-data-lineage",
+    "concept-shadow-traffic",
+    "project-linnet",
+    "project-nightjar",
+    "project-godwit",
+    "project-kestrel",
+    "project-shrike",
+    "project-dipper",
+    "project-dunlin"
+   ],
+   "answer": "The goal of Project Garganey is to track loaned equipment between sites.",
+   "citations": [
+    {
+     "note": "project-garganey",
+     "quote": "The goal of Project Garganey is to track loaned equipment between sites."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q052",
+   "retrieved": [
+    "concept-blameless-review",
+    "concept-shadow-traffic",
+    "concept-schema-evolution",
+    "concept-idempotent-writes",
+    "project-redshank",
+    "person-brisa-ibarrondo",
+    "person-yara-delacourt",
+    "person-linnea-kalvaitis",
+    "person-corvin-strandberg",
+    "person-ottilie-brannock",
+    "person-mirela-rautio",
+    "person-ulrik-asturias",
+    "person-brisa-brannock",
+    "person-oskar-rautio",
+    "concept-observability-budget",
+    "person-emeric-moravec",
+    "person-ilsa-thorsby",
+    "person-mirela-marchetti",
+    "meeting-2025-08-25-tidewater-sync",
+    "meeting-2025-11-03-bramble-sync"
+   ],
+   "answer": "After an incident, ask what made the mistake easy to make, not who made it.",
+   "citations": [
+    {
+     "note": "concept-blameless-review",
+     "quote": "After an incident, ask what made the mistake easy to make, not who made it."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q053",
+   "retrieved": [
+    "concept-idempotent-writes",
+    "concept-shadow-traffic",
+    "project-redshank",
+    "meeting-2025-05-12-lighthouse-sync",
+    "meeting-2025-05-24-meridian-sync",
+    "meeting-2025-01-11-meridian-sync",
+    "meeting-2025-02-14-bramble-sync",
+    "meeting-2025-06-27-bramble-sync",
+    "meeting-2025-07-20-willowherb-sync",
+    "meeting-2025-10-06-foxglove-sync",
+    "meeting-2025-12-23-ironbark-sync",
+    "meeting-2025-03-08-granite-sync",
+    "meeting-2025-05-16-foxglove-sync",
+    "meeting-2025-02-02-saltmarsh-sync",
+    "meeting-2025-07-08-willowherb-sync",
+    "meeting-2025-01-13-lighthouse-sync",
+    "meeting-2025-06-10-cinder-sync",
+    "meeting-2025-07-15-meridian-sync",
+    "meeting-2025-10-21-lighthouse-sync",
+    "meeting-2025-12-05-lighthouse-sync"
+   ],
+   "answer": "Repeating the same write leaves the data in the same state, which makes retries safe.",
+   "citations": [
+    {
+     "note": "concept-idempotent-writes",
+     "quote": "Repeating the same write leaves the data in the same state, which makes retries safe."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q054",
+   "retrieved": [
+    "concept-chaos-drills",
+    "concept-data-lineage",
+    "concept-observability-budget",
+    "concept-idempotent-writes",
+    "concept-feature-flags",
+    "project-tern",
+    "project-redshank",
+    "concept-shadow-traffic",
+    "concept-schema-evolution",
+    "concept-blameless-review",
+    "concept-backpressure",
+    "meeting-2025-10-21-granite-sync",
+    "meeting-2025-06-21-willowherb-sync",
+    "meeting-2025-07-22-meridian-sync",
+    "meeting-2025-06-27-bramble-sync",
+    "concept-rate-limiting",
+    "meeting-2025-01-02-ironbark-sync",
+    "meeting-2025-10-03-foxglove-sync",
+    "person-anselm-tamberlane",
+    "person-ulrik-oyelaran"
+   ],
+   "answer": "Break things on purpose, on a schedule, while people are watching, to learn how the system really fails.",
+   "citations": [
+    {
+     "note": "concept-chaos-drills",
+     "quote": "Break things on purpose, on a schedule, while people are watching, to learn how the system really fails."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q055",
+   "retrieved": [
+    "project-redshank",
+    "concept-observability-budget",
+    "concept-idempotent-writes",
+    "concept-schema-evolution",
+    "concept-data-lineage",
+    "concept-shadow-traffic",
+    "concept-feature-flags",
+    "site-ninefold",
+    "site-calder-rise",
+    "concept-rate-limiting",
+    "concept-cold-start-caching",
+    "person-bastian-oyelaran",
+    "project-bittern",
+    "project-lapwing",
+    "project-smew",
+    "meeting-2025-07-06-saltmarsh-sync",
+    "person-linnea-carrow",
+    "person-rurik-pellegrin",
+    "meeting-2025-07-22-meridian-sync",
+    "person-marit-marchetti"
+   ],
+   "answer": "Related ideas: data lineage, blameless review.",
+   "citations": [
+    {
+     "note": "project-redshank",
+     "quote": "Related ideas: data lineage, blameless review."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q056",
+   "retrieved": [
+    "concept-blameless-review",
+    "concept-shadow-traffic",
+    "concept-schema-evolution",
+    "concept-idempotent-writes",
+    "concept-observability-budget",
+    "concept-feature-flags",
+    "project-redshank",
+    "person-bastian-oyelaran",
+    "person-rurik-pellegrin",
+    "person-linnea-carrow",
+    "person-marit-marchetti",
+    "person-brisa-ibarrondo",
+    "person-elodie-pellegrin",
+    "person-leopold-halloran",
+    "person-vesna-thorsby",
+    "person-fabian-halloran",
+    "person-anselm-asturias",
+    "concept-backpressure",
+    "concept-chaos-drills",
+    "concept-data-lineage"
+   ],
+   "answer": "After an incident, ask what made the mistake easy to make, not who made it.",
+   "citations": [
+    {
+     "note": "concept-blameless-review",
+     "quote": "After an incident, ask what made the mistake easy to make, not who made it."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q057",
+   "retrieved": [
+    "concept-idempotent-writes",
+    "concept-feature-flags",
+    "project-plover",
+    "project-garganey",
+    "project-kestrel",
+    "project-tern",
+    "project-redshank",
+    "concept-shadow-traffic",
+    "concept-schema-evolution",
+    "concept-blameless-review",
+    "concept-backpressure",
+    "concept-chaos-drills",
+    "concept-data-lineage",
+    "concept-rate-limiting",
+    "concept-observability-budget",
+    "concept-cold-start-caching",
+    "concept-graceful-degradation",
+    "person-bastian-oyelaran",
+    "person-linnea-carrow",
+    "person-rurik-pellegrin"
+   ],
+   "answer": "Ship code switched off and turn it on for a few users first, so a bad change can be undone without a deploy.",
+   "citations": [
+    {
+     "note": "concept-feature-flags",
+     "quote": "Ship code switched off and turn it on for a few users first, so a bad change can be undone without a deploy."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q058",
+   "retrieved": [
+    "concept-idempotent-writes",
+    "concept-graceful-degradation",
+    "project-redshank",
+    "concept-shadow-traffic",
+    "concept-schema-evolution",
+    "concept-blameless-review",
+    "concept-backpressure",
+    "concept-chaos-drills",
+    "concept-data-lineage",
+    "person-kasimir-okafor-lind",
+    "person-marit-quintanar",
+    "person-talia-wexley",
+    "concept-rate-limiting",
+    "concept-observability-budget",
+    "concept-cold-start-caching",
+    "concept-feature-flags",
+    "person-bastian-oyelaran",
+    "person-linnea-carrow",
+    "person-rurik-pellegrin",
+    "person-marit-marchetti"
+   ],
+   "answer": null,
+   "citations": [],
+   "sec": 0.001
+  },
+  {
+   "id": "q059",
+   "retrieved": [
+    "concept-idempotent-writes",
+    "concept-data-lineage",
+    "project-redshank",
+    "concept-shadow-traffic",
+    "concept-schema-evolution",
+    "concept-blameless-review",
+    "concept-backpressure",
+    "concept-chaos-drills",
+    "concept-rate-limiting",
+    "concept-observability-budget",
+    "concept-cold-start-caching",
+    "concept-feature-flags",
+    "concept-graceful-degradation",
+    "project-merlin",
+    "person-anselm-tamberlane",
+    "person-ulrik-oyelaran",
+    "person-corvin-carrow",
+    "person-ilsa-wexley",
+    "person-rurik-kalvaitis",
+    "person-tomas-pellegrin"
+   ],
+   "answer": "Record where every derived number came from, so a wrong figure can be traced back to its source.",
+   "citations": [
+    {
+     "note": "concept-data-lineage",
+     "quote": "Record where every derived number came from, so a wrong figure can be traced back to its source."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q060",
+   "retrieved": [
+    "decision-2025-10-26-kestrel-deadline",
+    "decision-2025-06-09-kestrel-deadline",
+    "decision-2025-07-20-gannet-deadline",
+    "decision-2025-08-01-curlew-deadline",
+    "decision-2025-08-16-heron-deadline",
+    "decision-2025-09-12-bittern-deadline",
+    "decision-2025-09-16-dunlin-deadline",
+    "decision-2025-12-12-shrike-deadline",
+    "decision-2025-12-14-plover-deadline",
+    "decision-2025-12-17-merlin-deadline",
+    "decision-2025-12-01-osprey-deadline",
+    "tool-loamstack",
+    "project-kestrel",
+    "decision-2025-02-07-heron-deadline",
+    "decision-2025-02-08-plover-deadline",
+    "decision-2025-03-06-gannet-deadline",
+    "decision-2025-04-11-dunlin-deadline",
+    "decision-2025-04-26-bittern-deadline",
+    "decision-2025-04-28-shrike-deadline",
+    "decision-2025-05-06-merlin-deadline"
+   ],
+   "answer": "On 26 October 2025, the steering group moved the deadline for Project Kestrel to 9 July 2026, replacing the earlier decision.",
+   "citations": [
+    {
+     "note": "decision-2025-10-26-kestrel-deadline",
+     "quote": "On 26 October 2025, the steering group moved the deadline for Project Kestrel to 9 July 2026, replacing the earlier decision."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q061",
+   "retrieved": [
+    "decision-2025-08-16-heron-deadline",
+    "decision-2025-02-07-heron-deadline",
+    "decision-2025-07-20-gannet-deadline",
+    "decision-2025-08-01-curlew-deadline",
+    "decision-2025-09-12-bittern-deadline",
+    "decision-2025-09-16-dunlin-deadline",
+    "decision-2025-12-12-shrike-deadline",
+    "decision-2025-12-14-plover-deadline",
+    "decision-2025-12-17-merlin-deadline",
+    "decision-2025-10-26-kestrel-deadline",
+    "decision-2025-12-01-osprey-deadline",
+    "tool-mosscache",
+    "project-heron",
+    "decision-2025-02-08-plover-deadline",
+    "decision-2025-03-06-gannet-deadline",
+    "decision-2025-04-11-dunlin-deadline",
+    "decision-2025-04-26-bittern-deadline",
+    "decision-2025-04-28-shrike-deadline",
+    "decision-2025-05-06-merlin-deadline",
+    "decision-2025-06-17-curlew-deadline"
+   ],
+   "answer": "On 16 August 2025, the steering group moved the deadline for Project Heron to 4 November 2027, replacing the earlier decision.",
+   "citations": [
+    {
+     "note": "decision-2025-08-16-heron-deadline",
+     "quote": "On 16 August 2025, the steering group moved the deadline for Project Heron to 4 November 2027, replacing the earlier decision."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q062",
+   "retrieved": [
+    "decision-2025-12-14-plover-deadline",
+    "decision-2025-02-08-plover-deadline",
+    "decision-2025-07-20-gannet-deadline",
+    "decision-2025-08-01-curlew-deadline",
+    "decision-2025-08-16-heron-deadline",
+    "decision-2025-09-12-bittern-deadline",
+    "decision-2025-09-16-dunlin-deadline",
+    "decision-2025-12-12-shrike-deadline",
+    "decision-2025-12-17-merlin-deadline",
+    "decision-2025-10-26-kestrel-deadline",
+    "decision-2025-12-01-osprey-deadline",
+    "project-plover",
+    "tool-thimblerig",
+    "decision-2025-02-07-heron-deadline",
+    "decision-2025-03-06-gannet-deadline",
+    "decision-2025-04-11-dunlin-deadline",
+    "decision-2025-04-26-bittern-deadline",
+    "decision-2025-04-28-shrike-deadline",
+    "decision-2025-05-06-merlin-deadline",
+    "decision-2025-06-17-curlew-deadline"
+   ],
+   "answer": "On 14 December 2025, the steering group moved the deadline for Project Plover to 25 October 2026, replacing the earlier decision.",
+   "citations": [
+    {
+     "note": "decision-2025-12-14-plover-deadline",
+     "quote": "On 14 December 2025, the steering group moved the deadline for Project Plover to 25 October 2026, replacing the earlier decision."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q063",
+   "retrieved": [
+    "decision-2025-12-17-merlin-deadline",
+    "decision-2025-05-06-merlin-deadline",
+    "decision-2025-07-20-gannet-deadline",
+    "decision-2025-08-01-curlew-deadline",
+    "decision-2025-08-16-heron-deadline",
+    "decision-2025-09-12-bittern-deadline",
+    "decision-2025-09-16-dunlin-deadline",
+    "decision-2025-12-12-shrike-deadline",
+    "decision-2025-12-14-plover-deadline",
+    "decision-2025-10-26-kestrel-deadline",
+    "decision-2025-12-01-osprey-deadline",
+    "tool-corvex",
+    "decision-2025-02-07-heron-deadline",
+    "decision-2025-02-08-plover-deadline",
+    "decision-2025-03-06-gannet-deadline",
+    "decision-2025-04-11-dunlin-deadline",
+    "decision-2025-04-26-bittern-deadline",
+    "decision-2025-04-28-shrike-deadline",
+    "decision-2025-06-17-curlew-deadline",
+    "decision-2025-05-10-osprey-deadline"
+   ],
+   "answer": "On 17 December 2025, the steering group moved the deadline for Project Merlin to 25 October 2027, replacing the earlier decision.",
+   "citations": [
+    {
+     "note": "decision-2025-12-17-merlin-deadline",
+     "quote": "On 17 December 2025, the steering group moved the deadline for Project Merlin to 25 October 2027, replacing the earlier decision."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q064",
+   "retrieved": [
+    "decision-2025-12-01-osprey-deadline",
+    "decision-2025-05-10-osprey-deadline",
+    "decision-2025-07-20-gannet-deadline",
+    "decision-2025-08-01-curlew-deadline",
+    "decision-2025-08-16-heron-deadline",
+    "decision-2025-09-12-bittern-deadline",
+    "decision-2025-09-16-dunlin-deadline",
+    "decision-2025-12-12-shrike-deadline",
+    "decision-2025-12-14-plover-deadline",
+    "decision-2025-12-17-merlin-deadline",
+    "decision-2025-10-26-kestrel-deadline",
+    "project-osprey",
+    "tool-cobbleset",
+    "concept-feature-flags",
+    "decision-2025-02-07-heron-deadline",
+    "decision-2025-02-08-plover-deadline",
+    "decision-2025-03-06-gannet-deadline",
+    "decision-2025-04-11-dunlin-deadline",
+    "decision-2025-04-26-bittern-deadline",
+    "decision-2025-04-28-shrike-deadline"
+   ],
+   "answer": "On 1 December 2025, the steering group moved the deadline for Project Osprey to 16 November 2026, replacing the earlier decision.",
+   "citations": [
+    {
+     "note": "decision-2025-12-01-osprey-deadline",
+     "quote": "On 1 December 2025, the steering group moved the deadline for Project Osprey to 16 November 2026, replacing the earlier decision."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q065",
+   "retrieved": [
+    "decision-2025-08-01-curlew-deadline",
+    "decision-2025-06-17-curlew-deadline",
+    "decision-2025-07-20-gannet-deadline",
+    "decision-2025-08-16-heron-deadline",
+    "decision-2025-09-12-bittern-deadline",
+    "decision-2025-09-16-dunlin-deadline",
+    "decision-2025-12-12-shrike-deadline",
+    "decision-2025-12-14-plover-deadline",
+    "decision-2025-12-17-merlin-deadline",
+    "decision-2025-10-26-kestrel-deadline",
+    "decision-2025-12-01-osprey-deadline",
+    "tool-fathomer",
+    "concept-cold-start-caching",
+    "project-curlew",
+    "decision-2025-02-07-heron-deadline",
+    "decision-2025-02-08-plover-deadline",
+    "decision-2025-03-06-gannet-deadline",
+    "decision-2025-04-11-dunlin-deadline",
+    "decision-2025-04-26-bittern-deadline",
+    "decision-2025-04-28-shrike-deadline"
+   ],
+   "answer": "On 1 August 2025, the steering group moved the deadline for Project Curlew to 10 November 2027, replacing the earlier decision.",
+   "citations": [
+    {
+     "note": "decision-2025-08-01-curlew-deadline",
+     "quote": "On 1 August 2025, the steering group moved the deadline for Project Curlew to 10 November 2027, replacing the earlier decision."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q066",
+   "retrieved": [
+    "decision-2025-04-11-dunlin-deadline",
+    "decision-2025-09-16-dunlin-deadline",
+    "decision-2025-02-07-heron-deadline",
+    "decision-2025-02-08-plover-deadline",
+    "decision-2025-03-06-gannet-deadline",
+    "decision-2025-04-26-bittern-deadline",
+    "decision-2025-04-28-shrike-deadline",
+    "decision-2025-05-06-merlin-deadline",
+    "decision-2025-06-17-curlew-deadline",
+    "decision-2025-05-10-osprey-deadline",
+    "decision-2025-06-09-kestrel-deadline",
+    "concept-rate-limiting",
+    "project-dunlin",
+    "tool-pennantry",
+    "decision-2025-07-20-gannet-deadline",
+    "decision-2025-08-01-curlew-deadline",
+    "decision-2025-08-16-heron-deadline",
+    "decision-2025-09-12-bittern-deadline",
+    "decision-2025-12-12-shrike-deadline",
+    "decision-2025-12-14-plover-deadline"
+   ],
+   "answer": "On 11 April 2025, the steering group set the deadline for Project Dunlin to 1 June 2026.",
+   "citations": [
+    {
+     "note": "decision-2025-04-11-dunlin-deadline",
+     "quote": "On 11 April 2025, the steering group set the deadline for Project Dunlin to 1 June 2026."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q067",
+   "retrieved": [
+    "decision-2025-03-06-gannet-deadline",
+    "decision-2025-07-20-gannet-deadline",
+    "decision-2025-02-07-heron-deadline",
+    "decision-2025-02-08-plover-deadline",
+    "decision-2025-04-11-dunlin-deadline",
+    "decision-2025-04-26-bittern-deadline",
+    "decision-2025-04-28-shrike-deadline",
+    "decision-2025-05-06-merlin-deadline",
+    "decision-2025-06-17-curlew-deadline",
+    "decision-2025-05-10-osprey-deadline",
+    "decision-2025-06-09-kestrel-deadline",
+    "project-gannet",
+    "tool-spindrift",
+    "decision-2025-08-01-curlew-deadline",
+    "decision-2025-08-16-heron-deadline",
+    "decision-2025-09-12-bittern-deadline",
+    "decision-2025-09-16-dunlin-deadline",
+    "decision-2025-12-12-shrike-deadline",
+    "decision-2025-12-14-plover-deadline",
+    "decision-2025-12-17-merlin-deadline"
+   ],
+   "answer": "On 6 March 2025, the steering group set the deadline for Project Gannet to 17 February 2026.",
+   "citations": [
+    {
+     "note": "decision-2025-03-06-gannet-deadline",
+     "quote": "On 6 March 2025, the steering group set the deadline for Project Gannet to 17 February 2026."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q068",
+   "retrieved": [
+    "decision-2025-04-28-shrike-deadline",
+    "decision-2025-12-12-shrike-deadline",
+    "decision-2025-02-07-heron-deadline",
+    "decision-2025-02-08-plover-deadline",
+    "decision-2025-03-06-gannet-deadline",
+    "decision-2025-04-11-dunlin-deadline",
+    "decision-2025-04-26-bittern-deadline",
+    "decision-2025-05-06-merlin-deadline",
+    "decision-2025-06-17-curlew-deadline",
+    "decision-2025-05-10-osprey-deadline",
+    "decision-2025-06-09-kestrel-deadline",
+    "concept-rate-limiting",
+    "project-shrike",
+    "tool-gristmill",
+    "decision-2025-07-20-gannet-deadline",
+    "decision-2025-08-01-curlew-deadline",
+    "decision-2025-08-16-heron-deadline",
+    "decision-2025-09-12-bittern-deadline",
+    "decision-2025-09-16-dunlin-deadline",
+    "decision-2025-12-14-plover-deadline"
+   ],
+   "answer": "On 28 April 2025, the steering group set the deadline for Project Shrike to 13 March 2026.",
+   "citations": [
+    {
+     "note": "decision-2025-04-28-shrike-deadline",
+     "quote": "On 28 April 2025, the steering group set the deadline for Project Shrike to 13 March 2026."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q069",
+   "retrieved": [
+    "decision-2025-04-26-bittern-deadline",
+    "decision-2025-09-12-bittern-deadline",
+    "decision-2025-02-07-heron-deadline",
+    "decision-2025-02-08-plover-deadline",
+    "decision-2025-03-06-gannet-deadline",
+    "decision-2025-04-11-dunlin-deadline",
+    "decision-2025-04-28-shrike-deadline",
+    "decision-2025-05-06-merlin-deadline",
+    "decision-2025-06-17-curlew-deadline",
+    "decision-2025-05-10-osprey-deadline",
+    "decision-2025-06-09-kestrel-deadline",
+    "concept-blameless-review",
+    "project-bittern",
+    "decision-2025-07-20-gannet-deadline",
+    "decision-2025-08-01-curlew-deadline",
+    "decision-2025-08-16-heron-deadline",
+    "decision-2025-09-16-dunlin-deadline",
+    "decision-2025-12-12-shrike-deadline",
+    "decision-2025-12-14-plover-deadline",
+    "decision-2025-12-17-merlin-deadline"
+   ],
+   "answer": "On 26 April 2025, the steering group set the deadline for Project Bittern to 1 January 2026.",
+   "citations": [
+    {
+     "note": "decision-2025-04-26-bittern-deadline",
+     "quote": "On 26 April 2025, the steering group set the deadline for Project Bittern to 1 January 2026."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q070",
+   "retrieved": [
+    "person-severin-ibarrondo",
+    "person-kasimir-okafor-lind",
+    "person-brisa-ibarrondo",
+    "person-elodie-ibarrondo",
+    "person-marit-quintanar",
+    "meeting-2025-03-09-tidewater-sync",
+    "decision-2025-05-10-osprey-deadline",
+    "decision-2025-06-09-kestrel-deadline",
+    "decision-2025-10-26-kestrel-deadline",
+    "decision-2025-12-01-osprey-deadline",
+    "team-tidewater",
+    "person-linnea-kalvaitis",
+    "person-corvin-strandberg",
+    "person-ottilie-brannock",
+    "person-mirela-rautio",
+    "person-ulrik-asturias",
+    "person-oskar-rautio",
+    "person-brisa-brannock",
+    "person-yara-delacourt",
+    "team-lighthouse"
+   ],
+   "answer": "Outside work, Severin Ibarrondo swims in the harbour every morning, all year.",
+   "citations": [
+    {
+     "note": "person-severin-ibarrondo",
+     "quote": "Outside work, Severin Ibarrondo swims in the harbour every morning, all year."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q071",
+   "retrieved": [
+    "person-severin-ibarrondo",
+    "person-linnea-kalvaitis",
+    "person-corvin-strandberg",
+    "person-ottilie-brannock",
+    "person-mirela-rautio",
+    "person-ulrik-asturias",
+    "person-oskar-rautio",
+    "person-brisa-brannock",
+    "person-emeric-moravec",
+    "person-ilsa-thorsby",
+    "person-mirela-marchetti",
+    "concept-blameless-review",
+    "person-vesna-halloran",
+    "person-anselm-tamberlane",
+    "person-ulrik-oyelaran",
+    "person-bastian-oyelaran",
+    "person-saskia-okafor-lind",
+    "person-corvin-carrow",
+    "person-ilsa-wexley",
+    "person-brisa-ibarrondo"
+   ],
+   "answer": "Outside work, Severin Ibarrondo swims in the harbour every morning, all year.",
+   "citations": [
+    {
+     "note": "person-severin-ibarrondo",
+     "quote": "Outside work, Severin Ibarrondo swims in the harbour every morning, all year."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q072",
+   "retrieved": [
+    "person-saskia-okafor-lind",
+    "person-kasimir-okafor-lind",
+    "meeting-2025-06-10-cinder-sync",
+    "meeting-2025-03-09-tidewater-sync",
+    "person-tomas-pellegrin",
+    "person-marit-quintanar",
+    "decision-2025-05-10-osprey-deadline",
+    "decision-2025-06-09-kestrel-deadline",
+    "decision-2025-10-26-kestrel-deadline",
+    "decision-2025-12-01-osprey-deadline",
+    "person-fabian-halloran",
+    "team-cinder",
+    "team-tidewater",
+    "person-severin-ibarrondo",
+    "person-elodie-pellegrin",
+    "project-dipper",
+    "meeting-2025-11-14-willowherb-sync",
+    "meeting-2025-07-08-willowherb-sync",
+    "team-willowherb",
+    "meeting-2025-06-21-willowherb-sync"
+   ],
+   "answer": "Saskia Okafor-Lind works as a ML engineer on the Cinder team.",
+   "citations": [
+    {
+     "note": "person-saskia-okafor-lind",
+     "quote": "Saskia Okafor-Lind works as a ML engineer on the Cinder team."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q073",
+   "retrieved": [
+    "person-marit-quintanar",
+    "person-severin-ibarrondo",
+    "decision-2025-02-07-heron-deadline",
+    "decision-2025-02-08-plover-deadline",
+    "decision-2025-08-16-heron-deadline",
+    "decision-2025-12-14-plover-deadline",
+    "project-lapwing",
+    "team-saltmarsh",
+    "person-linnea-kalvaitis",
+    "meeting-2025-07-22-saltmarsh-sync",
+    "person-corvin-strandberg",
+    "person-ottilie-brannock",
+    "person-mirela-rautio",
+    "person-ulrik-asturias",
+    "person-oskar-rautio",
+    "person-brisa-brannock",
+    "person-emeric-moravec",
+    "person-ilsa-thorsby",
+    "person-mirela-marchetti",
+    "concept-blameless-review"
+   ],
+   "answer": "Marit Quintanar works as a hardware technician on the Saltmarsh team.",
+   "citations": [
+    {
+     "note": "person-marit-quintanar",
+     "quote": "Marit Quintanar works as a hardware technician on the Saltmarsh team."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q074",
+   "retrieved": [
+    "concept-blameless-review",
+    "person-elodie-ibarrondo",
+    "person-greta-oyelaran",
+    "person-severin-rautio",
+    "person-teodor-brannock",
+    "person-elodie-pellegrin",
+    "person-emeric-moravec",
+    "person-ilsa-thorsby",
+    "person-leopold-halloran",
+    "person-mirela-marchetti",
+    "person-vesna-thorsby",
+    "person-yara-thorsby",
+    "person-fabian-halloran",
+    "person-marit-quintanar",
+    "person-ines-wexley",
+    "person-oskar-vestergaard",
+    "person-petra-asturias",
+    "person-petra-fennimore",
+    "person-ines-rautio",
+    "person-greta-lindqvist"
+   ],
+   "answer": "Elodie currently leads Project Nightjar.",
+   "citations": [
+    {
+     "note": "person-elodie-ibarrondo",
+     "quote": "Elodie currently leads Project Nightjar."
+    }
+   ],
+   "sec": 0.0
+  },
+  {
+   "id": "q075",
+   "retrieved": [
+    "concept-blameless-review",
+    "person-elodie-ibarrondo",
+    "person-greta-oyelaran",
+    "person-severin-rautio",
+    "person-teodor-brannock",
+    "person-elodie-pellegrin",
+    "person-emeric-moravec",
+    "person-ilsa-thorsby",
+    "person-leopold-halloran",
+    "person-mirela-marchetti",
+    "person-vesna-thorsby",
+    "person-yara-thorsby",
+    "person-fabian-halloran",
+    "person-marit-quintanar",
+    "person-ines-wexley",
+    "person-oskar-vestergaard",
+    "person-petra-asturias",
+    "person-petra-fennimore",
+    "person-ines-rautio",
+    "person-greta-lindqvist"
+   ],
+   "answer": "Elodie currently leads Project Nightjar.",
+   "citations": [
+    {
+     "note": "person-elodie-ibarrondo",
+     "quote": "Elodie currently leads Project Nightjar."
+    }
+   ],
+   "sec": 0.0
+  },
+  {
+   "id": "q076",
+   "retrieved": [
+    "concept-blameless-review",
+    "person-elodie-ibarrondo",
+    "person-greta-oyelaran",
+    "person-severin-rautio",
+    "person-teodor-brannock",
+    "person-elodie-pellegrin",
+    "person-emeric-moravec",
+    "person-ilsa-thorsby",
+    "person-leopold-halloran",
+    "person-mirela-marchetti",
+    "person-vesna-thorsby",
+    "person-yara-thorsby",
+    "person-fabian-halloran",
+    "person-marit-quintanar",
+    "person-ines-wexley",
+    "person-oskar-vestergaard",
+    "person-petra-asturias",
+    "person-petra-fennimore",
+    "person-ines-rautio",
+    "person-greta-lindqvist"
+   ],
+   "answer": "Elodie currently leads Project Nightjar.",
+   "citations": [
+    {
+     "note": "person-elodie-ibarrondo",
+     "quote": "Elodie currently leads Project Nightjar."
+    }
+   ],
+   "sec": 0.0
+  },
+  {
+   "id": "q077",
+   "retrieved": [
+    "concept-idempotent-writes",
+    "project-redshank",
+    "tool-brindlewood",
+    "tool-fathomer",
+    "tool-ferrodb",
+    "tool-gristmill",
+    "tool-harrowby",
+    "tool-kilnworth",
+    "tool-lanternfish",
+    "tool-orreryx",
+    "tool-pennantry",
+    "tool-quillmark",
+    "tool-sextantix",
+    "tool-siltcore",
+    "tool-spindrift",
+    "tool-tallyhoe",
+    "tool-wickline",
+    "tool-cobbleset",
+    "tool-corvex",
+    "tool-loamstack"
+   ],
+   "answer": "Brindlewood is written in Erlang.",
+   "citations": [
+    {
+     "note": "tool-brindlewood",
+     "quote": "Brindlewood is written in Erlang."
+    }
+   ],
+   "sec": 0.0
+  },
+  {
+   "id": "q078",
+   "retrieved": [
+    "concept-idempotent-writes",
+    "project-redshank",
+    "tool-brindlewood",
+    "tool-fathomer",
+    "tool-ferrodb",
+    "tool-gristmill",
+    "tool-harrowby",
+    "tool-kilnworth",
+    "tool-lanternfish",
+    "tool-orreryx",
+    "tool-pennantry",
+    "tool-quillmark",
+    "tool-sextantix",
+    "tool-siltcore",
+    "tool-spindrift",
+    "tool-tallyhoe",
+    "tool-wickline",
+    "tool-cobbleset",
+    "tool-corvex",
+    "tool-loamstack"
+   ],
+   "answer": "Brindlewood is written in Erlang.",
+   "citations": [
+    {
+     "note": "tool-brindlewood",
+     "quote": "Brindlewood is written in Erlang."
+    }
+   ],
+   "sec": 0.0
+  },
+  {
+   "id": "q079",
+   "retrieved": [
+    "site-brackwater",
+    "site-ketterby",
+    "site-owlsgate",
+    "site-ninefold",
+    "site-amsel-quay",
+    "site-drumlin-cross",
+    "site-holloway-reach",
+    "site-larkspur-basin",
+    "site-port-varen",
+    "site-sorrel-point",
+    "site-tamsin-ford",
+    "site-calder-rise",
+    "concept-rate-limiting",
+    "concept-chaos-drills",
+    "concept-observability-budget",
+    "project-shrike",
+    "person-talia-wexley",
+    "team-bramble",
+    "team-meridian",
+    "team-willowherb"
+   ],
+   "answer": "The Brackwater office has 218 desks.",
+   "citations": [
+    {
+     "note": "site-brackwater",
+     "quote": "The Brackwater office has 218 desks."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q080",
+   "retrieved": [
+    "person-bastian-marchetti",
+    "person-marit-marchetti",
+    "person-mirela-marchetti",
+    "team-meridian",
+    "person-brisa-brannock",
+    "meeting-2025-07-15-meridian-sync",
+    "person-yara-thorsby",
+    "project-plover",
+    "decision-2025-02-08-plover-deadline",
+    "decision-2025-06-09-kestrel-deadline",
+    "decision-2025-12-14-plover-deadline",
+    "decision-2025-10-26-kestrel-deadline",
+    "person-bastian-oyelaran",
+    "person-linnea-kalvaitis",
+    "person-corvin-strandberg",
+    "person-ottilie-brannock",
+    "person-mirela-rautio",
+    "person-fabian-halloran",
+    "person-ulrik-asturias",
+    "person-oskar-rautio"
+   ],
+   "answer": "Bastian Marchetti works as a technical writer on the Meridian team.",
+   "citations": [
+    {
+     "note": "person-bastian-marchetti",
+     "quote": "Bastian Marchetti works as a technical writer on the Meridian team."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q081",
+   "retrieved": [
+    "person-ottilie-strandberg",
+    "meeting-2025-03-08-granite-sync",
+    "person-corvin-strandberg",
+    "person-ottilie-brannock",
+    "team-granite",
+    "meeting-2025-05-17-granite-sync",
+    "person-leopold-halloran",
+    "person-oskar-vestergaard",
+    "meeting-2025-01-02-ironbark-sync",
+    "meeting-2025-10-21-granite-sync",
+    "person-linnea-kalvaitis",
+    "person-mirela-rautio",
+    "meeting-2025-11-12-ironbark-sync",
+    "meeting-2025-10-21-ironbark-sync",
+    "decision-2025-04-11-dunlin-deadline",
+    "decision-2025-05-06-merlin-deadline",
+    "decision-2025-09-16-dunlin-deadline",
+    "decision-2025-12-17-merlin-deadline",
+    "team-ironbark",
+    "person-ulrik-asturias"
+   ],
+   "answer": "Ottilie Strandberg works as a ML engineer on the Granite team.",
+   "citations": [
+    {
+     "note": "person-ottilie-strandberg",
+     "quote": "Ottilie Strandberg works as a ML engineer on the Granite team."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q082",
+   "retrieved": [
+    "person-corvin-strandberg",
+    "meeting-2025-01-02-ironbark-sync",
+    "person-leopold-halloran",
+    "meeting-2025-11-12-ironbark-sync",
+    "meeting-2025-10-21-ironbark-sync",
+    "team-ironbark",
+    "person-corvin-carrow",
+    "person-ottilie-strandberg",
+    "meeting-2025-03-08-granite-sync",
+    "meeting-2025-11-03-bramble-sync",
+    "person-linnea-kalvaitis",
+    "person-ottilie-brannock",
+    "team-bramble",
+    "person-mirela-rautio",
+    "meeting-2025-05-17-granite-sync",
+    "team-granite",
+    "person-ulrik-asturias",
+    "person-brisa-brannock",
+    "person-oskar-rautio",
+    "person-emeric-moravec"
+   ],
+   "answer": "Corvin Strandberg works as a hardware technician on the Ironbark team.",
+   "citations": [
+    {
+     "note": "person-corvin-strandberg",
+     "quote": "Corvin Strandberg works as a hardware technician on the Ironbark team."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q083",
+   "retrieved": [
+    "person-oskar-vestergaard",
+    "person-ulrik-asturias",
+    "person-oskar-rautio",
+    "project-dunlin",
+    "meeting-2025-11-14-willowherb-sync",
+    "meeting-2025-07-20-willowherb-sync",
+    "team-willowherb",
+    "person-greta-oyelaran",
+    "person-linnea-kalvaitis",
+    "person-corvin-strandberg",
+    "person-ottilie-brannock",
+    "person-mirela-rautio",
+    "meeting-2025-10-03-foxglove-sync",
+    "person-brisa-brannock",
+    "person-emeric-moravec",
+    "person-ilsa-thorsby",
+    "person-mirela-marchetti",
+    "decision-2025-03-06-gannet-deadline",
+    "decision-2025-07-20-gannet-deadline",
+    "meeting-2025-05-21-foxglove-sync"
+   ],
+   "answer": "Oskar Vestergaard works as a program manager on the Willowherb team.",
+   "citations": [
+    {
+     "note": "person-oskar-vestergaard",
+     "quote": "Oskar Vestergaard works as a program manager on the Willowherb team."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q084",
+   "retrieved": [
+    "person-ines-rautio",
+    "person-elodie-ibarrondo",
+    "meeting-2025-02-02-saltmarsh-sync",
+    "project-redshank",
+    "meeting-2025-02-13-saltmarsh-sync",
+    "meeting-2025-07-06-saltmarsh-sync",
+    "person-ines-wexley",
+    "team-saltmarsh",
+    "meeting-2025-07-22-saltmarsh-sync",
+    "person-mirela-rautio",
+    "person-oskar-rautio",
+    "person-severin-rautio",
+    "person-kasimir-okafor-lind",
+    "person-marit-quintanar",
+    "person-talia-wexley",
+    "concept-graceful-degradation",
+    "project-osprey",
+    "meeting-2025-12-23-ironbark-sync",
+    "person-greta-oyelaran",
+    "team-ironbark"
+   ],
+   "answer": "Ines Rautio works as a research scientist on the Saltmarsh team.",
+   "citations": [
+    {
+     "note": "person-ines-rautio",
+     "quote": "Ines Rautio works as a research scientist on the Saltmarsh team."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q085",
+   "retrieved": [
+    "person-vesna-halloran",
+    "meeting-2025-07-08-willowherb-sync",
+    "meeting-2025-06-21-willowherb-sync",
+    "team-willowherb",
+    "person-kasimir-okafor-lind",
+    "meeting-2025-07-20-willowherb-sync",
+    "person-vesna-thorsby",
+    "person-leopold-halloran",
+    "person-fabian-halloran",
+    "person-marit-quintanar",
+    "meeting-2025-07-15-meridian-sync",
+    "person-talia-wexley",
+    "person-elodie-pellegrin",
+    "concept-graceful-degradation",
+    "project-avocet",
+    "meeting-2025-01-11-meridian-sync",
+    "team-meridian",
+    "meeting-2025-07-22-meridian-sync",
+    "project-dipper",
+    "meeting-2025-11-14-willowherb-sync"
+   ],
+   "answer": "Vesna Halloran works as a technical writer on the Willowherb team.",
+   "citations": [
+    {
+     "note": "person-vesna-halloran",
+     "quote": "Vesna Halloran works as a technical writer on the Willowherb team."
+    }
+   ],
+   "sec": 0.001
+  },
+  {
+   "id": "q086",
+   "retrieved": [
+    "tool-tallyhoe",
+    "person-ottilie-brannock",
+    "project-lapwing",
+    "person-oskar-rautio",
+    "concept-idempotent-writes",
+    "team-foxglove",
+    "project-redshank",
+    "tool-brindlewood",
+    "tool-fathomer",
+    "tool-ferrodb",
+    "tool-gristmill",
+    "tool-harrowby",
+    "tool-kilnworth",
+    "tool-lanternfish",
+    "tool-orreryx",
+    "tool-pennantry",
+    "tool-quillmark",
+    "tool-sextantix",
+    "tool-siltcore",
+    "tool-spindrift"
+   ],
+   "answer": "Tallyhoe was first released in 2020.",
+   "citations": [
+    {
+     "note": "tool-tallyhoe",
+     "quote": "Tallyhoe was first released in 2020."
+    }
+   ],
+   "sec": 0.0
+  },
+  {
+   "id": "q087",
+   "retrieved": [
+    "tool-brindlewood",
+    "concept-idempotent-writes",
+    "person-linnea-kalvaitis",
+    "project-skua",
+    "person-ottilie-strandberg",
+    "person-talia-lindqvist",
+    "meeting-2025-07-15-meridian-sync",
+    "team-meridian",
+    "project-redshank",
+    "tool-fathomer",
+    "tool-ferrodb",
+    "tool-gristmill",
+    "tool-harrowby",
+    "tool-kilnworth",
+    "tool-lanternfish",
+    "tool-orreryx",
+    "tool-pennantry",
+    "tool-quillmark",
+    "tool-sextantix",
+    "tool-siltcore"
+   ],
+   "answer": "Brindlewood was first released in 2019.",
+   "citations": [
+    {
+     "note": "tool-brindlewood",
+     "quote": "Brindlewood was first released in 2019."
+    }
+   ],
+   "sec": 0.0
+  },
+  {
+   "id": "q088",
+   "retrieved": [
+    "decision-2025-01-01-godwit-budget",
+    "decision-2025-01-05-avocet-budget",
+    "decision-2025-01-20-whimbrel-budget",
+    "decision-2025-06-12-skua-budget",
+    "decision-2025-06-26-ouzel-budget",
+    "decision-2025-07-20-linnet-budget",
+    "decision-2025-08-16-dipper-budget",
+    "decision-2025-09-26-lapwing-budget",
+    "decision-2025-11-11-siskin-budget",
+    "decision-2025-11-22-tern-budget",
+    "decision-2025-12-04-petrel-budget",
+    "decision-2025-12-13-redshank-budget",
+    "concept-observability-budget",
+    "project-gannet",
+    "decision-2025-03-06-gannet-deadline",
+    "decision-2025-07-20-gannet-deadline",
+    "tool-spindrift",
+    "concept-backpressure",
+    "concept-rate-limiting",
+    "concept-chaos-drills"
+   ],
+   "answer": "On 1 January 2025, the steering group approved a budget of 60,000 compute credits for Project Godwit.",
+   "citations": [
+    {
+     "note": "decision-2025-01-01-godwit-budget",
+     "quote": "On 1 January 2025, the steering group approved a budget of 60,000 compute credits for Project Godwit."
+    }
+   ],
+   "sec": 0.0
+  },
+  {
+   "id": "q089",
+   "retrieved": [
+    "decision-2025-01-01-godwit-budget",
+    "decision-2025-01-05-avocet-budget",
+    "decision-2025-01-20-whimbrel-budget",
+    "decision-2025-06-12-skua-budget",
+    "decision-2025-06-26-ouzel-budget",
+    "decision-2025-07-20-linnet-budget",
+    "decision-2025-08-16-dipper-budget",
+    "decision-2025-09-26-lapwing-budget",
+    "decision-2025-11-11-siskin-budget",
+    "decision-2025-11-22-tern-budget",
+    "decision-2025-12-04-petrel-budget",
+    "decision-2025-12-13-redshank-budget",
+    "concept-observability-budget",
+    "project-heron",
+    "decision-2025-02-07-heron-deadline",
+    "decision-2025-08-16-heron-deadline",
+    "concept-rate-limiting",
+    "concept-backpressure",
+    "concept-chaos-drills",
+    "tool-mosscache"
+   ],
+   "answer": "On 1 January 2025, the steering group approved a budget of 60,000 compute credits for Project Godwit.",
+   "citations": [
+    {
+     "note": "decision-2025-01-01-godwit-budget",
+     "quote": "On 1 January 2025, the steering group approved a budget of 60,000 compute credits for Project Godwit."
+    }
+   ],
+   "sec": 0.0
+  },
+  {
+   "id": "q090",
+   "retrieved": [
+    "decision-2025-01-01-godwit-budget",
+    "decision-2025-01-05-avocet-budget",
+    "decision-2025-01-20-whimbrel-budget",
+    "decision-2025-06-12-skua-budget",
+    "decision-2025-06-26-ouzel-budget",
+    "decision-2025-07-20-linnet-budget",
+    "decision-2025-08-16-dipper-budget",
+    "decision-2025-09-26-lapwing-budget",
+    "decision-2025-11-11-siskin-budget",
+    "decision-2025-11-22-tern-budget",
+    "decision-2025-12-04-petrel-budget",
+    "decision-2025-12-13-redshank-budget",
+    "project-osprey",
+    "decision-2025-05-10-osprey-deadline",
+    "decision-2025-12-01-osprey-deadline",
+    "meeting-2025-03-08-granite-sync",
+    "concept-rate-limiting",
+    "concept-chaos-drills",
+    "concept-observability-budget",
+    "project-shrike"
+   ],
+   "answer": "On 1 January 2025, the steering group approved a budget of 60,000 compute credits for Project Godwit.",
+   "citations": [
+    {
+     "note": "decision-2025-01-01-godwit-budget",
+     "quote": "On 1 January 2025, the steering group approved a budget of 60,000 compute credits for Project Godwit."
+    }
+   ],
+   "sec": 0.0
+  },
+  {
+   "id": "q091",
+   "retrieved": [
+    "site-holloway-reach",
+    "person-corvin-strandberg",
+    "person-mirela-rautio",
+    "meeting-2025-08-04-tidewater-sync",
+    "person-leopold-fennimore",
+    "person-emeric-moravec",
+    "team-tidewater",
+    "meeting-2025-12-16-tidewater-sync",
+    "person-ines-rautio",
+    "concept-blameless-review",
+    "site-brackwater",
+    "site-ketterby",
+    "site-owlsgate",
+    "site-ninefold",
+    "home",
+    "site-amsel-quay",
+    "site-drumlin-cross",
+    "site-larkspur-basin",
+    "site-port-varen",
+    "site-sorrel-point"
+   ],
+   "answer": "The Holloway Reach office opened in 1999.",
+   "citations": [
+    {
+     "note": "site-holloway-reach",
+     "quote": "The Holloway Reach office opened in 1999."
+    }
+   ],
+   "sec": 0.001
+  }
+ ]
+}

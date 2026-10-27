@@ -3,3 +3,5 @@
 bm25
 sqlite-graph-memory
 sqlite-graph-memory-vector
+sqlite-fts5
+second-brain   # git clone at a pinned commit, stdlib only

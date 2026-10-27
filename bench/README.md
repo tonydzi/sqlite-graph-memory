@@ -161,7 +161,8 @@ bench/
   run.py               run one system -> results/<name>.json
   validate.py          the CI gate (+ --selftest, --reproduce)
   leaderboard.py       results/*.json -> LEADERBOARD.md
-  adapters/            template.py, bm25.py, sgm.py (+ _extract.py, the shared answer floor)
+  adapters/            template.py, bm25.py, sgm.py, sqlite_fts5.py, second_brain.py,
+                       mem0_local.py, fidelis_memory.py (+ _extract.py, the shared answer floor)
   results/             one JSON per system
 ```
 

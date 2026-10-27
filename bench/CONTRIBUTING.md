@@ -22,14 +22,21 @@ Fill in two methods:
     word from that note.
 
 Rename the key in `SYSTEMS` to the name you want on the board (lowercase, `a-z0-9._-`).
+Do not name the file after your package (`adapters/fidelis.py` hides the real `fidelis`
+from its own imports); `run.py` refuses such a file and says so. `fidelis_memory.py` is fine.
 Put everything you set by hand into `info()["config"]`: model, prompt, top-k, thresholds.
+
+Working adapters by people other than the system's authors, to copy from:
+[`fidelis_memory.py`](adapters/fidelis_memory.py) (a library over mem0, local Ollama),
+[`mem0_local.py`](adapters/mem0_local.py) (mem0 without an API key),
+[`second_brain.py`](adapters/second_brain.py) (a project that is not on PyPI, run from a
+pinned clone) and [`sqlite_fts5.py`](adapters/sqlite_fts5.py) (stdlib only).
 
 Sketches for systems people have asked about. These are untested pointers, not working
 adapters. Check them against each project's current docs.
 
 | system | in `setup` | in `ask` |
 |---|---|---|
-| mem0 | `Memory().add(note_text, user_id="bench", metadata={"note": id})` per note | `search(question, user_id="bench")`, map hits back to `metadata["note"]` |
 | Letta | create an agent, insert each note into archival memory with its id in the text | send the question, read the archival-search tool calls for ids |
 | Khoj | point a Khoj instance at `bench/vault/` and wait for indexing | `/api/search?q=...`, map file paths to ids |
 | plain RAG | chunk + embed with your stack | top-k chunks -> ids; an LLM writes the answer and quotes a chunk |

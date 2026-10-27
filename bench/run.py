@@ -39,11 +39,36 @@ def adapter_modules():
         yield p, spec
 
 
+def shadowed_package(adapter_path):
+    """Name of an installed package that this adapter file would hide, or None.
+
+    Adapters put bench/adapters on sys.path (to import _extract). A file named
+    adapters/fidelis.py then shadows the real `fidelis` package, and `import fidelis.config`
+    inside it fails with a puzzling "'fidelis' is not a package". Caught here, by name."""
+    stem = adapter_path.stem
+    if stem.startswith('_'):
+        return None
+    here = adapter_path.parent.resolve()
+    saved = sys.path[:]
+    try:
+        sys.path[:] = [x for x in sys.path if Path(x or '.').resolve() != here]
+        found = importlib.util.find_spec(stem)
+    except Exception:             # a broken third-party install must not take run.py down
+        found = None
+    finally:
+        sys.path[:] = saved
+    return stem if found is not None else None
+
+
 def find_system(name):
     for p, spec in adapter_modules():
         src = p.read_text(encoding='utf-8')
         if repr(name) not in src and '"%s"' % name not in src:
             continue                      # avoid importing heavy adapters we do not need
+        clash = shadowed_package(p)
+        if clash:
+            sys.exit('adapter %s has the same name as the installed package %r and would hide it from '
+                     'its own imports; rename the file (e.g. %s_adapter.py)' % (p.name, clash, clash))
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
         if name in getattr(mod, 'SYSTEMS', {}):

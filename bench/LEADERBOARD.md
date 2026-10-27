@@ -7,27 +7,43 @@ Synthetic vault: 202 notes · 91 questions (69 answerable, 22 with no answer in 
 | system | R@5 | R@10 | answer | verbatim cite | faithful quotes | abstains when absent | false abstain ↓ | CI-reproduced | by |
 |---|---:|---:|---:|---:|---:|---:|---:|:---:|---|
 | [sqlite-graph-memory-vector](https://github.com/tonydzi/sqlite-graph-memory) `0.3.0` | 0.88 | 0.92 | 0.33 | 0.33 | 1.00 | 0.45 | 0.26 | yes | tonydzi |
+| [mem0-local](https://github.com/mem0ai/mem0) `2.2.1` | 0.87 | 0.93 | 0.36 | 0.36 | 1.00 | 0.14 | 0.13 | self-reported | tonydzi |
+| [fidelis](https://github.com/hermes-labs-ai/fidelis) `0.2.0` | 0.86 | 0.93 | 0.42 | 0.42 | 1.00 | 0.18 | 0.16 | self-reported | tonydzi |
 | [sqlite-graph-memory](https://github.com/tonydzi/sqlite-graph-memory) `0.3.0` | 0.85 | 0.91 | 0.33 | 0.33 | 1.00 | 0.45 | 0.26 | yes | tonydzi |
 | [bm25](https://en.wikipedia.org/wiki/Okapi_BM25) `reference` | 0.77 | 0.79 | 0.42 | 0.42 | 1.00 | 0.36 | 0.04 | yes | tonydzi |
+| [second-brain](https://github.com/stancsz/second-brain) `b17e6d5e9a1b` | 0.76 | 0.76 | 0.42 | 0.42 | 1.00 | 0.00 | 0.04 | yes | tonydzi |
+| [sqlite-fts5](https://www.sqlite.org/fts5.html) `reference` | 0.76 | 0.76 | 0.42 | 0.42 | 1.00 | 0.00 | 0.04 | yes | tonydzi |
 
 ## Recall@5 by question class
 
 | system | fact | bridge | paraphrase | paraphrase_bridge | temporal |
 |---|---:|---:|---:|---:|---:|
 | sqlite-graph-memory-vector | 1.00 | 0.97 | 0.80 | 0.08 | 1.00 |
+| mem0-local | 1.00 | 0.70 | 1.00 | 0.25 | 1.00 |
+| fidelis | 1.00 | 0.73 | 0.90 | 0.17 | 1.00 |
 | sqlite-graph-memory | 1.00 | 1.00 | 0.50 | 0.08 | 1.00 |
 | bm25 | 1.00 | 1.00 | 0.00 | 0.00 | 1.00 |
+| second-brain | 1.00 | 0.97 | 0.00 | 0.00 | 1.00 |
+| sqlite-fts5 | 1.00 | 0.97 | 0.00 | 0.00 | 1.00 |
 
 ## Abstention by question class (share of unanswerable questions left unanswered)
 
 | system | absent_entity | absent_attribute |
 |---|---:|---:|
 | sqlite-graph-memory-vector | 0.60 | 0.33 |
+| mem0-local | 0.30 | 0.00 |
+| fidelis | 0.40 | 0.00 |
 | sqlite-graph-memory | 0.60 | 0.33 |
 | bm25 | 0.80 | 0.00 |
+| second-brain | 0.00 | 0.00 |
+| sqlite-fts5 | 0.00 | 0.00 |
 
 ## Notes from the submitters
 
 - **sqlite-graph-memory-vector** — Our own system, vector-only. Ranks ahead of graph mode on this vault (graph helps bridge, hurts paraphrase). Same answer-side weaknesses as graph mode.
+- **mem0-local** — mem0 2.x local: Ollama nomic-embed-text, embedded Qdrant, infer=False so notes are stored verbatim (extraction on would rewrite them). Pure dense search, no abstention rule. Not CI-rerun: needs a local Ollama.
+- **fidelis** — fidelis-memory 0.2.0 zero_llm tier, BM25+dense+RRF with the hybrid extra on, Ollama nomic-embed-text, notes stored verbatim, embeddings memoized by the adapter (same vectors). No abstention rule at this tier. Not CI-rerun: needs a local Ollama.
 - **sqlite-graph-memory** — Our own system, graph mode. Answers come from a simple extractor, not an LLM. Weakest spots: cites the superseded decision on 6/6 current-deadline questions; abstains on all 16 paraphrase questions, including the ones it retrieved; answers 55% of absent-fact questions anyway.
 - **bm25** — Keyword search with no model and an extractive answer: the floor every other row has to clear. Wins on names, scores 0.00 on paraphrase.
+- **second-brain** — Run from a clone at a pinned commit (not on PyPI). Raw questions are an FTS5 syntax error in SecondBrain.search(), so the adapter quotes and OR-joins the words. Pure FTS5 ranking, no entity check: answers all 22 absent questions.
+- **sqlite-fts5** — FTS5 as shipped: SQLite's own bm25() rank over whole notes, question words OR-joined. No entity check, so it answers all 22 absent questions. Ties second-brain on every metric.

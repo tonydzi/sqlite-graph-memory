@@ -65,3 +65,24 @@ def test_inflated_number_is_caught():
     errs = bc.check_result(r2, bc.load_questions(), bc.load_vault(), bc.tree_sha256(bc.VAULT),
                            bc.file_sha256(bc.QUESTIONS), filename=f)
     assert any('answer_acc' in e for e in errs)
+
+
+def test_adapter_named_after_installed_package_is_refused(tmp_path):
+    """An adapter file named like an installed package (adapters/json.py) shadows it; run.py must say so."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('bench_run_mod', ROOT / 'bench' / 'run.py')
+    run = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(run)
+    clash = tmp_path / 'json.py'
+    clash.write_text("SYSTEMS = {'x': {}}\n")
+    assert run.shadowed_package(clash) == 'json'
+    assert run.shadowed_package(tmp_path / 'no_such_pkg_zz9.py') is None
+    # the adapter's own folder never counts: a module found only there is the adapter itself
+    own = tmp_path / 'zz_only_here_9.py'
+    own.write_text("SYSTEMS = {'y': {}}\n")
+    sys.path.insert(0, str(tmp_path))
+    try:
+        assert run.shadowed_package(own) is None
+    finally:
+        sys.path.remove(str(tmp_path))
+    assert all(run.shadowed_package(p) is None for p in (ROOT / 'bench' / 'adapters').glob('*.py'))
