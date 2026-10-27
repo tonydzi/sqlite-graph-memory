@@ -25,11 +25,11 @@
   "command": "python bench/run.py --system mem0-local"
  },
  "runtime": {
-  "setup_sec": 23.3,
-  "sec_per_question": 0.023,
+  "setup_sec": 51.6,
+  "sec_per_question": 0.038,
   "python": "3.12.15"
  },
- "notes": "mem0 2.x local: Ollama nomic-embed-text, embedded Qdrant, infer=False so notes are stored verbatim (extraction on would rewrite them). Pure dense search, no abstention rule. Produced and rerun in CI on Linux against a pinned Ollama container (macOS gives the same answers, R@10 0.93 there).",
+ "notes": "mem0 2.x local: Ollama nomic-embed-text, embedded Qdrant, infer=False so notes are stored verbatim (extraction on would rewrite them). Pure dense search, no abstention rule. Produced and rerun in CI on Linux against a pinned Ollama container held to its haswell CPU kernel (macOS gives the same answers, R@10 0.93 there).",
  "metrics": {
   "overall": {
    "n": 91,
@@ -147,13 +147,13 @@
     "person-ottilie-strandberg",
     "person-mirela-rautio",
     "tool-spindrift",
-    "tool-orreryx",
     "person-bastian-marchetti",
+    "tool-orreryx",
     "person-severin-rautio",
     "person-emeric-moravec",
     "tool-quillmark",
     "team-granite",
-    "tool-thimblerig"
+    "person-corvin-strandberg"
    ],
    "answer": "Rurik Pellegrin works as a hardware technician on the Willowherb team.",
    "citations": [
@@ -162,7 +162,7 @@
      "quote": "Rurik Pellegrin works as a hardware technician on the Willowherb team."
     }
    ],
-   "sec": 0.025,
+   "sec": 0.04,
    "top_score": 0.7192
   },
   {
@@ -196,8 +196,8 @@
      "quote": "Ines Rautio works as a research scientist on the Saltmarsh team."
     }
    ],
-   "sec": 0.023,
-   "top_score": 0.6979
+   "sec": 0.038,
+   "top_score": 0.6977
   },
   {
    "id": "q003",
@@ -230,8 +230,8 @@
      "quote": "Saskia Brannock works as a research scientist on the Bramble team."
     }
    ],
-   "sec": 0.023,
-   "top_score": 0.7521
+   "sec": 0.04,
+   "top_score": 0.7522
   },
   {
    "id": "q004",
@@ -264,8 +264,8 @@
      "quote": "Anselm Asturias works as a program manager on the Tidewater team."
     }
    ],
-   "sec": 0.023,
-   "top_score": 0.6823
+   "sec": 0.037,
+   "top_score": 0.6824
   },
   {
    "id": "q005",
@@ -298,7 +298,7 @@
      "quote": "Bastian Marchetti works as a technical writer on the Meridian team."
     }
    ],
-   "sec": 0.022,
+   "sec": 0.04,
    "top_score": 0.735
   },
   {
@@ -332,7 +332,7 @@
      "quote": "Oskar Rautio grew up in Port Varen."
     }
    ],
-   "sec": 0.02,
+   "sec": 0.031,
    "top_score": 0.66
   },
   {
@@ -366,7 +366,7 @@
      "quote": "Talia Wexley grew up in Tamsin Ford."
     }
    ],
-   "sec": 0.02,
+   "sec": 0.032,
    "top_score": 0.6593
   },
   {
@@ -400,7 +400,7 @@
      "quote": "Severin Ibarrondo works as a statistician on the Cinder team."
     }
    ],
-   "sec": 0.024,
+   "sec": 0.044,
    "top_score": 0.6763
   },
   {
@@ -415,8 +415,8 @@
     "tool-siltcore",
     "meeting-2025-10-03-foxglove-sync",
     "meeting-2025-07-06-saltmarsh-sync",
-    "tool-kilnworth",
     "tool-spindrift",
+    "tool-kilnworth",
     "person-brisa-brannock",
     "meeting-2025-07-22-saltmarsh-sync",
     "meeting-2025-02-13-saltmarsh-sync",
@@ -434,7 +434,7 @@
      "quote": "The current release of Sextantix is version 9.7.7."
     }
    ],
-   "sec": 0.021,
+   "sec": 0.038,
    "top_score": 0.7546
   },
   {
@@ -468,8 +468,8 @@
      "quote": "Brindlewood is written in Erlang."
     }
    ],
-   "sec": 0.021,
-   "top_score": 0.7345
+   "sec": 0.035,
+   "top_score": 0.7346
   },
   {
    "id": "q011",
@@ -502,8 +502,8 @@
      "quote": "The current release of Wickline is version 3.4.1."
     }
    ],
-   "sec": 0.02,
-   "top_score": 0.7667
+   "sec": 0.036,
+   "top_score": 0.7666
   },
   {
    "id": "q012",
@@ -536,7 +536,7 @@
      "quote": "Mosscache is written in Clojure."
     }
    ],
-   "sec": 0.02,
+   "sec": 0.033,
    "top_score": 0.7401
   },
   {
@@ -570,8 +570,8 @@
      "quote": "The current release of Ferrodb is version 6.7.6."
     }
    ],
-   "sec": 0.021,
-   "top_score": 0.7926
+   "sec": 0.033,
+   "top_score": 0.7927
   },
   {
    "id": "q014",
@@ -604,7 +604,7 @@
      "quote": "The current release of Siltcore is version 1.2.3."
     }
    ],
-   "sec": 0.021,
+   "sec": 0.033,
    "top_score": 0.768
   },
   {
@@ -638,8 +638,8 @@
      "quote": "The goal of Project Siskin is to route night-shift alerts to the right on-call person."
     }
    ],
-   "sec": 0.019,
-   "top_score": 0.7865
+   "sec": 0.034,
+   "top_score": 0.7866
   },
   {
    "id": "q016",
@@ -672,8 +672,8 @@
      "quote": "The goal of Project Dunlin is to detect sensor drift in the greenhouse arrays."
     }
    ],
-   "sec": 0.02,
-   "top_score": 0.7397
+   "sec": 0.035,
+   "top_score": 0.7396
   },
   {
    "id": "q017",
@@ -706,7 +706,7 @@
      "quote": "The goal of Project Whimbrel is to replace nightly batch exports with a streaming feed."
     }
    ],
-   "sec": 0.021,
+   "sec": 0.038,
    "top_score": 0.7545
   },
   {
@@ -740,8 +740,8 @@
      "quote": "The goal of Project Heron is to unify the three internal wikis into one."
     }
    ],
-   "sec": 0.02,
-   "top_score": 0.7424
+   "sec": 0.035,
+   "top_score": 0.7423
   },
   {
    "id": "q019",
@@ -774,8 +774,8 @@
      "quote": "The goal of Project Ouzel is to automate desk booking across all sites."
     }
    ],
-   "sec": 0.021,
-   "top_score": 0.7593
+   "sec": 0.035,
+   "top_score": 0.7592
   },
   {
    "id": "q020",
@@ -797,8 +797,8 @@
     "project-garganey",
     "concept-rate-limiting",
     "meeting-2025-06-27-bramble-sync",
-    "project-smew",
     "concept-backpressure",
+    "project-smew",
     "project-merlin"
    ],
    "answer": "The goal of Project Redshank is to predict which builds will fail before they run.",
@@ -808,8 +808,8 @@
      "quote": "The goal of Project Redshank is to predict which builds will fail before they run."
     }
    ],
-   "sec": 0.021,
-   "top_score": 0.7779
+   "sec": 0.036,
+   "top_score": 0.7778
   },
   {
    "id": "q021",
@@ -842,7 +842,7 @@
      "quote": "The Drumlin Cross office has 69 desks."
     }
    ],
-   "sec": 0.023,
+   "sec": 0.038,
    "top_score": 0.7194
   },
   {
@@ -876,7 +876,7 @@
      "quote": "The Holloway Reach office has 185 desks."
     }
    ],
-   "sec": 0.022,
+   "sec": 0.038,
    "top_score": 0.7082
   },
   {
@@ -910,8 +910,8 @@
      "quote": "The Ninefold office has 113 desks."
     }
    ],
-   "sec": 0.027,
-   "top_score": 0.733
+   "sec": 0.036,
+   "top_score": 0.7331
   },
   {
    "id": "q024",
@@ -944,7 +944,7 @@
      "quote": "The Sorrel Point office has 27 desks."
     }
    ],
-   "sec": 0.024,
+   "sec": 0.04,
    "top_score": 0.7001
   },
   {
@@ -978,8 +978,8 @@
      "quote": "On 26 September 2025, the steering group approved a budget of 10,000 compute credits for Project Lapwing."
     }
    ],
-   "sec": 0.02,
-   "top_score": 0.7677
+   "sec": 0.035,
+   "top_score": 0.7678
   },
   {
    "id": "q026",
@@ -1012,7 +1012,7 @@
      "quote": "On 12 June 2025, the steering group approved a budget of 91,000 compute credits for Project Skua."
     }
    ],
-   "sec": 0.021,
+   "sec": 0.035,
    "top_score": 0.7689
   },
   {
@@ -1046,7 +1046,7 @@
      "quote": "On 20 July 2025, the steering group approved a budget of 50,000 compute credits for Project Linnet."
     }
    ],
-   "sec": 0.021,
+   "sec": 0.034,
    "top_score": 0.7618
   },
   {
@@ -1080,7 +1080,7 @@
      "quote": "On 4 December 2025, the steering group approved a budget of 78,000 compute credits for Project Petrel."
     }
    ],
-   "sec": 0.022,
+   "sec": 0.034,
    "top_score": 0.7785
   },
   {
@@ -1099,8 +1099,8 @@
     "team-ironbark",
     "team-granite",
     "person-emeric-moravec",
-    "team-saltmarsh",
     "team-cinder",
+    "team-saltmarsh",
     "person-ulrik-asturias",
     "team-lighthouse",
     "team-bramble",
@@ -1114,7 +1114,7 @@
      "quote": "Oskar Rautio works as a data engineer on the Foxglove team."
     }
    ],
-   "sec": 0.023,
+   "sec": 0.04,
    "top_score": 0.7306
   },
   {
@@ -1148,8 +1148,8 @@
      "quote": "Ines Rautio works as a research scientist on the Saltmarsh team."
     }
    ],
-   "sec": 0.024,
-   "top_score": 0.7176
+   "sec": 0.041,
+   "top_score": 0.7175
   },
   {
    "id": "q031",
@@ -1182,7 +1182,7 @@
      "quote": "Anselm Tamberlane works as a program manager on the Saltmarsh team."
     }
    ],
-   "sec": 0.024,
+   "sec": 0.042,
    "top_score": 0.7154
   },
   {
@@ -1207,7 +1207,7 @@
     "person-emeric-moravec",
     "person-severin-ibarrondo",
     "person-anselm-asturias",
-    "team-tidewater"
+    "person-fabian-halloran"
    ],
    "answer": "Ulrik Oyelaran works as a ML engineer on the Lighthouse team.",
    "citations": [
@@ -1216,16 +1216,16 @@
      "quote": "Ulrik Oyelaran works as a ML engineer on the Lighthouse team."
     }
    ],
-   "sec": 0.024,
-   "top_score": 0.7265
+   "sec": 0.043,
+   "top_score": 0.7266
   },
   {
    "id": "q033",
    "retrieved": [
     "person-leopold-halloran",
     "person-fabian-halloran",
-    "team-willowherb",
     "person-leopold-fennimore",
+    "team-willowherb",
     "team-meridian",
     "team-ironbark",
     "team-foxglove",
@@ -1250,8 +1250,8 @@
      "quote": "Leopold Halloran works as a program manager on the Lighthouse team."
     }
    ],
-   "sec": 0.024,
-   "top_score": 0.7502
+   "sec": 0.037,
+   "top_score": 0.7503
   },
   {
    "id": "q034",
@@ -1284,7 +1284,7 @@
      "quote": "Thimblerig is written in Zig."
     }
    ],
-   "sec": 0.024,
+   "sec": 0.036,
    "top_score": 0.6633
   },
   {
@@ -1318,7 +1318,7 @@
      "quote": "Loamstack is written in Clojure."
     }
    ],
-   "sec": 0.023,
+   "sec": 0.036,
    "top_score": 0.6824
   },
   {
@@ -1352,8 +1352,8 @@
      "quote": "The Willowherb team maintains Ferrodb and Lanternfish."
     }
    ],
-   "sec": 0.02,
-   "top_score": 0.6779
+   "sec": 0.033,
+   "top_score": 0.6778
   },
   {
    "id": "q037",
@@ -1366,8 +1366,8 @@
     "site-brackwater",
     "team-meridian",
     "team-bramble",
-    "team-saltmarsh",
     "team-granite",
+    "team-saltmarsh",
     "site-sorrel-point",
     "team-cinder",
     "team-ironbark",
@@ -1386,8 +1386,8 @@
      "quote": "Wickline is written in Rust."
     }
    ],
-   "sec": 0.021,
-   "top_score": 0.6714
+   "sec": 0.04,
+   "top_score": 0.6715
   },
   {
    "id": "q038",
@@ -1420,8 +1420,8 @@
      "quote": "Fathomer is written in Fortran."
     }
    ],
-   "sec": 0.021,
-   "top_score": 0.6956
+   "sec": 0.035,
+   "top_score": 0.6955
   },
   {
    "id": "q039",
@@ -1442,8 +1442,8 @@
     "project-nightjar",
     "tool-lanternfish",
     "project-shrike",
-    "project-avocet",
     "project-skua",
+    "project-avocet",
     "tool-quillmark",
     "tool-corvex"
    ],
@@ -1454,7 +1454,7 @@
      "quote": "The goal of Project Ouzel is to automate desk booking across all sites."
     }
    ],
-   "sec": 0.023,
+   "sec": 0.038,
    "top_score": 0.7703
   },
   {
@@ -1488,7 +1488,7 @@
      "quote": "The goal of Project Godwit is to catch duplicate supplier records before payment."
     }
    ],
-   "sec": 0.024,
+   "sec": 0.04,
    "top_score": 0.7291
   },
   {
@@ -1522,7 +1522,7 @@
      "quote": "The goal of Project Redshank is to predict which builds will fail before they run."
     }
    ],
-   "sec": 0.027,
+   "sec": 0.04,
    "top_score": 0.7685
   },
   {
@@ -1556,7 +1556,7 @@
      "quote": "The goal of Project Avocet is to keep the visitor badge system running during outages."
     }
    ],
-   "sec": 0.025,
+   "sec": 0.04,
    "top_score": 0.7437
   },
   {
@@ -1569,8 +1569,8 @@
     "project-ouzel",
     "tool-siltcore",
     "concept-graceful-degradation",
-    "project-petrel",
     "project-nightjar",
+    "project-petrel",
     "project-merlin",
     "tool-cobbleset",
     "tool-kilnworth",
@@ -1590,8 +1590,8 @@
      "quote": "The goal of Project Kestrel is to translate support tickets between five languages."
     }
    ],
-   "sec": 0.025,
-   "top_score": 0.7767
+   "sec": 0.039,
+   "top_score": 0.7766
   },
   {
    "id": "q044",
@@ -1619,7 +1619,7 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 0.027,
+   "sec": 0.047,
    "top_score": 0.6893
   },
   {
@@ -1648,8 +1648,8 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 0.027,
-   "top_score": 0.6872
+   "sec": 0.037,
+   "top_score": 0.6873
   },
   {
    "id": "q046",
@@ -1670,15 +1670,15 @@
     "project-garganey",
     "concept-data-lineage",
     "tool-ferrodb",
-    "project-whimbrel",
     "project-skua",
+    "project-whimbrel",
     "decision-2025-12-13-redshank-budget",
     "tool-kilnworth"
    ],
    "answer": null,
    "citations": [],
-   "sec": 0.024,
-   "top_score": 0.626
+   "sec": 0.041,
+   "top_score": 0.6261
   },
   {
    "id": "q047",
@@ -1690,8 +1690,8 @@
     "project-garganey",
     "project-whimbrel",
     "project-dipper",
-    "site-tamsin-ford",
     "decision-2025-02-08-plover-deadline",
+    "site-tamsin-ford",
     "project-petrel",
     "decision-2025-06-09-kestrel-deadline",
     "project-smew",
@@ -1711,8 +1711,8 @@
      "quote": "Copy real requests to a new version that answers into the void, and compare it with the old one."
     }
    ],
-   "sec": 0.024,
-   "top_score": 0.6425
+   "sec": 0.043,
+   "top_score": 0.6424
   },
   {
    "id": "q048",
@@ -1723,8 +1723,8 @@
     "concept-observability-budget",
     "project-redshank",
     "concept-cold-start-caching",
-    "project-garganey",
     "project-siskin",
+    "project-garganey",
     "project-ouzel",
     "project-plover",
     "project-skua",
@@ -1740,8 +1740,8 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 0.024,
-   "top_score": 0.6487
+   "sec": 0.042,
+   "top_score": 0.6486
   },
   {
    "id": "q049",
@@ -1760,8 +1760,8 @@
     "tool-quillmark",
     "decision-2025-04-28-shrike-deadline",
     "tool-tallyhoe",
-    "project-avocet",
     "project-linnet",
+    "project-avocet",
     "tool-lanternfish",
     "tool-wickline",
     "tool-harrowby",
@@ -1769,8 +1769,8 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 0.026,
-   "top_score": 0.6506
+   "sec": 0.045,
+   "top_score": 0.6507
   },
   {
    "id": "q050",
@@ -1798,7 +1798,7 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 0.024,
+   "sec": 0.042,
    "top_score": 0.6351
   },
   {
@@ -1817,17 +1817,17 @@
     "meeting-2025-05-21-foxglove-sync",
     "project-ouzel",
     "concept-schema-evolution",
-    "meeting-2025-10-03-foxglove-sync",
     "concept-graceful-degradation",
+    "meeting-2025-10-03-foxglove-sync",
     "concept-observability-budget",
     "meeting-2025-07-06-saltmarsh-sync",
     "project-skua",
-    "project-garganey",
-    "concept-data-lineage"
+    "concept-data-lineage",
+    "project-garganey"
    ],
    "answer": null,
    "citations": [],
-   "sec": 0.021,
+   "sec": 0.033,
    "top_score": 0.6651
   },
   {
@@ -1844,8 +1844,8 @@
     "project-smew",
     "meeting-2025-02-13-saltmarsh-sync",
     "meeting-2025-07-22-saltmarsh-sync",
-    "project-kestrel",
     "meeting-2025-10-06-foxglove-sync",
+    "project-kestrel",
     "meeting-2025-12-05-lighthouse-sync",
     "meeting-2025-02-02-saltmarsh-sync",
     "project-shrike",
@@ -1861,7 +1861,7 @@
      "quote": "- Mirela Rautio raised concerns about the Project Curlew timeline."
     }
    ],
-   "sec": 0.025,
+   "sec": 0.045,
    "top_score": 0.6262
   },
   {
@@ -1890,8 +1890,8 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 0.023,
-   "top_score": 0.664
+   "sec": 0.042,
+   "top_score": 0.6641
   },
   {
    "id": "q054",
@@ -1924,8 +1924,8 @@
      "quote": "Sextantix is written in Erlang."
     }
    ],
-   "sec": 0.031,
-   "top_score": 0.6598
+   "sec": 0.056,
+   "top_score": 0.6599
   },
   {
    "id": "q055",
@@ -1935,8 +1935,8 @@
     "project-kestrel",
     "tool-siltcore",
     "project-siskin",
-    "concept-rate-limiting",
     "project-skua",
+    "concept-rate-limiting",
     "project-redshank",
     "tool-ferrodb",
     "tool-mosscache",
@@ -1958,8 +1958,8 @@
      "quote": "Sextantix is written in Erlang."
     }
    ],
-   "sec": 0.033,
-   "top_score": 0.6675
+   "sec": 0.061,
+   "top_score": 0.6674
   },
   {
    "id": "q056",
@@ -1992,8 +1992,8 @@
      "quote": "Sextantix is written in Erlang."
     }
    ],
-   "sec": 0.031,
-   "top_score": 0.6557
+   "sec": 0.058,
+   "top_score": 0.6558
   },
   {
    "id": "q057",
@@ -2026,7 +2026,7 @@
      "quote": "Sextantix is written in Erlang."
     }
    ],
-   "sec": 0.032,
+   "sec": 0.06,
    "top_score": 0.6622
   },
   {
@@ -2060,8 +2060,8 @@
      "quote": "Sextantix is written in Erlang."
     }
    ],
-   "sec": 0.029,
-   "top_score": 0.6544
+   "sec": 0.057,
+   "top_score": 0.6545
   },
   {
    "id": "q059",
@@ -2089,8 +2089,8 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 0.031,
-   "top_score": 0.7117
+   "sec": 0.062,
+   "top_score": 0.7118
   },
   {
    "id": "q060",
@@ -2123,8 +2123,8 @@
      "quote": "On 26 October 2025, the steering group moved the deadline for Project Kestrel to 9 July 2026, replacing the earlier decision."
     }
    ],
-   "sec": 0.022,
-   "top_score": 0.8282
+   "sec": 0.033,
+   "top_score": 0.8281
   },
   {
    "id": "q061",
@@ -2157,8 +2157,8 @@
      "quote": "On 16 August 2025, the steering group moved the deadline for Project Heron to 4 November 2027, replacing the earlier decision."
     }
    ],
-   "sec": 0.019,
-   "top_score": 0.8382
+   "sec": 0.034,
+   "top_score": 0.8381
   },
   {
    "id": "q062",
@@ -2191,8 +2191,8 @@
      "quote": "On 8 February 2025, the steering group set the deadline for Project Plover to 6 January 2026."
     }
    ],
-   "sec": 0.021,
-   "top_score": 0.8229
+   "sec": 0.035,
+   "top_score": 0.8228
   },
   {
    "id": "q063",
@@ -2225,7 +2225,7 @@
      "quote": "On 6 May 2025, the steering group set the deadline for Project Merlin to 24 January 2026."
     }
    ],
-   "sec": 0.019,
+   "sec": 0.038,
    "top_score": 0.8437
   },
   {
@@ -2247,8 +2247,8 @@
     "meeting-2025-03-08-granite-sync",
     "decision-2025-04-11-dunlin-deadline",
     "decision-2025-08-01-curlew-deadline",
-    "meeting-2025-08-25-tidewater-sync",
     "decision-2025-06-17-curlew-deadline",
+    "meeting-2025-08-25-tidewater-sync",
     "decision-2025-09-16-dunlin-deadline",
     "decision-2025-03-06-gannet-deadline"
    ],
@@ -2259,7 +2259,7 @@
      "quote": "On 1 December 2025, the steering group moved the deadline for Project Osprey to 16 November 2026, replacing the earlier decision."
     }
    ],
-   "sec": 0.021,
+   "sec": 0.035,
    "top_score": 0.8221
   },
   {
@@ -2293,7 +2293,7 @@
      "quote": "On 1 August 2025, the steering group moved the deadline for Project Curlew to 10 November 2027, replacing the earlier decision."
     }
    ],
-   "sec": 0.02,
+   "sec": 0.035,
    "top_score": 0.8348
   },
   {
@@ -2327,7 +2327,7 @@
      "quote": "On 11 April 2025, the steering group set the deadline for Project Dunlin to 1 June 2026."
     }
    ],
-   "sec": 0.021,
+   "sec": 0.036,
    "top_score": 0.7823
   },
   {
@@ -2361,7 +2361,7 @@
      "quote": "On 20 July 2025, the steering group moved the deadline for Project Gannet to 20 August 2027, replacing the earlier decision."
     }
    ],
-   "sec": 0.021,
+   "sec": 0.035,
    "top_score": 0.7945
   },
   {
@@ -2395,8 +2395,8 @@
      "quote": "On 12 December 2025, the steering group moved the deadline for Project Shrike to 10 August 2026, replacing the earlier decision."
     }
    ],
-   "sec": 0.021,
-   "top_score": 0.8006
+   "sec": 0.037,
+   "top_score": 0.8008
   },
   {
    "id": "q069",
@@ -2429,8 +2429,8 @@
      "quote": "On 26 April 2025, the steering group set the deadline for Project Bittern to 1 January 2026."
     }
    ],
-   "sec": 0.021,
-   "top_score": 0.8024
+   "sec": 0.033,
+   "top_score": 0.8025
   },
   {
    "id": "q070",
@@ -2463,7 +2463,7 @@
      "quote": "Outside work, Severin Ibarrondo swims in the harbour every morning, all year."
     }
    ],
-   "sec": 0.024,
+   "sec": 0.041,
    "top_score": 0.6833
   },
   {
@@ -2492,7 +2492,7 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 0.024,
+   "sec": 0.037,
    "top_score": 0.6427
   },
   {
@@ -2526,7 +2526,7 @@
      "quote": "Kasimir Okafor-Lind works as a program manager on the Tidewater team."
     }
    ],
-   "sec": 0.024,
+   "sec": 0.041,
    "top_score": 0.6973
   },
   {
@@ -2560,8 +2560,8 @@
      "quote": "Marit Quintanar works as a hardware technician on the Saltmarsh team."
     }
    ],
-   "sec": 0.022,
-   "top_score": 0.6717
+   "sec": 0.036,
+   "top_score": 0.6719
   },
   {
    "id": "q074",
@@ -2579,8 +2579,8 @@
     "person-oskar-vestergaard",
     "person-leopold-halloran",
     "project-gannet",
-    "project-lapwing",
     "person-teodor-brannock",
+    "project-lapwing",
     "project-merlin",
     "project-redshank",
     "project-petrel",
@@ -2589,7 +2589,7 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 0.018,
+   "sec": 0.03,
    "top_score": 0.6177
   },
   {
@@ -2618,8 +2618,8 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 0.02,
-   "top_score": 0.6281
+   "sec": 0.03,
+   "top_score": 0.6282
   },
   {
    "id": "q076",
@@ -2652,8 +2652,8 @@
      "quote": "Oskar currently leads Project Dunlin."
     }
    ],
-   "sec": 0.018,
-   "top_score": 0.6112
+   "sec": 0.027,
+   "top_score": 0.6111
   },
   {
    "id": "q077",
@@ -2686,7 +2686,7 @@
      "quote": "Cobbleset is written in Haskell."
     }
    ],
-   "sec": 0.02,
+   "sec": 0.032,
    "top_score": 0.5901
   },
   {
@@ -2711,7 +2711,7 @@
     "tool-tallyhoe",
     "team-ironbark",
     "person-oskar-rautio",
-    "person-rurik-pellegrin"
+    "person-bastian-marchetti"
    ],
    "answer": "Sextantix is written in Erlang.",
    "citations": [
@@ -2720,7 +2720,7 @@
      "quote": "Sextantix is written in Erlang."
     }
    ],
-   "sec": 0.02,
+   "sec": 0.031,
    "top_score": 0.5874
   },
   {
@@ -2754,8 +2754,8 @@
      "quote": "The Ninefold office has 113 desks."
     }
    ],
-   "sec": 0.022,
-   "top_score": 0.6451
+   "sec": 0.036,
+   "top_score": 0.6452
   },
   {
    "id": "q080",
@@ -2788,8 +2788,8 @@
      "quote": "Bastian Marchetti works as a technical writer on the Meridian team."
     }
    ],
-   "sec": 0.021,
-   "top_score": 0.6755
+   "sec": 0.035,
+   "top_score": 0.6756
   },
   {
    "id": "q081",
@@ -2822,7 +2822,7 @@
      "quote": "Ottilie Strandberg works as a ML engineer on the Granite team."
     }
    ],
-   "sec": 0.023,
+   "sec": 0.036,
    "top_score": 0.6905
   },
   {
@@ -2856,7 +2856,7 @@
      "quote": "Corvin Strandberg works as a hardware technician on the Ironbark team."
     }
    ],
-   "sec": 0.022,
+   "sec": 0.036,
    "top_score": 0.6965
   },
   {
@@ -2890,7 +2890,7 @@
      "quote": "Oskar Vestergaard works as a program manager on the Willowherb team."
     }
    ],
-   "sec": 0.021,
+   "sec": 0.036,
    "top_score": 0.6741
   },
   {
@@ -2924,7 +2924,7 @@
      "quote": "Ines Rautio works as a research scientist on the Saltmarsh team."
     }
    ],
-   "sec": 0.021,
+   "sec": 0.035,
    "top_score": 0.7057
   },
   {
@@ -2946,8 +2946,8 @@
     "person-marit-quintanar",
     "decision-2025-10-26-kestrel-deadline",
     "decision-2025-04-11-dunlin-deadline",
-    "decision-2025-09-12-bittern-deadline",
     "person-fabian-halloran",
+    "decision-2025-09-12-bittern-deadline",
     "person-bastian-oyelaran",
     "person-petra-fennimore"
    ],
@@ -2958,7 +2958,7 @@
      "quote": "Vesna Halloran works as a technical writer on the Willowherb team."
     }
    ],
-   "sec": 0.021,
+   "sec": 0.035,
    "top_score": 0.6988
   },
   {
@@ -2992,8 +2992,8 @@
      "quote": "Tallyhoe was first released in 2020."
     }
    ],
-   "sec": 0.02,
-   "top_score": 0.7183
+   "sec": 0.03,
+   "top_score": 0.7184
   },
   {
    "id": "q087",
@@ -3004,8 +3004,8 @@
     "site-tamsin-ford",
     "tool-kilnworth",
     "tool-harrowby",
-    "decision-2025-01-20-whimbrel-budget",
     "site-ketterby",
+    "decision-2025-01-20-whimbrel-budget",
     "person-brisa-brannock",
     "site-brackwater",
     "meeting-2025-02-02-saltmarsh-sync",
@@ -3026,7 +3026,7 @@
      "quote": "Brindlewood was first released in 2019."
     }
    ],
-   "sec": 0.02,
+   "sec": 0.031,
    "top_score": 0.6992
   },
   {
@@ -3060,7 +3060,7 @@
      "quote": "On 20 July 2025, the steering group approved a budget of 50,000 compute credits for Project Linnet."
     }
    ],
-   "sec": 0.021,
+   "sec": 0.034,
    "top_score": 0.698
   },
   {
@@ -3094,7 +3094,7 @@
      "quote": "On 4 December 2025, the steering group approved a budget of 78,000 compute credits for Project Petrel."
     }
    ],
-   "sec": 0.025,
+   "sec": 0.032,
    "top_score": 0.694
   },
   {
@@ -3111,8 +3111,8 @@
     "decision-2025-11-22-tern-budget",
     "decision-2025-09-26-lapwing-budget",
     "decision-2025-08-16-dipper-budget",
-    "decision-2025-07-20-linnet-budget",
     "project-osprey",
+    "decision-2025-07-20-linnet-budget",
     "decision-2025-12-01-osprey-deadline",
     "decision-2025-05-10-osprey-deadline",
     "meeting-2025-03-08-granite-sync",
@@ -3128,7 +3128,7 @@
      "quote": "On 20 January 2025, the steering group approved a budget of 36,000 compute credits for Project Whimbrel."
     }
    ],
-   "sec": 0.026,
+   "sec": 0.036,
    "top_score": 0.7009
   },
   {
@@ -3162,7 +3162,7 @@
      "quote": "The Holloway Reach office opened in 1999."
     }
    ],
-   "sec": 0.021,
+   "sec": 0.033,
    "top_score": 0.6992
   }
  ]
