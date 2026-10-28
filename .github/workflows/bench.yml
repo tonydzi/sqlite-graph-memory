@@ -73,6 +73,8 @@ jobs:
           curl -sf http://localhost:11434/api/pull -d '{"model":"nomic-embed-text:latest","stream":false}'
           # exactly this tag, exactly the digest the committed results were produced with
           curl -sf http://localhost:11434/api/tags | python -c "import sys,json; t=json.load(sys.stdin)['models']; d=[m['digest'] for m in t if m['name']=='nomic-embed-text:latest']; print(d); sys.exit(0 if d==['0a109f422b47e3a30ba2b10eca18548e944e8a23073ee3f3e947efcf3c45e59f'] else 1)"
+          # which CPU this runner has: without the kernel pin, an AVX512 runner would load zen4/skylakex
+          grep -m1 'model name' /proc/cpuinfo; grep -qw avx512f /proc/cpuinfo && echo 'runner has AVX512' || echo 'runner has no AVX512'
           # load the model once and prove which kernel computed it
           curl -sf http://localhost:11434/api/embed -d '{"model":"nomic-embed-text:latest","input":["warm up"]}' > /dev/null
           docker logs ollama 2>&1 | grep 'loaded CPU backend'
