@@ -3,4 +3,4 @@
 #   pip install torch==2.4.1 --index-url https://download.pytorch.org/whl/cpu
 numpy>=1.24
 sentence-transformers==3.1.1
-transformers==4.44.2
+transformers==4.57.6
