@@ -4,7 +4,7 @@ What shipped, in plain words. Entries below v0.1.3 were written on 2026-09-05 fr
 release notes that already existed — the file itself did not exist until then, so those three are
 recorded after the fact rather than backdated to look contemporaneous.
 
-## Unreleased
+## v0.3.4 - 2026-10-31
 
 **Credit, written down at last.** Four outside pull requests merged since 19.10 and none was named
 here. Thanks to [@Kaap10](https://github.com/Kaap10): the MCP server now answers non-object JSON
@@ -15,6 +15,8 @@ instead of passing silently (#35). Thanks to [@Khushbu677](https://github.com/Kh
 the turnstate hook's ledger writes (#57). From now on `scripts/credit_gate.py` runs in CI and goes red
 when a merged outside PR has no line here, or when a `@handle` here does not exist; the rules are in
 [CONTRIBUTING.md](CONTRIBUTING.md).
+
+**Also in this release.** Benchmark adapters for four external memory systems (fidelis, mem0 local, second-brain, SQLite FTS5) with CI reruns pinned to one Ollama build and one CPU kernel, and CI guards that freeze released CHANGELOG sections and fail on unreadable tags, pre-release tags and duplicate headers.
 
 ## v0.3.3 — 2026-10-26
 
