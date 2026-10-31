@@ -2,16 +2,17 @@
 
 <!-- mcp-name: io.github.tonydzi/sqlite-graph-memory -->
 
-[![PyPI](https://img.shields.io/pypi/v/sqlite-graph-memory)](https://pypi.org/project/sqlite-graph-memory/) [![tests](https://img.shields.io/github/actions/workflow/status/tonydzi/sqlite-graph-memory/tests.yml?label=tests)](https://github.com/tonydzi/sqlite-graph-memory/actions/workflows/tests.yml) [![MCP Registry](https://img.shields.io/badge/MCP%20Registry-io.github.tonydzi%2Fsqlite--graph--memory-blue)](https://registry.modelcontextprotocol.io/v0/servers?search=sqlite-graph-memory) [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-
-Long-term memory for coding agents that lives in the notes you already keep: an MCP server
-and a CLI over any folder of markdown, Obsidian vaults included. `pip install`, point it at
-the folder, and Claude Code, Cursor, Codex or any other MCP client can recall from it.
+Your coding agent remembers what you already wrote down, and reaches the note a plain search
+misses by following the links between your notes. It is an MCP server and a CLI over any
+folder of markdown, Obsidian vaults included: `pip install`, point it at the folder, and
+Claude Code, Cursor, Codex or any other MCP client can recall from it.
 
 **Your agent forgets everything between sessions, and plain vector search gives it back
 flat, unrelated chunks. This gives it associative recall over your own markdown notes:
 vector search finds the entry points, the `[[wikilinks]]` you already wrote are the graph.
 One SQLite file, no graph database, no ETL pass, no server.**
+
+[![PyPI](https://img.shields.io/pypi/v/sqlite-graph-memory)](https://pypi.org/project/sqlite-graph-memory/) [![tests](https://img.shields.io/github/actions/workflow/status/tonydzi/sqlite-graph-memory/tests.yml?label=tests)](https://github.com/tonydzi/sqlite-graph-memory/actions/workflows/tests.yml) [![MCP Registry](https://img.shields.io/badge/MCP%20Registry-io.github.tonydzi%2Fsqlite--graph--memory-blue)](https://registry.modelcontextprotocol.io/v0/servers?search=sqlite-graph-memory) [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 ## Three commands
 
