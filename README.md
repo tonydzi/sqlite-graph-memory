@@ -28,7 +28,7 @@ BRAIN_INDEX_DIR=$HOME/.sgm-index uvx --from 'sqlite-graph-memory[embeddings]' sg
 
 Then point your client at the server. Use the absolute path of that index folder.
 
-**Cold-start timeout (source checkout, not yet in PyPI 0.3.3).** The MCP server starts recall in a separate process. Its default deadline is 60 seconds; if loading the models exceeds that on your machine, set `BRAIN_RECALL_TIMEOUT=180` in the server's environment. Values from 1 to 600 integer seconds are accepted; invalid values return an error. Your MCP client's own tool timeout must also allow the longer call. Until this change is released, PyPI 0.3.3 does not read this setting: use `sgm-ask --ask` directly as the working fallback and do not report MCP recall as verified merely because the CLI works.
+**Cold-start timeout (0.3.5 and later).** The MCP server starts recall in a separate process with a default deadline of 180 seconds; a first call on a clean Windows install took 89 s, which the old fixed 60 s always cut off. Override with `BRAIN_RECALL_TIMEOUT` (integer seconds, 1 to 600; invalid values return an error). Your MCP client's own tool timeout must also allow the longer call. On 0.3.3 and earlier the deadline is a fixed 60 s: upgrade, or use `sgm-ask --ask` directly, and do not report MCP recall as verified merely because the CLI works.
 
 **Claude Code**
 
