@@ -184,6 +184,37 @@ def test_run_recall_timeout(tmp_path, monkeypatch):
     assert is_err is True
 
 
+def test_run_recall_respects_configured_startup_timeout(monkeypatch):
+    monkeypatch.setenv("BRAIN_RECALL_TIMEOUT", "180")
+    observed = []
+
+    def slow_model_start(*args, **kwargs):
+        observed.append(kwargs["timeout"])
+        raise subprocess.TimeoutExpired(cmd=args[0], timeout=kwargs["timeout"])
+
+    monkeypatch.setattr(mcp_server.subprocess, "run", slow_model_start)
+    text, is_err = mcp_server.run_recall("cold model start")
+    assert observed == [180]
+    assert is_err is True
+    assert "timed out after 180 seconds" in text
+
+
+@pytest.mark.parametrize("value", ["0", "-1", "601", "infinity", "1.5", ""])
+def test_run_recall_rejects_invalid_timeout_before_starting_child(monkeypatch, value):
+    monkeypatch.setenv("BRAIN_RECALL_TIMEOUT", value)
+    observed = []
+
+    def unexpected_child(*args, **kwargs):
+        observed.append(True)
+        raise RuntimeError("should not launch")
+
+    monkeypatch.setattr(mcp_server.subprocess, "run", unexpected_child)
+    text, is_err = mcp_server.run_recall("test query")
+    assert observed == []
+    assert is_err is True
+    assert "BRAIN_RECALL_TIMEOUT" in text
+
+
 def test_run_recall_answer_file_is_unique_per_call_and_cleaned_up(tmp_path, monkeypatch):
     """The scoped answer file must differ between calls and must not survive them.
 
