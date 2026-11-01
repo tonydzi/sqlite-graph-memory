@@ -72,6 +72,7 @@ sgm-stats = "sqlite_graph_memory.vault_stats:main"
 sgm-turnstate-hook = "sqlite_graph_memory.turnstate_hook:main"
 sgm-turnstate-show = "sqlite_graph_memory.turnstate_show:main"
 sgm-mcp = "sqlite_graph_memory.mcp_server:main"
+sgm-doctor = "sqlite_graph_memory.doctor:main"
 # Same server under the package's own name, so `uvx sqlite-graph-memory` (what MCP
 # registry clients run for a PyPI package) starts it without a --from flag.
 sqlite-graph-memory = "sqlite_graph_memory.mcp_server:main"
