@@ -7,12 +7,76 @@ misses by following the links between your notes. It is an MCP server and a CLI 
 folder of markdown, Obsidian vaults included: `pip install`, point it at the folder, and
 Claude Code, Cursor, Codex or any other MCP client can recall from it.
 
+![sgm-index builds the index of the 202-note bench vault, then sgm-ask --ab shows tool-lanternfish entering the top 5 only through a graph hop; the one-minute CPU indexing wait is cut](docs/demo.gif)
+
 **Your agent forgets everything between sessions, and plain vector search gives it back
 flat, unrelated chunks. This gives it associative recall over your own markdown notes:
 vector search finds the entry points, the `[[wikilinks]]` you already wrote are the graph.
 One SQLite file, no graph database, no ETL pass, no server.**
 
 [![PyPI](https://img.shields.io/pypi/v/sqlite-graph-memory)](https://pypi.org/project/sqlite-graph-memory/) [![tests](https://img.shields.io/github/actions/workflow/status/tonydzi/sqlite-graph-memory/tests.yml?label=tests)](https://github.com/tonydzi/sqlite-graph-memory/actions/workflows/tests.yml) [![MCP Registry](https://img.shields.io/badge/MCP%20Registry-io.github.tonydzi%2Fsqlite--graph--memory-blue)](https://registry.modelcontextprotocol.io/v0/servers?search=sqlite-graph-memory) [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
+## Install in your client
+
+Build the index once (any folder of markdown; [`uv`](https://docs.astral.sh/uv/) gives you `uvx`):
+
+```bash
+BRAIN_INDEX_DIR=$HOME/.sgm-index uvx --from 'sqlite-graph-memory[embeddings]' sgm-index ~/notes
+```
+
+Then point your client at the server. Use the absolute path of that index folder.
+
+**Claude Code**
+
+```bash
+claude mcp add sqlite-graph-memory -e BRAIN_INDEX_DIR=$HOME/.sgm-index -- uvx --with 'sqlite-graph-memory[embeddings]' sqlite-graph-memory
+```
+
+**Cursor** (`~/.cursor/mcp.json`; Claude Desktop, Zed and Windsurf take the same `mcpServers` block)
+
+```json
+{
+  "mcpServers": {
+    "sqlite-graph-memory": {
+      "command": "uvx",
+      "args": ["--with", "sqlite-graph-memory[embeddings]", "sqlite-graph-memory"],
+      "env": { "BRAIN_INDEX_DIR": "/absolute/path/to/.sgm-index" }
+    }
+  }
+}
+```
+
+**VS Code** (`.vscode/mcp.json` in the workspace)
+
+```json
+{
+  "servers": {
+    "sqlite-graph-memory": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["--with", "sqlite-graph-memory[embeddings]", "sqlite-graph-memory"],
+      "env": { "BRAIN_INDEX_DIR": "/absolute/path/to/.sgm-index" }
+    }
+  }
+}
+```
+
+**Codex** (`~/.codex/config.toml`)
+
+```toml
+[mcp_servers.sqlite-graph-memory]
+command = "uvx"
+args = ["--with", "sqlite-graph-memory[embeddings]", "sqlite-graph-memory"]
+env = { BRAIN_INDEX_DIR = "/absolute/path/to/.sgm-index" }
+```
+
+Size, `du -sh` of a fresh Python 3.12 venv on an x86_64 Mac (1 Nov 2026): the base install is
+26 MB and has no torch (numpy only, enough for the graph half and the SQLite ledger);
+with `[embeddings]`, which indexing and recall need, it is 879 MB, 540 MB of that torch 2.2.2
+CPU. On Linux the default torch wheel brings CUDA libraries and is bigger; not measured here.
+Already installed with pip? Replace `uvx --with ... sqlite-graph-memory` by `sgm-mcp`
+([`examples/mcp-config.json`](examples/mcp-config.json)). Agents that read files first:
+[`llms.txt`](llms.txt).
 
 ## Three commands
 
@@ -59,14 +123,6 @@ folder find this repo. `sgm-ask --ab` asks the same once per machine, in a termi
 That is the idea in one query, and it is not a blanket win. On this same vault vector-only
 ranks ahead of graph mode overall; the numbers are in [`bench/`](bench/README.md). `--ab`
 exists so you can measure which one wins on your own notes.
-
-**From any MCP client** (Claude Desktop, Cursor, Zed, Windsurf): `sgm-mcp` after the install
-above, or `uvx --with 'sqlite-graph-memory[embeddings]' sqlite-graph-memory`. Set
-`BRAIN_INDEX_DIR` to the `index` folder `sgm-index` wrote. Config:
-[`examples/mcp-config.json`](examples/mcp-config.json). Claude Code:
-`claude mcp add sqlite-graph-memory -e BRAIN_INDEX_DIR=/path/to/index -- sgm-mcp`.
-Codex: a `[mcp_servers.sqlite-graph-memory]` table in `~/.codex/config.toml` with
-`command = "sgm-mcp"`. Agents that read files first: [`llms.txt`](llms.txt).
 
 ## What it is
 
