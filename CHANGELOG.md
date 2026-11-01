@@ -6,6 +6,12 @@ recorded after the fact rather than backdated to look contemporaneous.
 
 ## Unreleased
 
+**MCP: configurable bounded recall timeout.** The default remains 60 seconds. For machines where cold model loading takes longer, `BRAIN_RECALL_TIMEOUT=180` permits a longer child process; valid values are integer seconds from 1 to 600. Invalid values return a visible configuration error without starting recall. Timeout errors name the actual configured deadline. Reproduced during a clean Windows installation: CLI recall succeeded while the MCP child hit the previous fixed 60-second deadline.
+
+**Tests: tilde expansion isolated on Windows.** The test sets the Windows home directory as well as the Unix home directory. It now checks the temporary profile on Windows instead of writing a marker into the real user's profile.
+
+**Docs: preserve an existing agent setup.** README links to the existing-setup guide in second-brain-starter-kit, covering per-client memory installation and fresh-chat acceptance without replacing the owner's rules.
+
 **`sgm-doctor`: one command that checks a fresh install in plain words.** Python, SQLite, numpy,
 torch and sentence-transformers, the two models in the local cache, and your index, each with an
 ok/warn/fail verdict and the fix printed next to it; exit 1 when anything fails. On an Intel Mac

@@ -18,6 +18,7 @@ Config (env, optional):
   BRAIN_INDEX_DIR   dir holding embedding index (default: ./index)
   TURNSTATE_DB      SQLite db for telemetry (default: ./turnstate.db)
   BRAIN_ANSWER_OUT  file to mirror answer into (default: ./_brain_answer.txt)
+  BRAIN_RECALL_TIMEOUT  recall child timeout in seconds (1..600, default: 60)
 """
 import sys, os, json, subprocess, tempfile
 from pathlib import Path
@@ -100,6 +101,13 @@ def run_recall(query: str, mode: str = "associative") -> tuple[str, bool]:
     An empty answer file means no notes matched; stdout is never promoted to an answer
     because it carries startup notices, load reports, and tokenizer warnings.
     """
+    try:
+        recall_timeout = int(os.environ.get("BRAIN_RECALL_TIMEOUT", "60"))
+        if not 1 <= recall_timeout <= 600:
+            raise ValueError
+    except ValueError:
+        return "Recall configuration error: BRAIN_RECALL_TIMEOUT must be an integer from 1 to 600 seconds.", True
+
     base_cmd = _brain_ask_cmd()
     if base_cmd is None:
         return (
@@ -136,7 +144,7 @@ def run_recall(query: str, mode: str = "associative") -> tuple[str, bool]:
             text=True,
             encoding="utf-8",
             errors="replace",
-            timeout=60
+            timeout=recall_timeout
         )
         if res.returncode != 0:
             err = (res.stderr or res.stdout or "").strip()
@@ -153,7 +161,7 @@ def run_recall(query: str, mode: str = "associative") -> tuple[str, bool]:
         # Empty answer file: return explicit message and flag error so agent does not ingest stdout noise
         return "(no matching notes found)", True
     except subprocess.TimeoutExpired:
-        return "Recall error: timed out after 60 seconds.", True
+        return f"Recall error: timed out after {recall_timeout} seconds.", True
     except Exception as e:
         return f"Recall exception: {e}", True
     finally:

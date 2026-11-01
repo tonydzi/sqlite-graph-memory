@@ -74,6 +74,9 @@ def test_ab_json_consumer_is_silent(tmp_path):
 
 def test_tilde_in_config_dir_expands(tmp_path, monkeypatch):
     monkeypatch.setenv("HOME", str(tmp_path))
+    # Windows expanduser reads USERPROFILE rather than HOME. Keep the marker
+    # inside this test's directory on both platforms, away from the real profile.
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
     buf = io.StringIO()
     assert maybe_star_prompt(stream=buf, env={"SGM_CONFIG_DIR": "~/sgm"}, interactive=True)
     assert (tmp_path / "sgm" / STAR_MARKER).exists()
