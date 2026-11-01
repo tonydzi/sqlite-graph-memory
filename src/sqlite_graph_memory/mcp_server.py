@@ -18,7 +18,7 @@ Config (env, optional):
   BRAIN_INDEX_DIR   dir holding embedding index (default: ./index)
   TURNSTATE_DB      SQLite db for telemetry (default: ./turnstate.db)
   BRAIN_ANSWER_OUT  file to mirror answer into (default: ./_brain_answer.txt)
-  BRAIN_RECALL_TIMEOUT  recall child timeout in seconds (1..600, default: 60)
+  BRAIN_RECALL_TIMEOUT  recall child timeout in seconds (1..600, default: 180)
 """
 import sys, os, json, subprocess, tempfile
 from pathlib import Path
@@ -102,7 +102,7 @@ def run_recall(query: str, mode: str = "associative") -> tuple[str, bool]:
     because it carries startup notices, load reports, and tokenizer warnings.
     """
     try:
-        recall_timeout = int(os.environ.get("BRAIN_RECALL_TIMEOUT", "60"))
+        recall_timeout = int(os.environ.get("BRAIN_RECALL_TIMEOUT", "180"))
         if not 1 <= recall_timeout <= 600:
             raise ValueError
     except ValueError:

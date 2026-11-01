@@ -176,11 +176,16 @@ def test_run_recall_timeout(tmp_path, monkeypatch):
     """Verify subprocess timeout is caught and returns clear error text."""
     from sqlite_graph_memory import mcp_server
     import subprocess
+    monkeypatch.delenv("BRAIN_RECALL_TIMEOUT", raising=False)
+    observed = []
     def mock_run(*args, **kwargs):
-        raise subprocess.TimeoutExpired(cmd=kwargs.get("args") or [], timeout=60)
+        observed.append(kwargs["timeout"])
+        raise subprocess.TimeoutExpired(cmd=kwargs.get("args") or [], timeout=kwargs["timeout"])
     monkeypatch.setattr(mcp_server.subprocess, "run", mock_run)
     text, is_err = mcp_server.run_recall("test query")
-    assert "timed out after 60 seconds" in text
+    # Default covers a cold first call: a clean Windows install measured 89 s for one CLI recall.
+    assert observed == [180]
+    assert "timed out after 180 seconds" in text
     assert is_err is True
 
 

@@ -6,7 +6,11 @@ recorded after the fact rather than backdated to look contemporaneous.
 
 ## Unreleased
 
-**MCP: configurable bounded recall timeout.** The default remains 60 seconds. For machines where cold model loading takes longer, `BRAIN_RECALL_TIMEOUT=180` permits a longer child process; valid values are integer seconds from 1 to 600. Invalid values return a visible configuration error without starting recall. Timeout errors name the actual configured deadline. Reproduced during a clean Windows installation: CLI recall succeeded while the MCP child hit the previous fixed 60-second deadline.
+## v0.3.5 - 2026-11-01
+
+**Release fix.** v0.3.4 was tagged but never reached PyPI: the release commit changed only this file, and the publish job stopped on its version check (pyproject, `__init__`, server.json still said 0.3.3). v0.3.5 is the first PyPI build with everything listed under v0.3.4 plus the entries below, with the version set in all four places.
+
+**MCP: recall no longer dies on the first cold call.** The default deadline is now 180 seconds (was a fixed 60): on a clean Windows install one CLI recall took 89 s, so the first MCP call timed out. `BRAIN_RECALL_TIMEOUT` overrides it; valid values are integer seconds from 1 to 600. Invalid values return a visible configuration error without starting recall. Timeout errors name the actual configured deadline. Reproduced during a clean Windows installation: CLI recall succeeded while the MCP child hit the previous fixed 60-second deadline.
 
 **Tests: tilde expansion isolated on Windows.** The test sets the Windows home directory as well as the Unix home directory. It now checks the temporary profile on Windows instead of writing a marker into the real user's profile.
 
