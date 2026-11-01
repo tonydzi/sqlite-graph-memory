@@ -93,7 +93,7 @@ For a single-user agent over a markdown knowledge base, all three are overkill:
   edges as `[[wikilinks]]`, and `brain_ask.py` just parses them.
   No extraction pass, and edge quality beats anything a model would mine.
 - **SQLite is enough** — the only things worth persisting are derived state (a per-turn
-  ledger) and telemetry, and both are defined in [`schema.sql`](schema.sql).
+  ledger) and telemetry, and both are defined in [`schema.sql`](src/sqlite_graph_memory/schema.sql).
   One file, stdlib driver, zero ops.
 - The expensive part of RAG quality is a **reranker**, not graph infrastructure — see the
   rerank step in `brain_ask.py`.
@@ -125,7 +125,7 @@ markdown notes (with [[wikilinks]])
                                 turnstate_show.py = read-only viewer.
 ```
 
-[`schema.sql`](schema.sql) documents both tables. The graph is **not** materialized in SQL:
+[`schema.sql`](src/sqlite_graph_memory/schema.sql) documents both tables. The graph is **not** materialized in SQL:
 `brain_ask.py` parses edges from the notes at query time, bounded to 1 hop / 40 neighbours.
 That keeps the graph permanently in sync with the notes at zero maintenance cost; materialize
 an edge table only when hop depth or corpus size demands it.
@@ -145,7 +145,7 @@ an edge table only when hop depth or corpus size demands it.
   vector-only recall, no ledger row.
   A memory layer must never make the agent worse than having no memory layer.
 - **Measure, don't believe.** `--ab` runs both pipelines on every real query and logs how
-  many notes the graph promoted into the top-N, to `ab_recall` in [`schema.sql`](schema.sql).
+  many notes the graph promoted into the top-N, to `ab_recall` in [`schema.sql`](src/sqlite_graph_memory/schema.sql).
   Whether "associative memory" earns its keep is a weekly SQL query, not a vibe.
 
 ### What's intentionally missing
@@ -222,7 +222,7 @@ A/B RECALL: how should agent memory work
 
 On a corpus this small the graph adds nothing — every note is already in the candidate
 pool. The interesting deltas appear at scale, and that is exactly what the `ab_recall`
-table in [`schema.sql`](schema.sql) accumulates evidence for.
+table in [`schema.sql`](src/sqlite_graph_memory/schema.sql) accumulates evidence for.
 
 ## Public benchmark — `bench/`
 
@@ -351,6 +351,11 @@ Seven other changes were rejected by the same ruler, under one rule fixed in adv
 | `sqlite-vec` (vec0) | full scan 11.99 s vs 0.14 s for a plain SQLite table, and its ANN missed 1.2 hits of 60 -> vectors live in SQLite, **the extension does not** |
 | bi-temporal demotion of superseded notes | temporal +0.130 nDCG on a 41-question temporal set, but title −0.012 -> **merged behind a flag, default off** (in the home pipeline, not in this package) |
 
+The two rows marked "home pipeline" are not in this package: BM25 fusion and superseded-note
+demotion exist only in the maintainer's home build. Check it yourself in a clone:
+`grep -rniE 'bm25|superseded' src/` prints nothing. The PageRank lane above is the one
+merged change that ships (`src/sqlite_graph_memory/ppr.py`).
+
 None of those verdicts is a claim about the models. They are claims about *this corpus with
 this ruler*, which is the only kind of claim a swap decision actually needs — and the reason
 the module is here rather than in a blog post is that your corpus will disagree with ours.
@@ -371,7 +376,7 @@ while the metric is broken never tested the metric.
 
 ## Roadmap
 
-**Now — [latest release](https://github.com/tonydzi/sqlite-graph-memory/releases/latest)** (v0.3.1 on PyPI and in the MCP Registry as of 2026-10-19).
+**Now — [latest release](https://github.com/tonydzi/sqlite-graph-memory/releases/latest)** (the version badge above is the one on PyPI; the same version is in the MCP Registry).
 The pilot as it runs daily: retrieval pipeline, per-turn ledger and A/B telemetry, all in
 `brain_ask.py` and `turnstate_hook.py`, plus the bi-temporal design note. Known defects live in
 the [tracker](https://github.com/tonydzi/sqlite-graph-memory/issues) rather than in footnotes
@@ -390,7 +395,8 @@ does not notice, and that drift is the defect this paragraph used to carry twice
   materialize the graph instead of parsing it at query time, give every edge a validity
   window (`valid_from` / `valid_to` / `observed_at`) so a rebuild *closes* superseded facts
   instead of deleting them: history is kept, recall prefers the present, and `as_of` queries
-  can reconstruct the past. Non-destructive aging by confidence decay. The day-1 A/B result
+  can reconstruct the past. Non-destructive aging by confidence decay. None of this is in
+  the package yet: it is a design note plus a home-pipeline experiment. The day-1 A/B result
   — context size ~unchanged, retrieved candidates ~60% fresher by mean age — is written up
   with its caveats in `docs/bitemporal.md`: the volume win is longitudinal, so that is one
   day on one corpus, not a benchmark.
