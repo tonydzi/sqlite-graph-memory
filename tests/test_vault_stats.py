@@ -78,6 +78,14 @@ def test_dangling_and_self_links_are_not_edges(tmp_path):
     assert _metric(r, "avg_degree")["detail"].startswith("2 resolved links")
 
 
+def test_link_in_inline_code_is_not_an_edge(tmp_path):
+    (tmp_path / "a.md").write_text("Write `[[x]]` to link.\n", encoding="utf-8")
+    (tmp_path / "x.md").write_text("# x\n", encoding="utf-8")
+    pages, edges = vault_stats.build_graph(tmp_path)
+    assert pages.keys() == {"a", "x"}
+    assert edges == set()
+
+
 # ------------------------------------------------------------------ average degree
 
 @pytest.mark.parametrize("extra,expected", [

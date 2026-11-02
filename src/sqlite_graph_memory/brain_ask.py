@@ -106,13 +106,15 @@ def looks_like_entity(q):
 
 
 FENCED_CODE_RX = re.compile(r'(?:```[\s\S]*?```|~~~[\s\S]*?~~~)')
+INLINE_CODE_RX = re.compile(r'`+[^`\n]*`+')
 WIKILINK_RX = re.compile(r'\[\[([^\]\|#]+)')
 
 def _links_in(path):
-    """Outgoing wikilink TARGETS in a note (alias/heading stripped, code fences ignored)."""
+    """Outgoing wikilink TARGETS in a note (alias/heading stripped, code ignored)."""
     try: t = Path(path).read_text(encoding='utf-8', errors='ignore')
     except Exception: return []
     t = FENCED_CODE_RX.sub('', t)
+    t = INLINE_CODE_RX.sub('', t)
     return [m.strip() for m in WIKILINK_RX.findall(t)]
 
 

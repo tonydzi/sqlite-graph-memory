@@ -100,6 +100,10 @@ def test_looks_like_entity(query, expected):
             "Another outside [[another_valid#anchor|alias]].",
             ["valid_note", "another_valid"],
         ),
+        # A wikilink inside inline code should NOT count
+        ("Write `[[example]]` to link.", []),
+        # Inline code hides its link, the surrounding sentence still counts
+        ("Outside [[real]]. Inside `[[example]]` only.", ["real"]),
     ],
 )
 def test_links_in_content_cases(tmp_path, content, expected):
