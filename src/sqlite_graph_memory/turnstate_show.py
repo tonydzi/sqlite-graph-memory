@@ -30,16 +30,23 @@ def jl(s):
         return []
 
 
-def main():
+def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--session")
     ap.add_argument("--n", type=int, default=15)
     ap.add_argument("--stats", action="store_true")
-    a = ap.parse_args()
+    a = ap.parse_args(argv)
 
     if not os.path.isfile(DB):
-        print("(no ledger yet:", DB, ")"); return
-    c = sqlite3.connect(DB)
+        print("(no ledger yet:", DB, ")")
+        return 0
+    try:
+        c = sqlite3.connect(DB)
+        # Opening succeeds on junk bytes; the first query is what raises DatabaseError.
+        c.execute("select 1 from sqlite_master limit 1").fetchone()
+    except sqlite3.Error:
+        print("sgm-turnstate-show: not a database: %s" % DB, file=sys.stderr)
+        return 1
 
     if a.stats:
         tot = c.execute("select count(*) from turns").fetchone()[0]
@@ -51,7 +58,7 @@ def main():
                 "select session_id,count(*),max(ts) from turns group by session_id "
                 "order by max(ts) desc limit 12"):
             print("  %-38s %4d turns  last %s" % (sid[:38], n, last))
-        return
+        return 0
 
     q = ("select ts,project,ask,summary,files,tools,commands,decisions,session_id "
          "from turns ")
@@ -79,7 +86,8 @@ def main():
                 print("     - %s" % x)
         if summary:
             print("💬 summary: %s" % summary.replace("\n", " ")[:200])
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main() or 0)
