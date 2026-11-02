@@ -35,6 +35,7 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
+from sqlite_graph_memory import __version__
 from sqlite_graph_memory.brain_ask import _links_in
 from sqlite_graph_memory.index_notes import FM_RX, iter_notes, read_note
 
@@ -194,6 +195,7 @@ def render(report):
 def main(argv=None):
     ap = argparse.ArgumentParser(prog='sgm-stats', description=__doc__.split('\n\n')[0])
     ap.add_argument('notes_dir')
+    ap.add_argument('--version', action='version', version=f'%(prog)s {__version__}')
     ap.add_argument('--json', action='store_true', help='machine-readable output')
     ap.add_argument('--today', type=datetime.date.fromisoformat,
                     help='date to measure staleness against (YYYY-MM-DD; default: today)')
