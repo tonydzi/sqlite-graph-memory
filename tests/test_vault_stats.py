@@ -220,7 +220,21 @@ def test_impossible_date_is_undated_not_a_crash(tmp_path):
 
 def test_empty_vault_exits_with_fail_code(tmp_path, capsys):
     assert vault_stats.main([str(tmp_path)]) == 2
-    assert "no notes" in capsys.readouterr().err
+    captured = capsys.readouterr()
+    assert "no notes" in captured.err
+    assert captured.out == ""
+
+
+def test_empty_vault_json_output(tmp_path, capsys):
+    code = vault_stats.main([str(tmp_path), "--json"])
+    assert code == 2
+    captured = capsys.readouterr()
+    report = json.loads(captured.out)
+    assert report["verdict"] == "fail"
+    assert report["exit_code"] == 2
+    assert report["pages"] == 0
+    assert report["notes_dir"] == str(tmp_path)
+    assert "no notes" in report["error"]
 
 
 def test_single_quoted_frontmatter(tmp_path):
