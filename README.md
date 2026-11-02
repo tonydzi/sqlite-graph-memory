@@ -18,7 +18,7 @@ One SQLite file, no graph database, no ETL pass, no server.**
 
 ## Install in your client
 
-Already using your own agent rules and projects? The [Russian existing-setup guide (proposed revision)](https://github.com/tonydzi/second-brain-starter-kit/blob/codex/dima-brain-H55019/docs/EXISTING-SETUP.ru.md) combines this memory backend with the optional starter-kit method, preserves existing settings, and checks recall in a fresh chat. Install one memory connection per client; the starter-kit memory plugin and manual registration are alternatives.
+Already using your own agent rules and projects? The [Russian existing-setup guide](https://github.com/tonydzi/second-brain-starter-kit/blob/master/docs/EXISTING-SETUP.ru.md) combines this memory backend with the optional starter-kit method, preserves existing settings, and checks recall in a fresh chat. Install one memory connection per client; the starter-kit memory plugin and manual registration are alternatives.
 
 Build the index once (any folder of markdown; [`uv`](https://docs.astral.sh/uv/) gives you `uvx`):
 
