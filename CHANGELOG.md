@@ -6,6 +6,14 @@ recorded after the fact rather than backdated to look contemporaneous.
 
 ## Unreleased
 
+**`sgm-turnstate-show`: a corrupt ledger gets one line, not a traceback.** When `TURNSTATE_DB` is not a SQLite file the command now prints `not a database: <path>` on stderr and exits 1, leaving the file untouched; a missing ledger keeps its friendly line. Thanks @ShahadatTest (#77), who picked up #74.
+
+**`sgm-stats`: a wikilink inside inline code is no longer a graph edge.** `_links_in` already ignored fenced blocks; it now ignores inline code spans too, so an example like `` `[[x]]` `` stops inflating the link counts. Thanks @bfs2021 (#78), who picked up #72.
+
+**`sgm-stats --json` on an empty folder prints JSON.** A cron script that parses the output now gets an object with `verdict: fail`, `exit_code: 2` and an `error` field instead of plain text; the exit code stays 2 and plain mode is unchanged. Thanks @sharmao07 (#79), who picked up #73.
+
+**`--version` on `sgm-stats` and `sgm-ask`.** Both print the package version and exit 0; `sgm-ask` answers before it touches a model or an index. Thanks @BiswasNehaa (#81), who picked up #75.
+
 ## v0.3.5 - 2026-11-01
 
 **Release fix.** v0.3.4 was tagged but never reached PyPI: the release commit changed only this file, and the publish job stopped on its version check (pyproject, `__init__`, server.json still said 0.3.3). v0.3.5 is the first PyPI build with everything listed under v0.3.4 plus the entries below, with the version set in all four places.
