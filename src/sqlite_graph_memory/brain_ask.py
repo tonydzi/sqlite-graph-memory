@@ -296,6 +296,10 @@ def maybe_star_prompt(stream=None, env=None, interactive=None):
 
 def main():
     args = sys.argv[1:]
+    if '--version' in args:
+        from sqlite_graph_memory import __version__
+        print('sgm-ask %s' % __version__)
+        return
     ask = '--ask' in args
     graph = '--graph' in args; ab = '--ab' in args
     flags = {'--ask', '--graph', '--ab', '--ppr'}
