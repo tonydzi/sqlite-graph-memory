@@ -207,8 +207,14 @@ def main(argv=None):
     try:
         report = compute(a.notes_dir, today=a.today, th=th)
     except EmptyVault as e:
-        print(e, file=sys.stderr)
-        return 2
+        if a.json:
+            report = {
+                'notes_dir': str(a.notes_dir), 'pages': 0, 'metrics': [],
+                'verdict': 'fail', 'exit_code': 2, 'error': str(e),
+            }
+        else:
+            print(e, file=sys.stderr)
+            return 2
     print(json.dumps(report, indent=2, ensure_ascii=False) if a.json else render(report))
     return report['exit_code']
 
