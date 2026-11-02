@@ -12,7 +12,8 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SECTION = re.compile(r"^## v(\d+\.\d+\.\d+)\b(.*)$", re.M)
+# The version must end the token: "## v0.4.0-rc1" or "## v0.3.3.post1" is not v0.4.0 / v0.3.3.
+SECTION = re.compile(r"^## v(\d+\.\d+\.\d+)(?=[ \t]|$)(.*)$", re.M)
 
 
 def top_released(changelog):
@@ -61,6 +62,11 @@ def test_the_v034_release_commit_is_caught():
 def test_section_marked_unreleased_may_lead():
     log = "## v0.3.4 - unreleased\n\nx\n\n## v0.3.3 - 2026-10-26\n\ny\n"
     assert disagreements(PY, INIT, SRV, log) == []
+
+
+def test_prerelease_header_is_not_the_stable_version():
+    log = "## v0.3.3.post1 - 2026-10-27\n\nx\n\n## v0.3.4-rc1\n\ny\n\n## v0.3.3 - 2026-10-26\n\nz\n"
+    assert top_released(log) == "0.3.3"
 
 
 def test_forgotten_pin_in_server_json_is_caught():
