@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
-"""tangleclaw — in-adapter SQLite FTS5 + BM25 + 1-hop [[wikilink]] + frontmatter lineage reference row.
-https://github.com/Jason-Vaughan/TangleClaw (MIT).
+"""tangleclaw-style — in-adapter SQLite FTS5 + BM25 + 1-hop [[wikilink]] + frontmatter lineage reference row.
+Reference recipe from https://github.com/Jason-Vaughan/TangleClaw (MIT).
 
 System identity and scope:
 TangleClaw is a multi-session agent orchestrator whose markdown continuity capsules and notes track
 document supersession via YAML frontmatter (`status: superseded`, `superseded_by: "[[...]]"`) and
 cross-note associations via `[[wikilinks]]`. Because TangleClaw itself is a Node.js session host
-rather than a standalone Python retrieval package, this adapter implements that markdown retrieval
-pipeline directly in Python + SQLite on top of `sqlite_graph_memory`'s own graph/fusion primitives
-(`brain_ask._links_in` and `ppr.rrf_fuse`) so CI can reproduce the row from scratch without an
-external daemon or API key (`version: "reference"`):
+rather than a standalone Python retrieval package, this row is named `tangleclaw-style` and
+implements that markdown retrieval recipe directly in Python + SQLite on top of
+`sqlite_graph_memory`'s own graph/fusion primitives (`brain_ask._links_in` and `ppr.rrf_fuse`) so CI
+can reproduce the row from scratch without an external daemon or API key (`version: "reference"`):
 
 1. Lexical + FTS5 Reciprocal Rank Fusion:
    Indexes each markdown note into SQLite FTS5 (`notes_fts`) and scores whole-note Okapi BM25
@@ -24,7 +24,11 @@ external daemon or API key (`version: "reference"`):
    the superseded note.
 4. Shared extractive floor and capitalized-entity abstention gate:
    Uses `_extract.best_sentence` (top-3 notes) for verbatim answers and citations, and abstains when
-   a capitalized entity word or multi-word proper name in the question does not appear in the vault.
+   a capitalized entity word or multi-word proper name (`CAP_SEQ_RX`) in the question does not appear
+   in the vault. `QWORDS` strips only general English sentence-initial question words and
+   prepositions (no domain nouns like `Project`, `Team`, `Office`, or `Lab`). Checking multi-word
+   proper names in addition to single tokens catches chimeric two-word names whose individual tokens
+   appear on different people in the vault (`10/10` on `absent_entity` without domain-noun stopwords).
    Like `bm25` and `sqlite-fts5`, this keyless lexical pipeline has no embedding model or LLM
    reader, so it scores 0.00 on zero-shared-word `paraphrase` queries and 0.00 on `absent_attribute`.
 """
@@ -41,7 +45,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _extract import best_sentence  # noqa: E402
 from sqlite_graph_memory import brain_ask as ba, ppr  # noqa: E402
 
-SYSTEMS = {'tangleclaw': {}}
+SYSTEMS = {'tangleclaw-style': {}}
 K1, B = 1.5, 0.75
 GHOPS = 3
 FM_RX = re.compile(r'^---\r?\n(.*?)\r?\n---\r?\n', re.S)
@@ -51,7 +55,6 @@ TERM_RX = re.compile(r'\w+')
 QWORDS = {
     'In', 'What', 'Which', 'Who', 'When', 'Where', 'Why', 'How',
     'Under', 'On', 'At', 'To', 'From', 'By', 'For',
-    'Project', 'Team', 'Office', 'Lab',
 }
 PAST_CUES = {'originally', 'original', 'earlier', 'initial', 'previous'}
 
@@ -82,9 +85,10 @@ class Adapter:
     def info(self):
         return {
             'version': 'reference',
-            'url': 'https://github.com/Jason-Vaughan/TangleClaw',
+            'url': 'https://www.sqlite.org/fts5.html',
             'config': {
-                'implementation': 'in-adapter Python/SQLite reference pipeline (no external TangleClaw daemon)',
+                'implementation': 'in-adapter Python/SQLite reference pipeline for TangleClaw markdown continuity (no external daemon)',
+                'reference_repo': 'https://github.com/Jason-Vaughan/TangleClaw',
                 'sqlite': sqlite3.sqlite_version,
                 'retrieval': 'BM25 (k1=1.5, b=0.75) + SQLite FTS5 + 1-hop wikilinks (brain_ask._links_in), fused by ppr.rrf_fuse',
                 'graph_hops': 1,

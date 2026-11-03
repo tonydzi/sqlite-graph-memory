@@ -2,12 +2,13 @@
  "schema": "memory-bench/result@1",
  "bench_version": "0.1",
  "system": {
-  "name": "tangleclaw",
+  "name": "tangleclaw-style",
   "version": "reference",
-  "url": "https://github.com/Jason-Vaughan/TangleClaw",
+  "url": "https://www.sqlite.org/fts5.html",
   "adapter": "bench/adapters/tangleclaw.py",
   "config": {
-   "implementation": "in-adapter Python/SQLite reference pipeline (no external TangleClaw daemon)",
+   "implementation": "in-adapter Python/SQLite reference pipeline for TangleClaw markdown continuity (no external daemon)",
+   "reference_repo": "https://github.com/Jason-Vaughan/TangleClaw",
    "sqlite": "3.53.1",
    "retrieval": "BM25 (k1=1.5, b=0.75) + SQLite FTS5 + 1-hop wikilinks (brain_ask._links_in), fused by ppr.rrf_fuse",
    "graph_hops": 1,
@@ -23,14 +24,14 @@
  "questions_sha256": "e203f965c33bfa94b05f8230d68661dad475dea416c6ebdf90194aad5604cd75",
  "reproduce": {
   "in_ci": true,
-  "command": "python bench/run.py --system tangleclaw"
+  "command": "python bench/run.py --system tangleclaw-style"
  },
  "runtime": {
   "setup_sec": 0.0,
   "sec_per_question": 0.001,
   "python": "3.14.3"
  },
- "notes": "In-adapter Python/SQLite reference pipeline for TangleClaw markdown continuity: BM25 + SQLite FTS5 + 1-hop wikilinks (brain_ask._links_in) fused via ppr.rrf_fuse, YAML frontmatter superseded_by lineage promotion, capitalized-entity abstention gate, and shared _extract.best_sentence floor. Resolves superseded decisions (10/10 temporal) and absent entities (10/10); scores 0.00 on paraphrase and absent_attribute (no embedding model or LLM reader).",
+ "notes": "In-adapter Python/SQLite reference pipeline for [TangleClaw](https://github.com/Jason-Vaughan/TangleClaw) markdown continuity: BM25 + SQLite FTS5 + 1-hop wikilinks (brain_ask._links_in) fused via ppr.rrf_fuse, YAML frontmatter superseded_by lineage promotion, capitalized-entity abstention gate (no domain-noun stopwords), and shared _extract.best_sentence floor. Resolves superseded decisions (10/10 temporal) and absent entities (10/10); scores 0.00 on paraphrase and absent_attribute (no embedding model or LLM reader).",
  "metrics": {
   "overall": {
    "n": 91,
@@ -367,7 +368,7 @@
      "quote": "Talia Wexley grew up in Tamsin Ford."
     }
    ],
-   "sec": 0.001,
+   "sec": 0.0,
    "top_score": 11.3143
   },
   {
@@ -979,7 +980,7 @@
      "quote": "On 26 September 2025, the steering group approved a budget of 10,000 compute credits for Project Lapwing."
     }
    ],
-   "sec": 0.0,
+   "sec": 0.001,
    "top_score": 17.5205
   },
   {
@@ -1047,7 +1048,7 @@
      "quote": "On 20 July 2025, the steering group approved a budget of 50,000 compute credits for Project Linnet."
     }
    ],
-   "sec": 0.0,
+   "sec": 0.001,
    "top_score": 17.0956
   },
   {
@@ -1081,7 +1082,7 @@
      "quote": "On 4 December 2025, the steering group approved a budget of 78,000 compute credits for Project Petrel."
     }
    ],
-   "sec": 0.0,
+   "sec": 0.001,
    "top_score": 17.5205
   },
   {
@@ -2086,7 +2087,7 @@
    ],
    "answer": null,
    "citations": [],
-   "sec": 0.001,
+   "sec": 0.002,
    "top_score": 9.1891
   },
   {
@@ -2988,7 +2989,7 @@
      "quote": "Tallyhoe was first released in 2020."
     }
    ],
-   "sec": 0.0,
+   "sec": 0.001,
    "top_score": 11.3276
   },
   {
@@ -3022,7 +3023,7 @@
      "quote": "Brindlewood was first released in 2019."
     }
    ],
-   "sec": 0.0,
+   "sec": 0.001,
    "top_score": 10.6796
   },
   {
@@ -3056,7 +3057,7 @@
      "quote": "On 1 January 2025, the steering group approved a budget of 60,000 compute credits for Project Godwit."
     }
    ],
-   "sec": 0.0,
+   "sec": 0.001,
    "top_score": 11.1407
   },
   {
@@ -3090,7 +3091,7 @@
      "quote": "On 1 January 2025, the steering group approved a budget of 60,000 compute credits for Project Godwit."
     }
    ],
-   "sec": 0.0,
+   "sec": 0.001,
    "top_score": 11.1407
   },
   {
@@ -3124,7 +3125,7 @@
      "quote": "On 1 January 2025, the steering group approved a budget of 60,000 compute credits for Project Godwit."
     }
    ],
-   "sec": 0.0,
+   "sec": 0.001,
    "top_score": 11.1407
   },
   {
