@@ -134,7 +134,10 @@ def main():
         enc = _ba.load_encoder()
         # Fetch the reranker too: otherwise the first recall from an MCP client is also
         # a ~470 MB download and runs into the client's tool timeout.
-        _ba._onnx().prefetch()
+        try:
+            _ba._onnx().prefetch()
+        except Exception as exc:              # offline: the first recall fetches it instead
+            print('reranker not prefetched (%s); the first recall will fetch it' % type(exc).__name__)
     else:
         _require_sentence_transformers()
         from sentence_transformers import SentenceTransformer

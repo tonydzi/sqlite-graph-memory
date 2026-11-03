@@ -43,9 +43,11 @@ def check_embeddings(system=None, machine=None):
     if brain_ask.backend() == 'onnx':
         try:
             import onnxruntime
+            import tokenizers  # noqa: F401
+            import huggingface_hub  # noqa: F401
         except Exception as exc:
             why = '%s: %s' % (type(exc).__name__, str(exc).splitlines()[0] if str(exc) else '')
-            return FAIL, 'onnxruntime fails to import (%s).' % why, \
+            return FAIL, 'The light backend is incomplete (%s).' % why, \
                 'Reinstall in a fresh virtualenv: pip install --force-reinstall "sqlite-graph-memory[lite]"'
         return OK, 'Light backend: onnxruntime %s, no torch needed.' % onnxruntime.__version__, ''
     try:

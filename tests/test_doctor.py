@@ -55,6 +55,18 @@ def test_light_backend_is_ok_without_torch(monkeypatch):
     assert status == doctor.OK and "onnxruntime" in what
 
 
+import pytest  # noqa: E402
+
+
+@pytest.mark.parametrize("missing", ["onnxruntime", "tokenizers", "huggingface_hub"])
+def test_incomplete_light_backend_fails(monkeypatch, missing):
+    """Codex review 2026-11-03: onnxruntime alone used to print ok while recall died."""
+    monkeypatch.setenv("SGM_BACKEND", "onnx")
+    monkeypatch.setitem(sys.modules, missing, None)
+    status, what, fix = doctor.check_embeddings()
+    assert status == doctor.FAIL and "[lite]" in fix and missing in what
+
+
 def test_broken_torch_on_intel_mac_points_at_numpy(monkeypatch):
     monkeypatch.setenv("SGM_BACKEND", "torch")
     class Boom:

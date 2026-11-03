@@ -159,17 +159,42 @@ def load_index(emb_path=None, meta_path=None):
     return emb, meta
 
 
+def _try_onnx(kind):
+    """The ONNX model, or None to fall back to torch.
+
+    Only an auto-picked ONNX falls back: someone who already has the torch models cached
+    and gets onnxruntime from another package may be offline, with no ONNX files yet.
+    Their recall must keep working on torch. SGM_BACKEND=onnx raises instead.
+    """
+    if backend() != 'onnx':
+        return None
+    try:
+        return getattr(_onnx(), kind)()
+    except Exception as exc:
+        if (os.getenv('SGM_BACKEND') or '').strip().lower() == 'onnx':
+            raise
+        try:
+            import sentence_transformers  # noqa: F401
+        except ImportError:
+            raise exc
+        sys.stderr.write('ONNX %s unavailable (%s: %s); using torch\n'
+                         % (kind, type(exc).__name__, str(exc).splitlines()[0] if str(exc) else ''))
+        return None
+
+
 def load_encoder(dev=None):
-    if backend() == 'onnx':
-        return _onnx().Encoder()
+    m = _try_onnx('Encoder')
+    if m is not None:
+        return m
     _require_sentence_transformers()
     from sentence_transformers import SentenceTransformer
     return SentenceTransformer(E5_MODEL, device=dev or pick_device())
 
 
 def load_reranker(dev=None):
-    if backend() == 'onnx':
-        return _onnx().CrossEncoder()
+    m = _try_onnx('CrossEncoder')
+    if m is not None:
+        return m
     _require_sentence_transformers()
     from sentence_transformers import CrossEncoder
     return CrossEncoder(RERANK_MODEL, device=dev or pick_device())

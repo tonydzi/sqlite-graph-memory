@@ -73,6 +73,40 @@ def test_loaders_use_onnx_without_sentence_transformers(monkeypatch, torch_forbi
     assert brain_ask.load_reranker() == "ce"
 
 
+class _FakeST:
+    """Stands in for sentence_transformers on a machine with cached torch models."""
+    def SentenceTransformer(self, *a, **k):
+        return "torch-enc"
+
+    def CrossEncoder(self, *a, **k):
+        return "torch-ce"
+
+
+def _offline(*a, **k):
+    raise OSError("offline: onnx/model.onnx is not in the cache")
+
+
+@pytest.mark.parametrize("loader,want", [("load_encoder", "torch-enc"),
+                                         ("load_reranker", "torch-ce")])
+def test_auto_onnx_failure_falls_back_to_torch(monkeypatch, loader, want):
+    """Codex review 2026-11-03: onnxruntime from another package + offline + torch models
+    cached must keep recall working instead of failing on a missing ONNX file."""
+    monkeypatch.delenv("SGM_BACKEND", raising=False)
+    monkeypatch.setattr(onnx_backend, "available", lambda: True)
+    monkeypatch.setattr(onnx_backend, "Encoder", _offline)
+    monkeypatch.setattr(onnx_backend, "CrossEncoder", _offline)
+    monkeypatch.setitem(sys.modules, "sentence_transformers", _FakeST())
+    assert getattr(brain_ask, loader)("cpu") == want
+
+
+def test_forced_onnx_failure_raises(monkeypatch):
+    monkeypatch.setenv("SGM_BACKEND", "onnx")
+    monkeypatch.setattr(onnx_backend, "Encoder", _offline)
+    monkeypatch.setitem(sys.modules, "sentence_transformers", _FakeST())
+    with pytest.raises(OSError):
+        brain_ask.load_encoder("cpu")
+
+
 def test_model_cache_is_not_temp(monkeypatch, tmp_path):
     """SGM_MODEL_CACHE is passed through; unset means huggingface_hub's persistent cache."""
     seen = []
