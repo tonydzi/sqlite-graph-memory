@@ -357,6 +357,30 @@ is what runs. An eval that re-implements the pipeline measures the re-implementa
 `--sqlite` appends one row per class and mode to a `gold_eval` table, which is how a run six
 weeks from now can be diffed against today's.
 
+### Sweeping the graph-expansion knobs — `eval/run_ablation.py`
+
+`run_eval.py` scores one configuration at a time (`vector` vs `graph`). `run_ablation.py`
+sweeps a grid of pipeline parameters — whether the 1-hop graph expansion runs at all
+(`hops`), how many top hits seed it (`ghops`), how many neighbours it admits (`gmax`), the
+dense-retrieve pool size (`topk`), and whether entity/name-shaped queries skip the hop
+(`entity_gate`) — against the **same gold file**, in one run, reusing `brain_ask.py` and
+`run_eval.py`'s own metrics so the sweep can't drift from what `sgm-ask` actually does:
+
+```bash
+python eval/run_ablation.py --list-grid                        # cells only, no model/index load
+python eval/run_ablation.py --gold eval/gold-<today>.jsonl      # the built-in 8-cell default grid
+```
+
+Each dense embedding is computed once per question and reused across every cell (a cell's
+candidate pool is a slice of the widest pool asked for, not a re-retrieve); only the
+cross-encoder rerank runs per `(question, cell)`, since the candidate set changes per cell.
+The report — printed as a Markdown table and written as both `<prefix>.md` and `<prefix>.csv`
+(`--out <prefix>`, or `--csv`/`--md` directly) — breaks down `n`, `Recall@12`, `MRR`, `nDCG@12`
+and `delta_nDCG@12` (vs the grid's `0-hop` baseline) per `(cell, class)` and `overall`, and
+warns explicitly whenever a class has fewer than 20 questions. `--grid` takes the default
+preset, a `';'`-separated `key=val` cell list (e.g. `--grid "hops=0;hops=1,gmax=80"`), or a
+JSON array of cell dicts.
+
 ### What it cost us to find out
 
 Numbers from the home vault (~24k chunks, RU+EN, 2026-09-16), one frozen gold set of 184
