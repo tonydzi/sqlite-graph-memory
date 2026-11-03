@@ -117,6 +117,33 @@ def test_links_in_nonexistent_file(tmp_path):
     assert _links_in(missing_file) == []
 
 
+def test_expand_1hop_resolves_folder_and_md_suffix_links(tmp_path):
+    """Issue #71 audit: expand_1hop resolves [[Sub/c]] and [[c.md]] targets."""
+    import numpy as np
+    from sqlite_graph_memory.brain_ask import expand_1hop, index_by_basename
+
+    sub = tmp_path / "sub"
+    sub.mkdir()
+    a_path = tmp_path / "a.md"
+    b_path = tmp_path / "b.md"
+    c_path = sub / "c.md"
+    a_path.write_text("[[Sub/c]]\n", encoding="utf-8")
+    b_path.write_text("[[c.md]]\n", encoding="utf-8")
+    c_path.write_text("# c\n", encoding="utf-8")
+
+    meta = [
+        {"path": str(a_path), "title": "a", "snippet": ""},
+        {"path": str(b_path), "title": "b", "snippet": ""},
+        {"path": str(c_path), "title": "c", "snippet": ""},
+    ]
+    sims = np.array([0.9, 0.8, 0.4], dtype="float32")
+    by_base = index_by_basename(meta)
+
+    assert expand_1hop(sims, meta, [0], by_base=by_base) == [2]
+    assert expand_1hop(sims, meta, [1], by_base=by_base) == [2]
+
+
+
 def test_missing_embedding_index_reports_error_and_exits_nonzero(tmp_path):
     """A missing index must reach CLI callers as an error, not empty results."""
     repo_root = Path(__file__).resolve().parents[1]

@@ -218,12 +218,39 @@ def retrieve_candidates(sims, meta, topk=TOPK_RETRIEVE):
     return order
 
 
+def _normalize_target(tgt):
+    """Normalize a wikilink target: backslashes to /, strip leading/trailing slashes and .md, lowercase."""
+    s = (tgt or '').strip().replace('\\', '/').strip('/')
+    if s.lower().endswith('.md'):
+        s = s[:-3].strip()
+    return s.lower()
+
+
 def index_by_basename(meta):
     """basename(no .md) -> meta indices, used to resolve [[wikilink]] targets to chunks."""
     by_base = {}
     for j, mm in enumerate(meta):
         by_base.setdefault(Path(mm['path']).stem.lower(), []).append(j)
     return by_base
+
+
+def _resolve_target_chunks(tgt, by_base, meta):
+    """Resolve a wikilink target (`[[name]]`, `[[name.md]]`, or `[[folder/name]]`) to chunk indices."""
+    norm = _normalize_target(tgt)
+    if not norm:
+        return []
+    if '/' not in norm:
+        return by_base.get(norm, [])
+    stem = norm.rsplit('/', 1)[-1]
+    cands = by_base.get(stem, [])
+    if not cands:
+        return []
+    suffix = '/' + norm
+    matched = [
+        j for j in cands
+        if ('/' + Path(meta[j]['path']).with_suffix('').as_posix().lower()).endswith(suffix)
+    ]
+    return matched
 
 
 def expand_1hop(sims, meta, base_order, by_base=None, ghops=GHOPS, gmax=GMAX):
@@ -239,7 +266,7 @@ def expand_1hop(sims, meta, base_order, by_base=None, ghops=GHOPS, gmax=GMAX):
         in_order = set(base_order)
         for i in base_order[:ghops]:
             for tgt in _links_in(meta[i]['path']):
-                idxs = by_base.get(tgt.lower())
+                idxs = _resolve_target_chunks(tgt, by_base, meta)
                 if not idxs: continue
                 best = max(idxs, key=lambda j: sims[j])   # best chunk of neighbour for THIS query
                 if best in in_order: continue
