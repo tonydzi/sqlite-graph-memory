@@ -143,6 +143,31 @@ def test_expand_1hop_resolves_folder_and_md_suffix_links(tmp_path):
     assert expand_1hop(sims, meta, [1], by_base=by_base) == [2]
 
 
+def test_expand_1hop_prefers_exact_vault_relative_path_over_suffix_collision(tmp_path):
+    """When both sub/c.md and other/sub/c.md exist, [[sub/c]] resolves to sub/c.md even if other/sub/c.md has higher similarity."""
+    import numpy as np
+    from sqlite_graph_memory.brain_ask import expand_1hop, index_by_basename
+
+    (tmp_path / "sub").mkdir()
+    (tmp_path / "other" / "sub").mkdir(parents=True)
+    a_path = tmp_path / "a.md"
+    exact_c = tmp_path / "sub" / "c.md"
+    nested_c = tmp_path / "other" / "sub" / "c.md"
+    a_path.write_text("[[sub/c]]\n", encoding="utf-8")
+    exact_c.write_text("# exact c\n", encoding="utf-8")
+    nested_c.write_text("# nested c\n", encoding="utf-8")
+
+    meta = [
+        {"path": str(a_path), "title": "a", "snippet": ""},
+        {"path": str(exact_c), "title": "c", "snippet": ""},
+        {"path": str(nested_c), "title": "c", "snippet": ""},
+    ]
+    sims = np.array([0.9, 0.3, 0.85], dtype="float32")
+    by_base = index_by_basename(meta)
+
+    assert expand_1hop(sims, meta, [0], by_base=by_base) == [1]
+
+
 
 def test_missing_embedding_index_reports_error_and_exits_nonzero(tmp_path):
     """A missing index must reach CLI callers as an error, not empty results."""

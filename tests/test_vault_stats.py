@@ -272,3 +272,15 @@ def test_folder_link_disambiguates_same_stem_in_different_folders(tmp_path):
     _, edges = vault_stats.build_graph(tmp_path)
     assert sorted(edges) == [("a", "sub/x")]
 
+
+def test_folder_link_prefers_exact_vault_relative_path_over_suffix_match(tmp_path):
+    """When both sub/c.md and other/sub/c.md exist, [[sub/c]] resolves only to sub/c."""
+    (tmp_path / "sub").mkdir()
+    (tmp_path / "other" / "sub").mkdir(parents=True)
+    (tmp_path / "a.md").write_text("[[sub/c]]\n", encoding="utf-8")
+    (tmp_path / "sub" / "c.md").write_text("# exact sub/c\n", encoding="utf-8")
+    (tmp_path / "other" / "sub" / "c.md").write_text("# nested other/sub/c\n", encoding="utf-8")
+    _, edges = vault_stats.build_graph(tmp_path)
+    assert sorted(edges) == [("a", "sub/c")]
+
+

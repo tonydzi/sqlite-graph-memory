@@ -235,7 +235,12 @@ def index_by_basename(meta):
 
 
 def _resolve_target_chunks(tgt, by_base, meta):
-    """Resolve a wikilink target (`[[name]]`, `[[name.md]]`, or `[[folder/name]]`) to chunk indices."""
+    """Resolve a wikilink target (`[[name]]`, `[[name.md]]`, or `[[folder/name]]`) to chunk indices.
+
+    For folder-qualified targets (`/` in normalized target), prefers exact vault-relative path
+    matches (`sub/c`) before falling back to deeper path-suffix matches (`other/sub/c`), matching
+    `vault_stats.build_graph`.
+    """
     norm = _normalize_target(tgt)
     if not norm:
         return []
@@ -245,12 +250,25 @@ def _resolve_target_chunks(tgt, by_base, meta):
     cands = by_base.get(stem, [])
     if not cands:
         return []
+    paths = [Path(m['path']).as_posix() for m in meta]
+    try:
+        root = os.path.commonpath(paths) if len(paths) > 1 else ''
+    except ValueError:
+        root = ''
+    if root and any(p == root for p in paths):
+        root = Path(root).parent.as_posix()
+        if root == '.':
+            root = ''
+    exact, suffix_matches = [], []
     suffix = '/' + norm
-    matched = [
-        j for j in cands
-        if ('/' + Path(meta[j]['path']).with_suffix('').as_posix().lower()).endswith(suffix)
-    ]
-    return matched
+    for j in cands:
+        p = Path(meta[j]['path']).with_suffix('').as_posix()
+        rel = p[len(root):].lstrip('/').lower() if (root and p.startswith(root)) else p.lstrip('/').lower()
+        if rel == norm or p.lstrip('/').lower() == norm:
+            exact.append(j)
+        elif ('/' + rel).endswith(suffix) or ('/' + p.lower()).endswith(suffix):
+            suffix_matches.append(j)
+    return exact if exact else suffix_matches
 
 
 def expand_1hop(sims, meta, base_order, by_base=None, ghops=GHOPS, gmax=GMAX):
