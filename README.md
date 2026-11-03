@@ -381,6 +381,19 @@ warns explicitly whenever a class has fewer than 20 questions. `--grid` takes th
 preset, a `';'`-separated `key=val` cell list (e.g. `--grid "hops=0;hops=1,gmax=80"`), or a
 JSON array of cell dicts.
 
+Sample run (`intfloat/multilingual-e5-base` + `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1` on CPU) over a 5-note synthetic mini-vault (`12` questions: `5` title, `5` body, `1` bridge, `1` temporal) with `--grid "hops=0,topk=3;hops=1,ghops=2,gmax=5,topk=3,entity_gate=on;hops=1,ghops=2,gmax=5,topk=3,entity_gate=off"`:
+
+| cell | class | n | Recall@12 | MRR | nDCG@12 | delta_nDCG@12 |
+|---|---|---:|---:|---:|---:|---:|
+| `cell-0` (`hops=0, topk=3`) | bridge | 1 | 0.500 | 0.500 | 0.387 | +0.000 |
+| `cell-0` (`hops=0, topk=3`) | overall | 12 | 0.958 | 0.903 | 0.907 | +0.000 |
+| `cell-1` (`hops=1, ghops=2, gmax=5, topk=3, gate=on`) | bridge | 1 | 1.000 | 0.500 | 0.693 | +0.307 |
+| `cell-1` (`hops=1, ghops=2, gmax=5, topk=3, gate=on`) | overall | 12 | 1.000 | 0.903 | 0.933 | +0.026 |
+| `cell-2` (`hops=1, ghops=2, gmax=5, topk=3, gate=off`) | bridge | 1 | 1.000 | 0.500 | 0.693 | +0.307 |
+| `cell-2` (`hops=1, ghops=2, gmax=5, topk=3, gate=off`) | overall | 12 | 1.000 | 0.903 | 0.933 | +0.026 |
+
+When `topk` is smaller than the vault (`topk=3 < 5` notes), 1-hop `[[wikilink]]` expansion (`cell-1`, `cell-2`) lifts `bridge` Recall@12 from `0.500` to `1.000` (`+0.307` nDCG@12, `+0.026` overall) without regressing `title`, `body`, or `temporal`. On the default 10-cell grid (`topk=20..80 > 5` notes), every cell scores identically (`overall` Recall@12 `1.000`, nDCG@12 `0.929`, `delta_nDCG@12 = +0.000`) because dense retrieval already admits the entire mini-vault before the graph hop runs.
+
 ### What it cost us to find out
 
 Numbers from the home vault (~24k chunks, RU+EN, 2026-09-16), one frozen gold set of 184
