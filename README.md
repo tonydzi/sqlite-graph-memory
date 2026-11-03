@@ -377,9 +377,11 @@ cross-encoder rerank runs per `(question, cell)`, since the candidate set change
 The report — printed as a Markdown table and written as both `<prefix>.md` and `<prefix>.csv`
 (`--out <prefix>`, or `--csv`/`--md` directly) — breaks down `n`, `Recall@12`, `MRR`, `nDCG@12`
 and `delta_nDCG@12` (vs the grid's `0-hop` baseline) per `(cell, class)` and `overall`, and
-warns explicitly whenever a class has fewer than 20 questions. `--grid` takes the default
-preset, a `';'`-separated `key=val` cell list (e.g. `--grid "hops=0;hops=1,gmax=80"`), or a
-JSON array of cell dicts.
+warns explicitly whenever a class has fewer than 20 questions. The built-in `default`
+10-cell grid varies **one axis at a time** against `1-hop` (`ghops=15, gmax=40, topk=60,
+entity_gate=on`) rather than a full Cartesian product; `--grid` takes `default`, a
+`';'`-separated `key=val` cell list (e.g. `--grid "hops=0;hops=1,ghops=30,gmax=80"` to test
+multi-axis interactions), or a JSON array of cell dicts.
 
 Sample run (`intfloat/multilingual-e5-base` + `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1` on CPU) over a 5-note synthetic mini-vault (`12` questions: `5` title, `5` body, `1` bridge, `1` temporal) with `--grid "hops=0,topk=3;hops=1,ghops=2,gmax=5,topk=3,entity_gate=on;hops=1,ghops=2,gmax=5,topk=3,entity_gate=off"`:
 
