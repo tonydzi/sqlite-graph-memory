@@ -64,7 +64,8 @@ def test_incomplete_light_backend_fails(monkeypatch, missing):
     monkeypatch.setenv("SGM_BACKEND", "onnx")
     monkeypatch.setitem(sys.modules, missing, None)
     status, what, fix = doctor.check_embeddings()
-    assert status == doctor.FAIL and "[lite]" in fix and missing in what
+    # Names the first missing package, which on a runner without [lite] is onnxruntime.
+    assert status == doctor.FAIL and "[lite]" in fix and "incomplete" in what
 
 
 def test_broken_torch_on_intel_mac_points_at_numpy(monkeypatch):
