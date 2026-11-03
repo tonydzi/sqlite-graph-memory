@@ -2,21 +2,28 @@
 """index_notes.py — minimal embedding indexer for a folder of markdown notes.
 
 Builds the dense index that brain_ask.py retrieves from:
-  index/_brain_e5.npy       float32 matrix, one row per chunk (L2-normalized)
-  index/_brain_e5_meta.pkl  list of dicts: {path, title, snippet, date}
+  index/_brain_e5.npy            float32 matrix, one row per chunk (L2-normalized)
+  index/_brain_e5_meta.pkl       list of dicts: {path, title, snippet, date}
+  index/_brain_e5_manifest.json  {path: {size, mtime, hash}} + a settings fingerprint
 
 Chunking is deliberately simple (fixed-size windows over the note body) — the
 cross-encoder reranker downstream forgives coarse chunk boundaries.
 
+Re-running only re-embeds notes that are new or changed since the manifest was
+written (size + mtime fast path, content sha256 truth); unchanged notes keep
+their existing rows, and deleted notes lose theirs. Pass --full (or delete/corrupt
+the manifest, or change one of the chunking settings below) to force a complete
+rebuild.
+
 USAGE:
-  python index_notes.py <notes_dir>
+  python index_notes.py <notes_dir> [--full]
 Config (env, optional):
   BRAIN_INDEX_DIR     output dir (default: ./index)
   BRAIN_INDEX_HIDDEN  1 = also index dot-files and dot-directories (default:
                       skip them, so .draft.md, .stversions/.obsidian/.git and
                       Syncthing conflict copies never enter the index)
 """
-import os, re, sys, pickle
+import argparse, hashlib, json, os, re, sys, pickle
 from pathlib import Path
 import numpy as np
 
@@ -26,8 +33,6 @@ CHUNK_OVERLAP = 200
 SNIPPET_CHARS = 600
 
 FM_RX = re.compile(r'^---\r?\n(.*?)\r?\n---\r?\n', re.S)
-
-
 
 try:
     from sqlite_graph_memory import brain_ask as _ba
@@ -50,6 +55,7 @@ def _require_sentence_transformers():
             raise
         raise SystemExit(_EMBEDDINGS_HINT) from exc
     return sentence_transformers
+
 
 def chunks_of(text):
     step = CHUNK_CHARS - CHUNK_OVERLAP
@@ -106,54 +112,168 @@ def read_note(path):
         return None
 
 
-def main():
-    if len(sys.argv) < 2:
-        print(__doc__); return
-    notes_dir = Path(sys.argv[1])
-    out_dir = Path(os.getenv('BRAIN_INDEX_DIR', 'index'))
+def _file_hash(path):
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def _settings_fingerprint():
+    return {'E5_MODEL': E5_MODEL, 'CHUNK_CHARS': CHUNK_CHARS,
+            'CHUNK_OVERLAP': CHUNK_OVERLAP, 'SNIPPET_CHARS': SNIPPET_CHARS}
+
+
+def _chunk_note(p):
+    """-> (meta dicts, 'passage: '-prefixed texts) for one note's chunks."""
+    t = read_note(p)
+    if t is None:
+        return [], []
+    m = FM_RX.match(t)
+    fm = m.group(1) if m else ''
+    body = t[m.end():] if m else t
+    date = fm_date(fm)
+    title = p.stem
+    meta, texts = [], []
+    for c in chunks_of(body):
+        meta.append({'path': str(p), 'title': title,
+                     'snippet': c[:SNIPPET_CHARS], 'date': date})
+        texts.append('passage: ' + c)     # e5 expects the passage: prefix
+    return meta, texts
+
+
+def _embed(encoder, texts):
+    """encoder.encode(texts) if it has one, else encoder(texts); lazily loads
+    the default model via brain_ask.load_encoder() only when encoder is None,
+    and only when texts is non-empty (so an unchanged re-run never touches
+    the embedding stack)."""
+    if encoder is None:
+        encoder = _ba.load_encoder()
+        return np.asarray(
+            encoder.encode(texts, normalize_embeddings=True, convert_to_numpy=True,
+                           batch_size=64, show_progress_bar=True),
+            dtype='float32',
+        )
+    result = encoder.encode(texts) if hasattr(encoder, 'encode') else encoder(texts)
+    return np.asarray(result, dtype='float32')
+
+
+def build_index(notes_dir, out_dir=None, encoder=None, full=False):
+    """Index ``notes_dir`` into ``out_dir`` (default ``./index``).
+
+    Re-embeds only notes that are new or changed since the manifest was last
+    written; unchanged notes keep their rows, deleted notes lose theirs.
+    ``full=True`` (or --full on the CLI) forces a complete rebuild, as does a
+    missing/corrupt manifest/index or a changed chunking setting.
+    ``encoder``, when given, is called as ``encoder.encode(texts)`` or
+    ``encoder(texts)`` — inject a fake in tests so no model ever loads.
+    Returns {'chunks': int, 'files': int, 'new_texts': int}.
+    """
+    notes_dir = Path(notes_dir)
+    out_dir = Path(out_dir) if out_dir is not None else Path('index')
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    meta, texts = [], []
-    for p in iter_notes(notes_dir):
-        t = read_note(p)
-        if t is None:
-            continue
-        m = FM_RX.match(t)
-        fm = m.group(1) if m else ''
-        body = t[m.end():] if m else t
-        date = fm_date(fm)
-        title = p.stem
-        for c in chunks_of(body):
-            meta.append({'path': str(p), 'title': title,
-                         'snippet': c[:SNIPPET_CHARS], 'date': date})
-            texts.append('passage: ' + c)     # e5 expects the passage: prefix
-    if not texts:
-        print('no indexable .md notes found under', notes_dir); return
+    emb_path = out_dir / '_brain_e5.npy'
+    meta_path = out_dir / '_brain_e5_meta.pkl'
+    manifest_path = out_dir / '_brain_e5_manifest.json'
+    settings = _settings_fingerprint()
 
+    notes = iter_notes(notes_dir)
+
+    do_full = full
+    old_meta, old_emb, old_files = [], None, {}
+    if not do_full:
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+            if not isinstance(manifest, dict) or not isinstance(manifest.get('files'), dict):
+                raise ValueError('manifest is not {settings, files: {...}}')
+            if manifest.get('settings') != settings:
+                do_full = True
+            else:
+                old_files = manifest['files']
+                if not all(isinstance(v, dict) for v in old_files.values()):
+                    raise ValueError('manifest file record is not a dict')
+                old_meta = pickle.loads(meta_path.read_bytes())
+                old_emb = np.load(emb_path)
+                if (not isinstance(old_meta, list) or old_emb.ndim != 2
+                        or old_emb.shape[0] != len(old_meta)):
+                    raise ValueError('index/meta row count mismatch')
+        except Exception:
+            do_full = True
+
+    current_files = {}
+    for p in notes:
+        key = str(p)
+        st = p.stat()
+        prev = old_files.get(key) if not do_full else None
+        if (isinstance(prev, dict)
+                and prev.get('size') == st.st_size
+                and prev.get('mtime') == st.st_mtime
+                and isinstance(prev.get('hash'), str)
+                and prev.get('hash')):
+            file_hash = prev['hash']
+        else:
+            file_hash = _file_hash(p)
+        current_files[key] = {'size': st.st_size, 'mtime': st.st_mtime, 'hash': file_hash}
+
+    if do_full:
+        old_meta, old_emb, old_files = [], None, {}
+        changed_or_new = set(current_files)
+    else:
+        unchanged = {path for path, info in current_files.items()
+                     if old_files.get(path, {}).get('hash') == info['hash']}
+        changed_or_new = set(current_files) - unchanged
+        kept_mask = [m['path'] in unchanged for m in old_meta]
+        old_meta = [m for m, keep in zip(old_meta, kept_mask) if keep]
+        old_emb = old_emb[np.array(kept_mask, dtype=bool)] if old_emb is not None else None
+
+    new_meta, new_texts = [], []
+    for p in notes:
+        if str(p) in changed_or_new:
+            m, t = _chunk_note(p)
+            new_meta.extend(m)
+            new_texts.extend(t)
+
+    new_emb = _embed(encoder, new_texts) if new_texts else None
+
+    meta = old_meta + new_meta
+    if old_emb is not None and new_emb is not None:
+        emb = np.vstack([old_emb, new_emb]).astype('float32')
+    elif new_emb is not None:
+        emb = new_emb.astype('float32')
+    elif old_emb is not None:
+        emb = old_emb.astype('float32')
+    else:
+        emb = np.zeros((0, 0), dtype='float32')
+
+    np.save(emb_path, emb)
+    meta_path.write_bytes(pickle.dumps(meta))
+    manifest_path.write_text(json.dumps({'settings': settings, 'files': current_files}, indent=2),
+                             encoding='utf-8')
+
+    files = len({m['path'] for m in meta})
+    return {'chunks': len(meta), 'files': files, 'new_texts': len(new_texts)}
+
+
+def main():
+    ap = argparse.ArgumentParser(add_help=False)
+    ap.add_argument('notes_dir', nargs='?')
+    ap.add_argument('--full', action='store_true',
+                    help='force a complete rebuild, ignoring the manifest')
+    args = ap.parse_args()
+    if not args.notes_dir:
+        print(__doc__); return
+    notes_dir = Path(args.notes_dir)
+    out_dir = Path(os.getenv('BRAIN_INDEX_DIR', 'index'))
+
+    result = build_index(notes_dir, out_dir=out_dir, full=args.full)
+    if result['chunks'] == 0:
+        print('no indexable .md notes found under', notes_dir); return
     if _ba.backend() == 'onnx':
-        enc = _ba.load_encoder()
         # Fetch the reranker too: otherwise the first recall from an MCP client is also
         # a ~470 MB download and runs into the client's tool timeout.
         try:
             _ba._onnx().prefetch()
         except Exception as exc:              # offline: the first recall fetches it instead
             print('reranker not prefetched (%s); the first recall will fetch it' % type(exc).__name__)
-    else:
-        _require_sentence_transformers()
-        from sentence_transformers import SentenceTransformer
-        try:
-            import torch
-            dev = 'cuda' if torch.cuda.is_available() else 'cpu'
-        except Exception:
-            dev = 'cpu'
-        enc = SentenceTransformer(E5_MODEL, device=dev)
-    emb = enc.encode(texts, normalize_embeddings=True, convert_to_numpy=True,
-                     batch_size=64, show_progress_bar=True).astype('float32')
-
-    np.save(out_dir / '_brain_e5.npy', emb)
-    (out_dir / '_brain_e5_meta.pkl').write_bytes(pickle.dumps(meta))
-    files = len({m['path'] for m in meta})
-    print('indexed %d chunks from %d files -> %s' % (len(meta), files, out_dir))
+    print('indexed %d chunks from %d files -> %s' % (result['chunks'], result['files'], out_dir))
 
 
 if __name__ == '__main__':
