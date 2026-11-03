@@ -1,5 +1,5 @@
 {
-  "//": "Drop this into your MCP client's config after `pip install 'sqlite-graph-memory[embeddings]'`. The command is on PATH, so there is no clone path to keep in sync. If you installed into a venv your client does not inherit, use the absolute path to that venv's bin/sgm-mcp.",
+  "//": "Drop this into your MCP client's config after `pip install 'sqlite-graph-memory[lite]'`. The command is on PATH, so there is no clone path to keep in sync. If you installed into a venv your client does not inherit, use the absolute path to that venv's bin/sgm-mcp.",
   "//index": "BRAIN_INDEX_DIR is the directory `sgm-index` wrote; TURNSTATE_DB is where the per-turn ledger and the A/B telemetry live. Both default to the current working directory, which is rarely what you want for a long-lived server.",
   "mcpServers": {
     "sqlite-graph-memory": {

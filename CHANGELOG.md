@@ -6,6 +6,8 @@ recorded after the fact rather than backdated to look contemporaneous.
 
 ## Unreleased
 
+**Docs: install commands use `[lite]`.** Now that v0.3.6 is on PyPI with the `[lite]` extra, README, llms.txt and the example MCP config install the torch-free stack; `[embeddings]` stays documented for a GPU.
+
 ## v0.3.6 - 2026-11-03
 
 **Light backend: recall without torch.** New extra `[lite]` runs the same two models (multilingual-e5-base and the mMiniLMv2 reranker) on ONNX Runtime from their official ONNX exports: 155 MB installed instead of ~2 GB, and on the hub one MCP recall took 7.0 s instead of 33.8 s through torch, with the same hits and scores (embeddings agree to 3e-7). It is picked automatically when installed; `SGM_BACKEND=torch|onnx` forces either, and an index built by one backend works with the other. `pick_device()` no longer imports torch on this path: on a Windows CPU laptop that import alone took 44 s and pushed the first MCP call past the client's tool timeout (2026-11-01). Models stay in the persistent Hugging Face cache (`SGM_MODEL_CACHE` overrides), and `sgm-index` fetches the reranker too, so the first recall is not also a download. `sgm-doctor` reports the light backend. Install commands in README keep `[embeddings]` until `[lite]` is on PyPI.
