@@ -6,6 +6,10 @@ recorded after the fact rather than backdated to look contemporaneous.
 
 ## Unreleased
 
+## v0.3.6 - 2026-11-03
+
+**Light backend: recall without torch.** New extra `[lite]` runs the same two models (multilingual-e5-base and the mMiniLMv2 reranker) on ONNX Runtime from their official ONNX exports: 155 MB installed instead of ~2 GB, and on the hub one MCP recall took 7.0 s instead of 33.8 s through torch, with the same hits and scores (embeddings agree to 3e-7). It is picked automatically when installed; `SGM_BACKEND=torch|onnx` forces either, and an index built by one backend works with the other. `pick_device()` no longer imports torch on this path: on a Windows CPU laptop that import alone took 44 s and pushed the first MCP call past the client's tool timeout (2026-11-01). Models stay in the persistent Hugging Face cache (`SGM_MODEL_CACHE` overrides), and `sgm-index` fetches the reranker too, so the first recall is not also a download. `sgm-doctor` reports the light backend. Install commands in README keep `[embeddings]` until `[lite]` is on PyPI.
+
 **`sgm-turnstate-show`: a corrupt ledger gets one line, not a traceback.** When `TURNSTATE_DB` is not a SQLite file the command now prints `not a database: <path>` on stderr and exits 1, leaving the file untouched; a missing ledger keeps its friendly line. Thanks @ShahadatTest (#77), who picked up #74.
 
 **`sgm-stats`: a wikilink inside inline code is no longer a graph edge.** `_links_in` already ignored fenced blocks; it now ignores inline code spans too, so an example like `` `[[x]]` `` stops inflating the link counts. Thanks @bfs2021 (#78), who picked up #72.

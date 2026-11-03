@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sqlite-graph-memory"
-version = "0.3.5"
+version = "0.3.6"
 description = "Associative memory for LLM agents: Graph RAG over a folder of markdown notes, in one SQLite file, with no server to run."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -40,6 +40,15 @@ classifiers = [
 dependencies = ["numpy>=1.24"]
 
 [project.optional-dependencies]
+# The same two models on ONNX Runtime, no torch: ~60 MB instead of ~2 GB, and a recall
+# that starts in seconds on a CPU laptop. Measured 2026-11-01 through the MCP server on
+# Windows: `import torch` alone took 44 s and the client hit its 60 s tool timeout.
+# brain_ask picks this stack automatically when it is installed (SGM_BACKEND overrides).
+lite = [
+  "onnxruntime>=1.17",
+  "tokenizers>=0.15",
+  "huggingface_hub>=0.20",
+]
 # The indexer and the reranker need these; the graph half, the SQLite schema and
 # the turnstate memory do not. Kept out of the base install so that
 # `pip install sqlite-graph-memory` stays a two-second, ~20 MB operation instead

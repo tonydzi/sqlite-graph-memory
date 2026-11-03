@@ -29,12 +29,12 @@ FM_RX = re.compile(r'^---\r?\n(.*?)\r?\n---\r?\n', re.S)
 
 
 
-_EMBEDDINGS_HINT = (
-    "This step needs the optional embedding stack (sentence-transformers, torch).\n"
-    "Install it with:  pip install 'sqlite-graph-memory[embeddings]'\n"
-    "The base install stays small on purpose: the graph half, the SQLite schema\n"
-    "and the turnstate memory work without it."
-)
+try:
+    from sqlite_graph_memory import brain_ask as _ba
+except ImportError:                           # run as a loose script next to brain_ask.py
+    import brain_ask as _ba
+
+_EMBEDDINGS_HINT = _ba._EMBEDDINGS_HINT
 
 
 def _require_sentence_transformers():
@@ -130,14 +130,23 @@ def main():
     if not texts:
         print('no indexable .md notes found under', notes_dir); return
 
-    _require_sentence_transformers()
-    from sentence_transformers import SentenceTransformer
-    try:
-        import torch
-        dev = 'cuda' if torch.cuda.is_available() else 'cpu'
-    except Exception:
-        dev = 'cpu'
-    enc = SentenceTransformer(E5_MODEL, device=dev)
+    if _ba.backend() == 'onnx':
+        enc = _ba.load_encoder()
+        # Fetch the reranker too: otherwise the first recall from an MCP client is also
+        # a ~470 MB download and runs into the client's tool timeout.
+        try:
+            _ba._onnx().prefetch()
+        except Exception as exc:              # offline: the first recall fetches it instead
+            print('reranker not prefetched (%s); the first recall will fetch it' % type(exc).__name__)
+    else:
+        _require_sentence_transformers()
+        from sentence_transformers import SentenceTransformer
+        try:
+            import torch
+            dev = 'cuda' if torch.cuda.is_available() else 'cpu'
+        except Exception:
+            dev = 'cpu'
+        enc = SentenceTransformer(E5_MODEL, device=dev)
     emb = enc.encode(texts, normalize_embeddings=True, convert_to_numpy=True,
                      batch_size=64, show_progress_bar=True).astype('float32')
 

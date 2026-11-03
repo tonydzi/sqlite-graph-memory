@@ -38,6 +38,8 @@ def no_sentence_transformers(monkeypatch):
 
     monkeypatch.delitem(sys.modules, "sentence_transformers", raising=False)
     monkeypatch.setattr(builtins, "__import__", fake_import)
+    # The torch path is the one under test; with the lite extra installed, auto would pick ONNX.
+    monkeypatch.setenv("SGM_BACKEND", "torch")
 
 
 def test_indexer_exits_with_install_instructions(tmp_path, monkeypatch, capsys,

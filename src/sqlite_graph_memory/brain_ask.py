@@ -49,11 +49,35 @@ ENTITY_TOOLS = {'obsidian', 'syncthing', 'sqlite', 'telegram', 'whatsapp', 'n8n'
 
 
 _EMBEDDINGS_HINT = (
-    "This step needs the optional embedding stack (sentence-transformers, torch).\n"
-    "Install it with:  pip install 'sqlite-graph-memory[embeddings]'\n"
+    "This step needs an embedding stack.\n"
+    "Light, no torch (~60 MB):  pip install 'sqlite-graph-memory[lite]'\n"
+    "Torch, for a GPU:          pip install 'sqlite-graph-memory[embeddings]'\n"
     "The base install stays small on purpose: the graph half, the SQLite schema\n"
     "and the turnstate memory work without it."
 )
+
+
+def backend(env=None):
+    """'onnx' or 'torch': which stack runs the two models.
+
+    SGM_BACKEND=onnx|torch forces one. Unset (auto): ONNX whenever the lite stack is
+    installed, because it starts in seconds where torch took 44 s just to import on a
+    CPU laptop (2026-11-01); otherwise sentence-transformers, as before. Both run the
+    same checkpoints, so an index built by one is searched correctly by the other.
+    """
+    env = os.environ if env is None else env
+    want = (env.get('SGM_BACKEND') or 'auto').strip().lower()
+    if want in ('onnx', 'torch'):
+        return want
+    return 'onnx' if _onnx().available() else 'torch'
+
+
+def _onnx():
+    try:
+        from sqlite_graph_memory import onnx_backend
+    except ImportError:                       # run as a loose script next to onnx_backend.py
+        import onnx_backend
+    return onnx_backend
 
 
 def _require_sentence_transformers():
@@ -71,6 +95,10 @@ def _require_sentence_transformers():
     return sentence_transformers
 
 def pick_device():
+    # The ONNX path runs on CPU; importing torch here only to ask about CUDA was the
+    # 44-second stall the lite backend exists to remove.
+    if backend() == 'onnx':
+        return 'cpu'
     try:
         import torch
         return 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -131,13 +159,42 @@ def load_index(emb_path=None, meta_path=None):
     return emb, meta
 
 
+def _try_onnx(kind):
+    """The ONNX model, or None to fall back to torch.
+
+    Only an auto-picked ONNX falls back: someone who already has the torch models cached
+    and gets onnxruntime from another package may be offline, with no ONNX files yet.
+    Their recall must keep working on torch. SGM_BACKEND=onnx raises instead.
+    """
+    if backend() != 'onnx':
+        return None
+    try:
+        return getattr(_onnx(), kind)()
+    except Exception as exc:
+        if (os.getenv('SGM_BACKEND') or '').strip().lower() == 'onnx':
+            raise
+        try:
+            import sentence_transformers  # noqa: F401
+        except ImportError:
+            raise exc
+        sys.stderr.write('ONNX %s unavailable (%s: %s); using torch\n'
+                         % (kind, type(exc).__name__, str(exc).splitlines()[0] if str(exc) else ''))
+        return None
+
+
 def load_encoder(dev=None):
+    m = _try_onnx('Encoder')
+    if m is not None:
+        return m
     _require_sentence_transformers()
     from sentence_transformers import SentenceTransformer
     return SentenceTransformer(E5_MODEL, device=dev or pick_device())
 
 
 def load_reranker(dev=None):
+    m = _try_onnx('CrossEncoder')
+    if m is not None:
+        return m
     _require_sentence_transformers()
     from sentence_transformers import CrossEncoder
     return CrossEncoder(RERANK_MODEL, device=dev or pick_device())

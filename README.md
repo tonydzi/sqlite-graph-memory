@@ -76,8 +76,12 @@ env = { BRAIN_INDEX_DIR = "/absolute/path/to/.sgm-index" }
 
 Size, `du -sh` of a fresh Python 3.12 venv on an x86_64 Mac (1 Nov 2026): the base install is
 26 MB and has no torch (numpy only, enough for the graph half and the SQLite ledger);
-with `[embeddings]`, which indexing and recall need, it is 879 MB, 540 MB of that torch 2.2.2
-CPU. On Linux the default torch wheel brings CUDA libraries and is bigger; not measured here.
+with `[embeddings]` (torch) it is 879 MB, 540 MB of that torch 2.2.2 CPU. With `[lite]` (from v0.3.6),
+the same two models on ONNX Runtime and no torch, it is 155 MB (Windows, Python 3.12,
+3 Nov 2026), installs in 12 s, and one MCP recall on the 202-note bench vault took 7.0 s
+against 33.8 s through torch on the same machine, with the same top hits and scores.
+`[lite]` is picked automatically when installed; `SGM_BACKEND=torch` forces torch (for a GPU).
+An index built by either backend is searched correctly by the other.
 Already installed with pip? Replace `uvx --with ... sqlite-graph-memory` by `sgm-mcp`
 ([`examples/mcp-config.json`](examples/mcp-config.json)). Agents that read files first:
 [`llms.txt`](llms.txt).
@@ -225,9 +229,9 @@ an edge table only when hop depth or corpus size demands it.
 ## Quickstart
 
 ```bash
-# Indexing and reranking need the embedding stack; the base install leaves it out
-# so that `pip install sqlite-graph-memory` stays small instead of pulling ~2 GB
-# of torch. Ask for it explicitly:
+# Indexing and reranking need an embedding stack; the base install leaves it out.
+# [lite] (from v0.3.6) runs the models on ONNX Runtime without torch (~155 MB); [embeddings]
+# brings torch (~2 GB) if you want a GPU. Ask for one explicitly:
 pip install 'sqlite-graph-memory[embeddings]'
 
 # 1. index a folder of markdown notes

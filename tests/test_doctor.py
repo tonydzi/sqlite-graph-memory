@@ -40,12 +40,36 @@ def test_models_missing_when_cache_is_empty(tmp_path, monkeypatch):
 
 
 def test_missing_torch_is_a_warning_not_a_failure(monkeypatch):
+    monkeypatch.setenv("SGM_BACKEND", "torch")
     monkeypatch.setitem(sys.modules, "torch", None)  # import torch -> ModuleNotFoundError
     status, what, fix = doctor.check_embeddings()
-    assert status == doctor.WARN and "embeddings" in fix
+    assert status == doctor.WARN and "embeddings" in fix and "lite" in fix
+
+
+def test_light_backend_is_ok_without_torch(monkeypatch):
+    import pytest
+    pytest.importorskip("onnxruntime")
+    monkeypatch.setenv("SGM_BACKEND", "onnx")
+    monkeypatch.setitem(sys.modules, "torch", None)
+    status, what, _ = doctor.check_embeddings()
+    assert status == doctor.OK and "onnxruntime" in what
+
+
+import pytest  # noqa: E402
+
+
+@pytest.mark.parametrize("missing", ["onnxruntime", "tokenizers", "huggingface_hub"])
+def test_incomplete_light_backend_fails(monkeypatch, missing):
+    """Codex review 2026-11-03: onnxruntime alone used to print ok while recall died."""
+    monkeypatch.setenv("SGM_BACKEND", "onnx")
+    monkeypatch.setitem(sys.modules, missing, None)
+    status, what, fix = doctor.check_embeddings()
+    # Names the first missing package, which on a runner without [lite] is onnxruntime.
+    assert status == doctor.FAIL and "[lite]" in fix and "incomplete" in what
 
 
 def test_broken_torch_on_intel_mac_points_at_numpy(monkeypatch):
+    monkeypatch.setenv("SGM_BACKEND", "torch")
     class Boom:
         def __getattr__(self, name):
             raise RuntimeError("Numpy is not available")
