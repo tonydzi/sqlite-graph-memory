@@ -49,6 +49,9 @@ def _fill_cell(partial, index):
     cell.update(partial)
     if not cell.get('name'):
         cell['name'] = 'cell-%d' % index
+    if cell['hops'] not in (0, 1):
+        raise ValueError("cell %r: hops must be 0 or 1 (score_grid only runs the 1-hop "
+                         "expand_1hop), got %r" % (cell['name'], cell['hops']))
     return cell
 
 
@@ -60,7 +63,9 @@ DEFAULT_GRID = [
     _fill_cell({'name': 'gmax-80', 'gmax': 80}, 4),
     _fill_cell({'name': 'topk-20', 'topk': 20}, 5),
     _fill_cell({'name': 'topk-80', 'topk': 80}, 6),
-    _fill_cell({'name': 'entity-gate-off', 'entity_gate': False}, 7),
+    _fill_cell({'name': 'ghops-5', 'ghops': 5}, 7),
+    _fill_cell({'name': 'ghops-30', 'ghops': 30}, 8),
+    _fill_cell({'name': 'entity-gate-off', 'entity_gate': False}, 9),
 ]
 GRID_PRESETS = {'default': DEFAULT_GRID}
 

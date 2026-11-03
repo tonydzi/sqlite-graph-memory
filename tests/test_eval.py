@@ -21,6 +21,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'src'))
 sys.path.insert(0, str(ROOT / 'eval'))
@@ -29,8 +31,8 @@ from build_gold import (build_gold, first_paragraph, indexed_stems,  # noqa: E40
                         lang_of, read_notes)
 from run_eval import mrr_at, ndcg_at, recall_at, SMALL_N  # noqa: E402
 import run_ablation  # noqa: E402
-from run_ablation import (format_markdown, low_n_warnings, parse_grid,  # noqa: E402
-                          score_grid, summarize_grid, write_csv)
+from run_ablation import (DEFAULT_GRID, format_markdown, low_n_warnings,  # noqa: E402
+                          parse_grid, score_grid, summarize_grid, write_csv)
 
 PARA = ('This paragraph is long enough to be treated as a real question by the gold builder, '
         'which skips fragments shorter than a hundred characters.')
@@ -415,3 +417,18 @@ def test_low_n_warning_names_the_thin_cell_and_class():
     warnings = low_n_warnings(summary)
     assert len(warnings) == 1
     assert 'temporal' in warnings[0] and '0-hop' in warnings[0] and str(SMALL_N) in warnings[0]
+
+
+def test_default_grid_varies_ghops_too(tmp_path):
+    """R-Gate (PR #4): the default sweep must vary all 5 axes, ghops included —
+    it previously left ghops fixed at 15 across every cell."""
+    assert len({c['ghops'] for c in DEFAULT_GRID}) > 1
+
+
+def test_parse_grid_rejects_unsupported_hop_counts():
+    """R-Gate (PR #4): score_grid only ever runs the 1-hop expand_1hop, so a cell
+    claiming hops=2 would be silently scored as a 1-hop cell and mislabeled."""
+    with pytest.raises(ValueError):
+        parse_grid('hops=2')
+    with pytest.raises(ValueError):
+        parse_grid('[{"name": "two-hop", "hops": 2}]')

@@ -368,7 +368,7 @@ dense-retrieve pool size (`topk`), and whether entity/name-shaped queries skip t
 
 ```bash
 python eval/run_ablation.py --list-grid                        # cells only, no model/index load
-python eval/run_ablation.py --gold eval/gold-<today>.jsonl      # the built-in 8-cell default grid
+python eval/run_ablation.py --gold eval/gold-<today>.jsonl      # the built-in 10-cell default grid
 ```
 
 Each dense embedding is computed once per question and reused across every cell (a cell's
