@@ -99,6 +99,25 @@ def test_auto_onnx_failure_falls_back_to_torch(monkeypatch, loader, want):
     assert getattr(brain_ask, loader)("cpu") == want
 
 
+def test_fallback_is_visible_in_the_answer(monkeypatch):
+    """Issue #89: through MCP only the answer reaches the agent, stderr does not. A silent
+    fallback put people back on the slow torch path without a word."""
+    monkeypatch.delenv("SGM_BACKEND", raising=False)
+    monkeypatch.setattr(onnx_backend, "available", lambda: True)
+    monkeypatch.setattr(onnx_backend, "Encoder", _offline)
+    monkeypatch.setitem(sys.modules, "sentence_transformers", _FakeST())
+    monkeypatch.setattr(brain_ask, "FALLBACK_NOTES", [])
+    brain_ask.load_encoder("cpu")
+    answer = brain_ask._with_notes("QUERY: x")
+    assert answer.startswith("NOTE:") and "torch" in answer and "sgm-doctor" in answer
+    assert answer.endswith("QUERY: x")
+
+
+def test_no_note_without_fallback(monkeypatch):
+    monkeypatch.setattr(brain_ask, "FALLBACK_NOTES", [])
+    assert brain_ask._with_notes("QUERY: x") == "QUERY: x"
+
+
 def test_forced_onnx_failure_raises(monkeypatch):
     monkeypatch.setenv("SGM_BACKEND", "onnx")
     monkeypatch.setattr(onnx_backend, "Encoder", _offline)
