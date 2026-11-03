@@ -168,6 +168,32 @@ def test_expand_1hop_prefers_exact_vault_relative_path_over_suffix_collision(tmp
     assert expand_1hop(sims, meta, [0], by_base=by_base) == [1]
 
 
+def test_expand_1hop_single_subfolder_layout_and_precomputed_root(tmp_path, monkeypatch):
+    """Pin all-notes-under-one-subfolder resolution and ensure commonpath is not called per link."""
+    import numpy as np
+    import sqlite_graph_memory.brain_ask as ba
+
+    sub = tmp_path / "sub"
+    sub.mkdir(parents=True)
+    a_path = sub / "a.md"
+    c_path = sub / "c.md"
+    a_path.write_text("# a\nSee [[sub/c]].\n", encoding="utf-8")
+    c_path.write_text("# c\nTarget.\n", encoding="utf-8")
+
+    meta = [
+        {"path": str(a_path), "title": "a", "snippet": ""},
+        {"path": str(c_path), "title": "c", "snippet": ""},
+    ]
+    sims = np.array([0.9, 0.5], dtype="float32")
+    by_base = ba.index_by_basename(meta)
+
+    def _forbid_commonpath(_paths):
+        raise AssertionError("os.path.commonpath should not run inside expand_1hop when by_base is precomputed")
+
+    monkeypatch.setattr(ba.os.path, "commonpath", _forbid_commonpath)
+    assert ba.expand_1hop(sims, meta, [0], by_base=by_base) == [1]
+
+
 
 def test_missing_embedding_index_reports_error_and_exits_nonzero(tmp_path):
     """A missing index must reach CLI callers as an error, not empty results."""

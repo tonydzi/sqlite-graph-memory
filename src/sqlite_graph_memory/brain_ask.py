@@ -226,15 +226,38 @@ def _normalize_target(tgt):
     return s.lower()
 
 
+class _BasenameIndex(dict):
+    """Dict mapping lowercase filename stem -> chunk indices, with precomputed vault `root`."""
+    __slots__ = ('root',)
+
+    def __init__(self, *args, root='', **kwargs):
+        super().__init__(*args, **kwargs)
+        self.root = root
+
+
+def vault_root(meta):
+    """Common directory prefix of every chunk path in `meta`, computed once per index."""
+    paths = [Path(m['path']).as_posix() for m in meta]
+    try:
+        root = os.path.commonpath(paths) if len(paths) > 1 else ''
+    except ValueError:
+        root = ''
+    if root and any(p == root for p in paths):
+        root = Path(root).parent.as_posix()
+        if root == '.':
+            root = ''
+    return root
+
+
 def index_by_basename(meta):
     """basename(no .md) -> meta indices, used to resolve [[wikilink]] targets to chunks."""
-    by_base = {}
+    by_base = _BasenameIndex(root=vault_root(meta))
     for j, mm in enumerate(meta):
         by_base.setdefault(Path(mm['path']).stem.lower(), []).append(j)
     return by_base
 
 
-def _resolve_target_chunks(tgt, by_base, meta):
+def _resolve_target_chunks(tgt, by_base, meta, root=None):
     """Resolve a wikilink target (`[[name]]`, `[[name.md]]`, or `[[folder/name]]`) to chunk indices.
 
     For folder-qualified targets (`/` in normalized target), prefers exact vault-relative path
@@ -250,15 +273,10 @@ def _resolve_target_chunks(tgt, by_base, meta):
     cands = by_base.get(stem, [])
     if not cands:
         return []
-    paths = [Path(m['path']).as_posix() for m in meta]
-    try:
-        root = os.path.commonpath(paths) if len(paths) > 1 else ''
-    except ValueError:
-        root = ''
-    if root and any(p == root for p in paths):
-        root = Path(root).parent.as_posix()
-        if root == '.':
-            root = ''
+    if root is None:
+        root = getattr(by_base, 'root', None)
+    if root is None:
+        root = vault_root(meta)
     exact, suffix_matches = [], []
     suffix = '/' + norm
     for j in cands:
@@ -271,7 +289,7 @@ def _resolve_target_chunks(tgt, by_base, meta):
     return exact if exact else suffix_matches
 
 
-def expand_1hop(sims, meta, base_order, by_base=None, ghops=GHOPS, gmax=GMAX):
+def expand_1hop(sims, meta, base_order, by_base=None, ghops=GHOPS, gmax=GMAX, root=None):
     """Follow 1-hop OUTGOING wikilinks from the top vector hits and return the neighbour
     chunks to ADD to the candidate set; the reranker decides whether they are relevant.
 
@@ -281,10 +299,14 @@ def expand_1hop(sims, meta, base_order, by_base=None, ghops=GHOPS, gmax=GMAX):
     if not base_order: return added
     try:
         by_base = by_base or index_by_basename(meta)
+        if root is None:
+            root = getattr(by_base, 'root', None)
+        if root is None:
+            root = vault_root(meta)
         in_order = set(base_order)
         for i in base_order[:ghops]:
             for tgt in _links_in(meta[i]['path']):
-                idxs = _resolve_target_chunks(tgt, by_base, meta)
+                idxs = _resolve_target_chunks(tgt, by_base, meta, root=root)
                 if not idxs: continue
                 best = max(idxs, key=lambda j: sims[j])   # best chunk of neighbour for THIS query
                 if best in in_order: continue
