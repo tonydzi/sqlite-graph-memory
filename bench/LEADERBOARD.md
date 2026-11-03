@@ -6,6 +6,7 @@ Synthetic vault: 202 notes · 91 questions (69 answerable, 22 with no answer in 
 
 | system | R@5 | R@10 | answer | verbatim cite | faithful quotes | abstains when absent | false abstain ↓ | CI-reproduced | by |
 |---|---:|---:|---:|---:|---:|---:|---:|:---:|---|
+| [tangleclaw](https://github.com/Jason-Vaughan/TangleClaw) `0.1.0` | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 0.00 | yes | Jason-Vaughan |
 | [sqlite-graph-memory-vector](https://github.com/tonydzi/sqlite-graph-memory) `0.3.0` | 0.88 | 0.92 | 0.33 | 0.33 | 1.00 | 0.45 | 0.26 | yes | tonydzi |
 | [mem0-local](https://github.com/mem0ai/mem0) `2.2.1` | 0.87 | 0.92 | 0.36 | 0.36 | 1.00 | 0.14 | 0.13 | yes | tonydzi |
 | [fidelis](https://github.com/hermes-labs-ai/fidelis) `0.2.0` | 0.86 | 0.93 | 0.42 | 0.42 | 1.00 | 0.18 | 0.16 | yes | tonydzi |
@@ -18,6 +19,7 @@ Synthetic vault: 202 notes · 91 questions (69 answerable, 22 with no answer in 
 
 | system | fact | bridge | paraphrase | paraphrase_bridge | temporal |
 |---|---:|---:|---:|---:|---:|
+| tangleclaw | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 |
 | sqlite-graph-memory-vector | 1.00 | 0.97 | 0.80 | 0.08 | 1.00 |
 | mem0-local | 1.00 | 0.70 | 1.00 | 0.25 | 1.00 |
 | fidelis | 1.00 | 0.73 | 0.90 | 0.17 | 1.00 |
@@ -30,6 +32,7 @@ Synthetic vault: 202 notes · 91 questions (69 answerable, 22 with no answer in 
 
 | system | absent_entity | absent_attribute |
 |---|---:|---:|
+| tangleclaw | 1.00 | 1.00 |
 | sqlite-graph-memory-vector | 0.60 | 0.33 |
 | mem0-local | 0.30 | 0.00 |
 | fidelis | 0.40 | 0.00 |
@@ -40,6 +43,7 @@ Synthetic vault: 202 notes · 91 questions (69 answerable, 22 with no answer in 
 
 ## Notes from the submitters
 
+- **tangleclaw** — Hybrid BM25 + stem/concept expansion + query-gated 2-hop wikilink graph + frontmatter superseded_by resolution + two-stage entity/attribute abstention gate (stdlib only, no LLM). Weakest spot: paraphrase recall relies on a curated domain concept thesaurus rather than dense embeddings.
 - **sqlite-graph-memory-vector** — Our own system, vector-only. Ranks ahead of graph mode on this vault (graph helps bridge, hurts paraphrase). Same answer-side weaknesses as graph mode.
 - **mem0-local** — mem0 2.x local: Ollama nomic-embed-text, embedded Qdrant, infer=False so notes are stored verbatim (extraction on would rewrite them). Pure dense search, no abstention rule. Produced and rerun in CI on Linux against a pinned Ollama container held to its haswell CPU kernel (macOS gives the same answers, R@10 0.93 there).
 - **fidelis** — fidelis-memory 0.2.0 zero_llm tier, BM25+dense+RRF with the hybrid extra on, Ollama nomic-embed-text, notes stored verbatim, embeddings memoized by the adapter (same vectors). No abstention rule at this tier. Produced and rerun in CI on Linux against a pinned Ollama container held to its haswell CPU kernel (macOS gives the same answers, a few rank-8-to-10 swaps).
