@@ -159,6 +159,17 @@ def load_index(emb_path=None, meta_path=None):
     return emb, meta
 
 
+FALLBACK_NOTES = []   # filled by _try_onnx, printed at the top of the answer by _with_notes
+
+
+def _with_notes(text):
+    """Put fallback notes at the top of the answer. Through MCP the agent sees only the
+    answer, never stderr, so a silent fallback would hide the slow torch path (#89)."""
+    if not FALLBACK_NOTES:
+        return text
+    return '\n'.join(FALLBACK_NOTES) + '\n\n' + text
+
+
 def _try_onnx(kind):
     """The ONNX model, or None to fall back to torch.
 
@@ -177,8 +188,10 @@ def _try_onnx(kind):
             import sentence_transformers  # noqa: F401
         except ImportError:
             raise exc
-        sys.stderr.write('ONNX %s unavailable (%s: %s); using torch\n'
-                         % (kind, type(exc).__name__, str(exc).splitlines()[0] if str(exc) else ''))
+        why = '%s: %s' % (type(exc).__name__, str(exc).splitlines()[0] if str(exc) else '')
+        sys.stderr.write('ONNX %s unavailable (%s); using torch\n' % (kind, why))
+        FALLBACK_NOTES.append('NOTE: the light ONNX %s failed to load (%s), so this recall ran '
+                              'on torch and was slower. Run sgm-doctor to see why.' % (kind, why))
         return None
 
 
@@ -456,6 +469,7 @@ def main():
             except Exception:
                 pass
         _out = Path(os.getenv('BRAIN_ANSWER_OUT', '_brain_answer.txt'))
+        text = _with_notes(text)
         _out.write_text(text, encoding='utf-8'); print(text)
         maybe_star_prompt()
         return
@@ -481,7 +495,7 @@ def main():
             lines.append("%2d. [rr=%6.2f] [%s] %s%s" % (rank, float(sc), m.get('date', ''), m['title'], gmark))
             lines.append("     %s" % m['snippet'][:140])
     _out = Path(os.getenv('BRAIN_ANSWER_OUT', '_brain_answer.txt'))
-    _out.write_text('\n'.join(lines), encoding='utf-8')
+    _out.write_text(_with_notes('\n'.join(lines)), encoding='utf-8')
     print(f'{len(reranked)} hits (scope={scope}) -> {_out}')
 
 

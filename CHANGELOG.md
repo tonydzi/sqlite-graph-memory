@@ -6,6 +6,8 @@ recorded after the fact rather than backdated to look contemporaneous.
 
 ## Unreleased
 
+**Light backend: a fallback to torch is no longer silent.** When the ONNX models fail to load and recall falls back to torch, the answer now starts with a `NOTE:` line naming the reason and pointing at `sgm-doctor`. Through MCP the agent sees only the answer, so the stderr line alone hid the slow path (#89).
+
 **Docs: install commands use `[lite]`.** Now that v0.3.6 is on PyPI with the `[lite]` extra, README, llms.txt and the example MCP config install the torch-free stack; `[embeddings]` stays documented for a GPU.
 
 ## v0.3.6 - 2026-11-03

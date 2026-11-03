@@ -12,7 +12,10 @@ on:
 
 jobs:
   pytest:
-    runs-on: ubuntu-latest
+    # ubuntu-latest moved to 26.04 on 2026-11-03 and setup-python has no 3.9 build for it
+    # ("The version '3.9' with architecture 'x64' was not found for Ubuntu 26.04"), so the
+    # floor runs on 24.04 and the rest keep following latest.
+    runs-on: ${{ matrix.python-version == '3.9' && 'ubuntu-24.04' || 'ubuntu-latest' }}
     strategy:
       fail-fast: false
       matrix:
