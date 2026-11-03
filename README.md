@@ -23,7 +23,7 @@ Already using your own agent rules and projects? The [Russian existing-setup gui
 Build the index once (any folder of markdown; [`uv`](https://docs.astral.sh/uv/) gives you `uvx`):
 
 ```bash
-BRAIN_INDEX_DIR=$HOME/.sgm-index uvx --from 'sqlite-graph-memory[embeddings]' sgm-index ~/notes
+BRAIN_INDEX_DIR=$HOME/.sgm-index uvx --from 'sqlite-graph-memory[lite]' sgm-index ~/notes
 ```
 
 Then point your client at the server. Use the absolute path of that index folder.
@@ -33,7 +33,7 @@ Then point your client at the server. Use the absolute path of that index folder
 **Claude Code**
 
 ```bash
-claude mcp add sqlite-graph-memory -e BRAIN_INDEX_DIR=$HOME/.sgm-index -- uvx --with 'sqlite-graph-memory[embeddings]' sqlite-graph-memory
+claude mcp add sqlite-graph-memory -e BRAIN_INDEX_DIR=$HOME/.sgm-index -- uvx --with 'sqlite-graph-memory[lite]' sqlite-graph-memory
 ```
 
 **Cursor** (`~/.cursor/mcp.json`; Claude Desktop, Zed and Windsurf take the same `mcpServers` block)
@@ -43,7 +43,7 @@ claude mcp add sqlite-graph-memory -e BRAIN_INDEX_DIR=$HOME/.sgm-index -- uvx --
   "mcpServers": {
     "sqlite-graph-memory": {
       "command": "uvx",
-      "args": ["--with", "sqlite-graph-memory[embeddings]", "sqlite-graph-memory"],
+      "args": ["--with", "sqlite-graph-memory[lite]", "sqlite-graph-memory"],
       "env": { "BRAIN_INDEX_DIR": "/absolute/path/to/.sgm-index" }
     }
   }
@@ -58,7 +58,7 @@ claude mcp add sqlite-graph-memory -e BRAIN_INDEX_DIR=$HOME/.sgm-index -- uvx --
     "sqlite-graph-memory": {
       "type": "stdio",
       "command": "uvx",
-      "args": ["--with", "sqlite-graph-memory[embeddings]", "sqlite-graph-memory"],
+      "args": ["--with", "sqlite-graph-memory[lite]", "sqlite-graph-memory"],
       "env": { "BRAIN_INDEX_DIR": "/absolute/path/to/.sgm-index" }
     }
   }
@@ -70,14 +70,18 @@ claude mcp add sqlite-graph-memory -e BRAIN_INDEX_DIR=$HOME/.sgm-index -- uvx --
 ```toml
 [mcp_servers.sqlite-graph-memory]
 command = "uvx"
-args = ["--with", "sqlite-graph-memory[embeddings]", "sqlite-graph-memory"]
+args = ["--with", "sqlite-graph-memory[lite]", "sqlite-graph-memory"]
 env = { BRAIN_INDEX_DIR = "/absolute/path/to/.sgm-index" }
 ```
 
 Size, `du -sh` of a fresh Python 3.12 venv on an x86_64 Mac (1 Nov 2026): the base install is
 26 MB and has no torch (numpy only, enough for the graph half and the SQLite ledger);
-with `[embeddings]`, which indexing and recall need, it is 879 MB, 540 MB of that torch 2.2.2
-CPU. On Linux the default torch wheel brings CUDA libraries and is bigger; not measured here.
+with `[embeddings]` (torch) it is 879 MB, 540 MB of that torch 2.2.2 CPU. With `[lite]`,
+the same two models on ONNX Runtime and no torch, it is 155 MB (Windows, Python 3.12,
+3 Nov 2026), installs in 12 s, and one MCP recall on the 202-note bench vault took 7.0 s
+against 33.8 s through torch on the same machine, with the same top hits and scores.
+`[lite]` is picked automatically when installed; `SGM_BACKEND=torch` forces torch (for a GPU).
+An index built by either backend is searched correctly by the other.
 Already installed with pip? Replace `uvx --with ... sqlite-graph-memory` by `sgm-mcp`
 ([`examples/mcp-config.json`](examples/mcp-config.json)). Agents that read files first:
 [`llms.txt`](llms.txt).
@@ -85,7 +89,7 @@ Already installed with pip? Replace `uvx --with ... sqlite-graph-memory` by `sgm
 ## Three commands
 
 ```bash
-pip install 'sqlite-graph-memory[embeddings]'
+pip install 'sqlite-graph-memory[lite]'
 sgm-index ./notes
 sgm-ask --ab "In which programming language is the tool behind Project Ouzel written?"
 ```
@@ -225,10 +229,10 @@ an edge table only when hop depth or corpus size demands it.
 ## Quickstart
 
 ```bash
-# Indexing and reranking need the embedding stack; the base install leaves it out
-# so that `pip install sqlite-graph-memory` stays small instead of pulling ~2 GB
-# of torch. Ask for it explicitly:
-pip install 'sqlite-graph-memory[embeddings]'
+# Indexing and reranking need an embedding stack; the base install leaves it out.
+# [lite] runs the models on ONNX Runtime without torch (~155 MB); [embeddings]
+# brings torch (~2 GB) if you want a GPU. Ask for one explicitly:
+pip install 'sqlite-graph-memory[lite]'
 
 # 1. index a folder of markdown notes
 sgm-index /path/to/notes
@@ -252,7 +256,7 @@ To enable the per-turn ledger in Claude Code, register the Stop hook (the exact 
 sgm-turnstate-show --stats
 ```
 
-Working from a clone instead of an install? `pip install -e '.[embeddings]'` gives you the
+Working from a clone instead of an install? `pip install -e '.[lite]'` gives you the
 same four commands, and the modules stay importable as
 `from sqlite_graph_memory import brain_ask`.
 

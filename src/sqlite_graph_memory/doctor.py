@@ -40,6 +40,14 @@ def _intel_mac(system=None, machine=None):
 
 def check_embeddings(system=None, machine=None):
     """The heavy half. Without it the graph and the SQLite parts work, indexing and recall do not."""
+    if brain_ask.backend() == 'onnx':
+        try:
+            import onnxruntime
+        except Exception as exc:
+            why = '%s: %s' % (type(exc).__name__, str(exc).splitlines()[0] if str(exc) else '')
+            return FAIL, 'onnxruntime fails to import (%s).' % why, \
+                'Reinstall in a fresh virtualenv: pip install --force-reinstall "sqlite-graph-memory[lite]"'
+        return OK, 'Light backend: onnxruntime %s, no torch needed.' % onnxruntime.__version__, ''
     try:
         import numpy
         np_major = int(numpy.__version__.split('.')[0])
@@ -50,7 +58,8 @@ def check_embeddings(system=None, machine=None):
         import sentence_transformers
     except ModuleNotFoundError as exc:
         return (WARN, 'The embeddings extra is not installed (%s missing).' % exc.name,
-                'Only needed to index and recall. Install it with: pip install "sqlite-graph-memory[embeddings]"')
+                'Only needed to index and recall. Install it with: pip install "sqlite-graph-memory[lite]"'
+                '   (or [embeddings] for torch and a GPU)')
     except Exception as exc:  # torch dies at import on a numpy it was not built for
         why = '%s: %s' % (type(exc).__name__, str(exc).splitlines()[0] if str(exc) else '')
         if _intel_mac(system, machine) and np_major >= 2:
