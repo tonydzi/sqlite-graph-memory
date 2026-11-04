@@ -6,6 +6,8 @@ recorded after the fact rather than backdated to look contemporaneous.
 
 ## Unreleased
 
+**`eval/run_ablation.py`: one run sweeps the retrieval knobs.** Scores a grid of cells (`hops`, `ghops`, `gmax`, `topk`, entity gate) on one gold file, reusing the same pipeline functions as `sgm-ask` and the metrics from `run_eval.py`; the dense pass runs once per question and each cell slices the widest pool, so only the rerank repeats. The default grid changes one axis at a time against `1-hop`; `--grid` takes multi-axis cells. Thanks @Jason-Vaughan (#86), who picked up #19.
+
 **Light backend: a fallback to torch is no longer silent.** When the ONNX models fail to load and recall falls back to torch, the answer now starts with a `NOTE:` line naming the reason and pointing at `sgm-doctor`. Through MCP the agent sees only the answer, so the stderr line alone hid the slow path (#89).
 
 **Docs: install commands use `[lite]`.** Now that v0.3.6 is on PyPI with the `[lite]` extra, README, llms.txt and the example MCP config install the torch-free stack; `[embeddings]` stays documented for a GPU.
