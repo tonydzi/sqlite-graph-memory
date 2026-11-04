@@ -231,15 +231,78 @@ def retrieve_candidates(sims, meta, topk=TOPK_RETRIEVE):
     return order
 
 
+def _normalize_target(tgt):
+    """Normalize a wikilink target: backslashes to /, strip leading/trailing slashes and .md, lowercase."""
+    s = (tgt or '').strip().replace('\\', '/').strip('/')
+    if s.lower().endswith('.md'):
+        s = s[:-3].strip()
+    return s.lower()
+
+
+class _BasenameIndex(dict):
+    """Dict mapping lowercase filename stem -> chunk indices, with precomputed vault `root`."""
+    __slots__ = ('root',)
+
+    def __init__(self, *args, root='', **kwargs):
+        super().__init__(*args, **kwargs)
+        self.root = root
+
+
+def vault_root(meta):
+    """Common directory prefix of every chunk path in `meta`, computed once per index."""
+    paths = [Path(m['path']).as_posix() for m in meta]
+    try:
+        root = os.path.commonpath(paths) if len(paths) > 1 else ''
+    except ValueError:
+        root = ''
+    if root and any(p == root for p in paths):
+        root = Path(root).parent.as_posix()
+        if root == '.':
+            root = ''
+    return root
+
+
 def index_by_basename(meta):
     """basename(no .md) -> meta indices, used to resolve [[wikilink]] targets to chunks."""
-    by_base = {}
+    by_base = _BasenameIndex(root=vault_root(meta))
     for j, mm in enumerate(meta):
         by_base.setdefault(Path(mm['path']).stem.lower(), []).append(j)
     return by_base
 
 
-def expand_1hop(sims, meta, base_order, by_base=None, ghops=GHOPS, gmax=GMAX):
+def _resolve_target_chunks(tgt, by_base, meta, root=None):
+    """Resolve a wikilink target (`[[name]]`, `[[name.md]]`, or `[[folder/name]]`) to chunk indices.
+
+    For folder-qualified targets (`/` in normalized target), prefers exact vault-relative path
+    matches (`sub/c`) before falling back to deeper path-suffix matches (`other/sub/c`), matching
+    `vault_stats.build_graph`.
+    """
+    norm = _normalize_target(tgt)
+    if not norm:
+        return []
+    if '/' not in norm:
+        return by_base.get(norm, [])
+    stem = norm.rsplit('/', 1)[-1]
+    cands = by_base.get(stem, [])
+    if not cands:
+        return []
+    if root is None:
+        root = getattr(by_base, 'root', None)
+    if root is None:
+        root = vault_root(meta)
+    exact, suffix_matches = [], []
+    suffix = '/' + norm
+    for j in cands:
+        p = Path(meta[j]['path']).with_suffix('').as_posix()
+        rel = p[len(root):].lstrip('/').lower() if (root and p.startswith(root)) else p.lstrip('/').lower()
+        if rel == norm or p.lstrip('/').lower() == norm:
+            exact.append(j)
+        elif ('/' + rel).endswith(suffix) or ('/' + p.lower()).endswith(suffix):
+            suffix_matches.append(j)
+    return exact if exact else suffix_matches
+
+
+def expand_1hop(sims, meta, base_order, by_base=None, ghops=GHOPS, gmax=GMAX, root=None):
     """Follow 1-hop OUTGOING wikilinks from the top vector hits and return the neighbour
     chunks to ADD to the candidate set; the reranker decides whether they are relevant.
 
@@ -249,10 +312,14 @@ def expand_1hop(sims, meta, base_order, by_base=None, ghops=GHOPS, gmax=GMAX):
     if not base_order: return added
     try:
         by_base = by_base or index_by_basename(meta)
+        if root is None:
+            root = getattr(by_base, 'root', None)
+        if root is None:
+            root = vault_root(meta)
         in_order = set(base_order)
         for i in base_order[:ghops]:
             for tgt in _links_in(meta[i]['path']):
-                idxs = by_base.get(tgt.lower())
+                idxs = _resolve_target_chunks(tgt, by_base, meta, root=root)
                 if not idxs: continue
                 best = max(idxs, key=lambda j: sims[j])   # best chunk of neighbour for THIS query
                 if best in in_order: continue

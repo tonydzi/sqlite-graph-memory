@@ -249,3 +249,38 @@ def test_single_quoted_frontmatter(tmp_path):
     _write(tmp_path, "c", fm="type: 'concept'\nupdated: '2020-01-01'")
     m = _metric(_run(tmp_path), "stale_concepts")
     assert m["value"] == 100.0
+
+
+def test_folder_and_extension_wikilinks_resolve(tmp_path):
+    """Issue #71: [[Sub/c]] and [[c.md]] resolve to existing notes."""
+    sub = tmp_path / "sub"
+    sub.mkdir()
+    (tmp_path / "a.md").write_text("[[Sub/c]] [[c.md]]\n", encoding="utf-8")
+    (sub / "c.md").write_text("# c\n", encoding="utf-8")
+    pages, edges = vault_stats.build_graph(tmp_path)
+    assert set(pages.keys()) == {"a", "sub/c"}
+    assert sorted(edges) == [("a", "sub/c")]
+
+
+def test_folder_link_disambiguates_same_stem_in_different_folders(tmp_path):
+    """A folder-prefixed link [[sub/x]] resolves to sub/x rather than every x in the vault."""
+    (tmp_path / "sub").mkdir()
+    (tmp_path / "other").mkdir()
+    (tmp_path / "a.md").write_text("[[Sub/x.md]]\n", encoding="utf-8")
+    (tmp_path / "sub" / "x.md").write_text("# sub x\n", encoding="utf-8")
+    (tmp_path / "other" / "x.md").write_text("# other x\n", encoding="utf-8")
+    _, edges = vault_stats.build_graph(tmp_path)
+    assert sorted(edges) == [("a", "sub/x")]
+
+
+def test_folder_link_prefers_exact_vault_relative_path_over_suffix_match(tmp_path):
+    """When both sub/c.md and other/sub/c.md exist, [[sub/c]] resolves only to sub/c."""
+    (tmp_path / "sub").mkdir()
+    (tmp_path / "other" / "sub").mkdir(parents=True)
+    (tmp_path / "a.md").write_text("[[sub/c]]\n", encoding="utf-8")
+    (tmp_path / "sub" / "c.md").write_text("# exact sub/c\n", encoding="utf-8")
+    (tmp_path / "other" / "sub" / "c.md").write_text("# nested other/sub/c\n", encoding="utf-8")
+    _, edges = vault_stats.build_graph(tmp_path)
+    assert sorted(edges) == [("a", "sub/c")]
+
+

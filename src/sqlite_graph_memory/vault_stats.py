@@ -36,7 +36,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from sqlite_graph_memory import __version__
-from sqlite_graph_memory.brain_ask import _links_in
+from sqlite_graph_memory.brain_ask import _links_in, _normalize_target
 from sqlite_graph_memory.index_notes import FM_RX, iter_notes, read_note
 
 DEFAULTS = {
@@ -61,15 +61,29 @@ def build_graph(notes_dir):
     """(pages, edges): pages = {relative path without .md: Path},
     edges = {(src, dst)} between real pages."""
     root = Path(notes_dir)
-    pages, by_stem = {}, defaultdict(list)
+    pages, by_path, by_stem = {}, defaultdict(list), defaultdict(list)
     for p in iter_notes(root):
         key = p.relative_to(root).with_suffix('').as_posix()
         pages[key] = p
+        by_path[key.lower()].append(key)
         by_stem[p.stem.lower()].append(key)
     edges = set()
     for src, path in pages.items():
         for tgt in _links_in(path):
-            for dst in by_stem.get(tgt.lower(), ()):
+            norm = _normalize_target(tgt)
+            if not norm:
+                continue
+            if '/' in norm:
+                dsts = by_path.get(norm, ())
+                if not dsts:
+                    suffix = '/' + norm
+                    dsts = [
+                        k for k in by_stem.get(norm.rsplit('/', 1)[-1], ())
+                        if ('/' + k.lower()).endswith(suffix)
+                    ]
+            else:
+                dsts = by_stem.get(norm, ())
+            for dst in dsts:
                 if dst != src:
                     edges.add((src, dst))
     return pages, edges
