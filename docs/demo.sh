@@ -1,15 +1,14 @@
 #!/usr/bin/env bash
 # Renders docs/demo.gif, the clip at the top of the README. Real run, real numbers.
-# Only the display is trimmed: top 5 of 12 per list, same as the README's output
-# block, plus green on the graph-only line, so the result fits one screen.
 #
 #   pip install 'sqlite-graph-memory[lite]'            # sgm-index and sgm-ask on PATH
-#   uvx --from 'asciinema<3' asciinema rec --cols 100 --rows 22 -c 'bash docs/demo.sh' demo.cast
+#   uvx --python 3.12 --from 'asciinema<3' asciinema rec --cols 100 --rows 22 -c 'bash docs/demo.sh' demo.cast
 #   agg --idle-time-limit 2 --last-frame-duration 12 --font-size 16 --theme monokai demo.cast docs/demo.gif
 #
-# The only cut is agg's idle-time limit: on an x86_64 Mac CPU the embedding pass
-# takes about a minute and prints nothing (the progress bar is off), so the gif
-# skips that silence. The query is the one from "Three commands" in the README.
+# Trimmed from the display so the result fits one screen: the indexer's progress lines,
+# the (Direct=...) counts line and ranks 6-12 of each list. Green marks the graph-only hit.
+# Trimmed from the time: agg's idle-time limit skips the silence while the index builds.
+# The query is the one from "Three commands" in the README.
 set -eo pipefail
 for tool in sgm-index sgm-ask; do
   command -v "$tool" > /dev/null || { echo "$tool must be on PATH" >&2; exit 1; }
@@ -36,7 +35,7 @@ say() {   # print a command as if typed, then run it; $2 = optional display filt
 clear
 printf '\033[2m# 202 markdown notes that link to each other with [[wikilinks]]\033[0m\n'
 sleep 1.5
-say 'sgm-index ./notes'
+say 'sgm-index ./notes' "grep -v '^  encoded '"
 sleep 2
 echo
 say "sgm-ask --ab 'In which programming language is the tool behind Project Ouzel written?'" top5

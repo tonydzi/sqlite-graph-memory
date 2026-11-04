@@ -26,7 +26,7 @@
           "type": "named",
           "name": "--python",
           "value": "3.12",
-          "description": "Intel Macs have no onnxruntime wheels for Python 3.14; the pin keeps uvx from falling back to an old release."
+          "description": "Intel Macs have no onnxruntime wheels for Python 3.14, so without this pin uvx cannot resolve the package there."
         }
       ],
       "transport": {

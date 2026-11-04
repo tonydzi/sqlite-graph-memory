@@ -1,26 +1,32 @@
-"""Every documented uvx line must pin Python, or it breaks on an Intel Mac.
+"""Every documented uvx line must pin Python, or it can break on a Mac.
 
-onnxruntime has no x86_64 macOS wheels for Python 3.14 and torch none for 3.13+. An
-unpinned `uvx --with 'sqlite-graph-memory[lite]' ...` resolves on uv's default Python.
-When that default is too new, uv falls back to 0.3.5, a release without `[lite]`, and
-`sgm-index` stops with a hint to install `[embeddings]` (measured 2026-11-04, MacPro192,
-uv default 3.14: exit 1 and "does not have an extra named lite").
+onnxruntime has no Python 3.14 wheels for an Intel Mac or for Apple Silicon below macOS 14,
+and torch none for 3.13+ on an Intel Mac. An unpinned `uvx --with 'sqlite-graph-memory[lite]' ...`
+resolves on uv's default Python. When that default is too new, uv falls back to 0.3.5, a
+release without `[lite]`, and `sgm-index` stops with a hint to install `[embeddings]`
+(measured 2026-11-04, MacPro192, uv default 3.14: exit 1 with that hint).
 """
 import json
 import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-DOCS = ["README.md", "examples/README.md", "llms.txt"]
-EXTRAS = ("sqlite-graph-memory[lite]", "sqlite-graph-memory[embeddings]")
+DOCS = sorted(
+    path
+    for pattern in ("*.md", "examples/*.md", "docs/*.md", "llms.txt")
+    for path in ROOT.glob(pattern)
+    if path.name != "CHANGELOG.md"  # released history keeps its old commands
+)
 PIN = "3.12"  # newest Python with torch wheels on Intel Macs
 
 
 def unpinned_uvx_lines(text):
-    """uvx command lines that install the embeddings extra without --python."""
+    """uvx commands for this package that do not pass the pin to uvx itself."""
+    command = re.compile(r"uvx\s+(?:--|sqlite-graph-memory)")
+    pinned = re.compile(rf"uvx\s+--python\s+{re.escape(PIN)}\s")
     return [
         line for line in text.splitlines()
-        if "uvx " in line and any(e in line for e in EXTRAS) and f"--python {PIN}" not in line
+        if "sqlite-graph-memory" in line and command.search(line) and not pinned.search(line)
     ]
 
 
@@ -39,15 +45,20 @@ def unpinned_json_args(text):
 def test_detector_catches_the_old_lines():
     assert unpinned_uvx_lines("uvx --with 'sqlite-graph-memory[lite]' sqlite-graph-memory")
     assert unpinned_uvx_lines("uvx --python 3.13 --with 'sqlite-graph-memory[embeddings]' sqlite-graph-memory")
+    assert unpinned_uvx_lines("uvx --python 3.120 --with 'sqlite-graph-memory[lite]' sqlite-graph-memory")
+    assert unpinned_uvx_lines("uvx --with 'sqlite-graph-memory[lite]' sqlite-graph-memory --python 3.12")
+    assert unpinned_uvx_lines("Replace `uvx --with ... sqlite-graph-memory` by `sgm-mcp`")
+    assert not unpinned_uvx_lines("any client that speaks uvx (registry name io.github.tonydzi/sqlite-graph-memory)")
     old = '```json\n{"mcpServers": {"x": {"command": "uvx", "args": ["--with", "y"]}}}\n```'
     assert unpinned_json_args(old) == ["x"]
 
 
 def test_docs_pin_python():
-    for name in DOCS:
-        text = (ROOT / name).read_text(encoding="utf-8")
-        assert not unpinned_uvx_lines(text), name
-        assert not unpinned_json_args(text), name
+    assert any(path.name == "README.md" for path in DOCS)
+    for path in DOCS:
+        text = path.read_text(encoding="utf-8")
+        assert not unpinned_uvx_lines(text), path
+        assert not unpinned_json_args(text), path
 
 
 def test_toml_block_pins_python():

@@ -8,8 +8,9 @@ recorded after the fact rather than backdated to look contemporaneous.
 
 **`uvx` install lines work on a newer default Python.** On an Intel Mac whose `uv` defaults to Python
 3.14, `uvx --from 'sqlite-graph-memory[lite]' ...` fell back to release 0.3.5, which has no `[lite]`, and
-`sgm-index` stopped with a hint to install `[embeddings]`. Every `uvx` line and `server.json` now pin
-`--python 3.12`.
+`sgm-index` stopped with a hint to install `[embeddings]`. Apple Silicon below macOS 14 resolves the same
+way. The `uvx` lines in the docs now pin `--python 3.12`; `server.json` does too, and that reaches the MCP
+Registry with this release.
 
 **Shorter demo gif.** It now shows the top 5 of each list, so the graph hit fits on one screen.
 

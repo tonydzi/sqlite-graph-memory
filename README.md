@@ -26,9 +26,9 @@ Build the index once (any folder of markdown; [`uv`](https://docs.astral.sh/uv/)
 BRAIN_INDEX_DIR=$HOME/.sgm-index uvx --python 3.12 --from 'sqlite-graph-memory[lite]' sgm-index ~/notes
 ```
 
-`--python 3.12` is deliberate. On an Intel Mac neither onnxruntime nor torch has wheels for the
-newest Python, so an unpinned `uvx` on a newer default falls back to an old release of this
-package without `[lite]`, and `sgm-index` then stops and asks for `[embeddings]`.
+`--python 3.12` is deliberate. onnxruntime has no wheels for Python 3.14 on an Intel Mac, or on
+Apple Silicon below macOS 14. On such a machine an unpinned `uvx` falls back to release 0.3.5,
+which has no `[lite]`, and `sgm-index` then stops and asks for `[embeddings]`.
 
 Then point your client at the server. Use the absolute path of that index folder.
 
@@ -98,7 +98,7 @@ sgm-index ./notes
 sgm-ask --ab "In which programming language is the tool behind Project Ouzel written?"
 ```
 
-On an Intel Mac, `pip install` needs Python 3.13 or older for `[lite]`, and 3.12 or older for `[embeddings]`.
+On an Intel Mac, use Python 3.12 with `pip install`. On a newer Python it can quietly install 0.3.5, which has no `[lite]`.
 
 `./notes` is any folder of markdown notes. Re-running `sgm-index` only re-embeds notes
 that are new or changed since the last run (tracked by a manifest next to the index);
