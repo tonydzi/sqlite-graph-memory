@@ -6,6 +6,12 @@ recorded after the fact rather than backdated to look contemporaneous.
 
 ## Unreleased
 
+**`sgm-index`: a rerun re-embeds only what changed.** A manifest keyed on the content hash and the index settings lets `sgm-index` skip untouched notes; size and mtime are the fast path, the hash decides the changed set, and a corrupt manifest falls back to a full build. The default encoder still comes from `load_encoder()`, so `[lite]` installs keep working without torch. Thanks @Jason-Vaughan (#85), who picked up #17.
+
+**Recall: folder-style wikilinks resolve in the graph hop.** `[[folder/note]]` links now reach their note in `expand_1hop` the same way `sgm-stats` counts them, preferring the exact vault-relative path; the vault root is computed once per index, not per link. Thanks @Jason-Vaughan (#84), who picked up #71.
+
+**Bench: `tangleclaw-style` reference row.** A stdlib-only pipeline (BM25 + FTS5 + 1-hop wikilinks + `superseded_by` lineage) in the style of TangleClaw's markdown continuity, reproduced in CI. Same R@5 as bm25; its gain is on superseded decisions and abstention, with no domain words in the abstention gate. Thanks @Jason-Vaughan (#87), who picked up #21.
+
 **`eval/run_ablation.py`: one run sweeps the retrieval knobs.** Scores a grid of cells (`hops`, `ghops`, `gmax`, `topk`, entity gate) on one gold file, reusing the same pipeline functions as `sgm-ask` and the metrics from `run_eval.py`; the dense pass runs once per question and each cell slices the widest pool, so only the rerank repeats. The default grid changes one axis at a time against `1-hop`; `--grid` takes multi-axis cells. Thanks @Jason-Vaughan (#86), who picked up #19.
 
 **Light backend: a fallback to torch is no longer silent.** When the ONNX models fail to load and recall falls back to torch, the answer now starts with a `NOTE:` line naming the reason and pointing at `sgm-doctor`. Through MCP the agent sees only the answer, so the stderr line alone hid the slow path (#89).
