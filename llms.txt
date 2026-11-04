@@ -12,11 +12,13 @@ sgm-index ./notes
 sgm-ask --ab "In which programming language is the tool behind Project Ouzel written?"
 ```
 
+On an Intel Mac use Python 3.12: on a newer Python, pip can quietly install release 0.3.5, which has no `[lite]`.
+
 `--ab` runs vector-only and vector+graph side by side and logs the difference to SQLite (`ab_recall` table). Other modes: `sgm-ask "q"` (vector only), `sgm-ask --graph "q"`, `sgm-ask --ask "q"` (context bundle to paste into an agent). The base install without `[embeddings]` explains the missing extra instead of failing with a traceback.
 
 ## MCP server
 
-Command: `sgm-mcp` (also installed as `sqlite-graph-memory`, so `uvx --with 'sqlite-graph-memory[lite]' sqlite-graph-memory` works). Registry name: `io.github.tonydzi/sqlite-graph-memory`. One tool: `memory_recall`.
+Command: `sgm-mcp` (also installed as `sqlite-graph-memory`, so `uvx --python 3.12 --with 'sqlite-graph-memory[lite]' sqlite-graph-memory` works). Registry name: `io.github.tonydzi/sqlite-graph-memory`. One tool: `memory_recall`.
 
 JSON clients (Claude Desktop, Cursor, Zed, Windsurf):
 
