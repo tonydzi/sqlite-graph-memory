@@ -23,8 +23,12 @@ Already using your own agent rules and projects? The [Russian existing-setup gui
 Build the index once (any folder of markdown; [`uv`](https://docs.astral.sh/uv/) gives you `uvx`):
 
 ```bash
-BRAIN_INDEX_DIR=$HOME/.sgm-index uvx --from 'sqlite-graph-memory[lite]' sgm-index ~/notes
+BRAIN_INDEX_DIR=$HOME/.sgm-index uvx --python 3.12 --from 'sqlite-graph-memory[lite]' sgm-index ~/notes
 ```
+
+`--python 3.12` is deliberate. On an Intel Mac neither onnxruntime nor torch has wheels for the
+newest Python, so an unpinned `uvx` on a newer default falls back to an old release of this
+package without `[lite]`, and `sgm-index` then stops and asks for `[embeddings]`.
 
 Then point your client at the server. Use the absolute path of that index folder.
 
@@ -33,7 +37,7 @@ Then point your client at the server. Use the absolute path of that index folder
 **Claude Code**
 
 ```bash
-claude mcp add sqlite-graph-memory -e BRAIN_INDEX_DIR=$HOME/.sgm-index -- uvx --with 'sqlite-graph-memory[lite]' sqlite-graph-memory
+claude mcp add sqlite-graph-memory -e BRAIN_INDEX_DIR=$HOME/.sgm-index -- uvx --python 3.12 --with 'sqlite-graph-memory[lite]' sqlite-graph-memory
 ```
 
 **Cursor** (`~/.cursor/mcp.json`; Claude Desktop, Zed and Windsurf take the same `mcpServers` block)
@@ -43,7 +47,7 @@ claude mcp add sqlite-graph-memory -e BRAIN_INDEX_DIR=$HOME/.sgm-index -- uvx --
   "mcpServers": {
     "sqlite-graph-memory": {
       "command": "uvx",
-      "args": ["--with", "sqlite-graph-memory[lite]", "sqlite-graph-memory"],
+      "args": ["--python", "3.12", "--with", "sqlite-graph-memory[lite]", "sqlite-graph-memory"],
       "env": { "BRAIN_INDEX_DIR": "/absolute/path/to/.sgm-index" }
     }
   }
@@ -58,7 +62,7 @@ claude mcp add sqlite-graph-memory -e BRAIN_INDEX_DIR=$HOME/.sgm-index -- uvx --
     "sqlite-graph-memory": {
       "type": "stdio",
       "command": "uvx",
-      "args": ["--with", "sqlite-graph-memory[lite]", "sqlite-graph-memory"],
+      "args": ["--python", "3.12", "--with", "sqlite-graph-memory[lite]", "sqlite-graph-memory"],
       "env": { "BRAIN_INDEX_DIR": "/absolute/path/to/.sgm-index" }
     }
   }
@@ -70,7 +74,7 @@ claude mcp add sqlite-graph-memory -e BRAIN_INDEX_DIR=$HOME/.sgm-index -- uvx --
 ```toml
 [mcp_servers.sqlite-graph-memory]
 command = "uvx"
-args = ["--with", "sqlite-graph-memory[lite]", "sqlite-graph-memory"]
+args = ["--python", "3.12", "--with", "sqlite-graph-memory[lite]", "sqlite-graph-memory"]
 env = { BRAIN_INDEX_DIR = "/absolute/path/to/.sgm-index" }
 ```
 
@@ -82,7 +86,7 @@ the same two models on ONNX Runtime and no torch, it is 155 MB (Windows, Python 
 against 33.8 s through torch on the same machine, with the same top hits and scores.
 `[lite]` is picked automatically when installed; `SGM_BACKEND=torch` forces torch (for a GPU).
 An index built by either backend is searched correctly by the other.
-Already installed with pip? Replace `uvx --with ... sqlite-graph-memory` by `sgm-mcp`
+Already installed with pip? Replace `uvx --python 3.12 --with ... sqlite-graph-memory` by `sgm-mcp`
 ([`examples/mcp-config.json`](examples/mcp-config.json)). Agents that read files first:
 [`llms.txt`](llms.txt).
 
@@ -93,6 +97,8 @@ pip install 'sqlite-graph-memory[lite]'
 sgm-index ./notes
 sgm-ask --ab "In which programming language is the tool behind Project Ouzel written?"
 ```
+
+On an Intel Mac, `pip install` needs Python 3.13 or older for `[lite]`, and 3.12 or older for `[embeddings]`.
 
 `./notes` is any folder of markdown notes. Re-running `sgm-index` only re-embeds notes
 that are new or changed since the last run (tracked by a manifest next to the index);

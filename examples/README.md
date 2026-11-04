@@ -66,7 +66,7 @@ Two copy-paste doors that need no JSON editing:
 claude mcp add sqlite-graph-memory -e BRAIN_INDEX_DIR=/path/to/your/index -e TURNSTATE_DB=/path/to/your/turnstate.db -- sgm-mcp
 
 # any client that speaks uvx (registry name io.github.tonydzi/sqlite-graph-memory)
-uvx --with 'sqlite-graph-memory[embeddings]' sqlite-graph-memory
+uvx --python 3.12 --with 'sqlite-graph-memory[embeddings]' sqlite-graph-memory
 ```
 
 ### Direct CLI Verification

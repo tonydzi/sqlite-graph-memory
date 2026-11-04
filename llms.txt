@@ -16,7 +16,7 @@ sgm-ask --ab "In which programming language is the tool behind Project Ouzel wri
 
 ## MCP server
 
-Command: `sgm-mcp` (also installed as `sqlite-graph-memory`, so `uvx --with 'sqlite-graph-memory[lite]' sqlite-graph-memory` works). Registry name: `io.github.tonydzi/sqlite-graph-memory`. One tool: `memory_recall`.
+Command: `sgm-mcp` (also installed as `sqlite-graph-memory`, so `uvx --python 3.12 --with 'sqlite-graph-memory[lite]' sqlite-graph-memory` works). Registry name: `io.github.tonydzi/sqlite-graph-memory`. One tool: `memory_recall`.
 
 JSON clients (Claude Desktop, Cursor, Zed, Windsurf):
 
