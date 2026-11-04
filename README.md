@@ -94,7 +94,11 @@ sgm-index ./notes
 sgm-ask --ab "In which programming language is the tool behind Project Ouzel written?"
 ```
 
-`./notes` is any folder of markdown notes. To get exactly the output below, use the
+`./notes` is any folder of markdown notes. Re-running `sgm-index` only re-embeds notes
+that are new or changed since the last run (tracked by a manifest next to the index);
+pass `--full` to force a complete rebuild.
+
+To get exactly the output below, use the
 202-note synthetic vault from this repo (it is not inside the pip package):
 
 ```bash
@@ -217,7 +221,7 @@ an edge table only when hop depth or corpus size demands it.
 
 - No entity lane. The production setup has an extra retrieval lane over people/project
   cards; it is too entangled with personal data to publish.
-- No incremental indexing (tracked in the issues). Packaging exists since v0.3.0 (`pip install sqlite-graph-memory`). There IS an eval suite now — see
+- Packaging exists since v0.3.0 (`pip install sqlite-graph-memory`). There IS an eval suite now — see
   [Measure before you swap](#measure-before-you-swap--eval) — but it scores retrieval on
   wikilink-derived gold, which is weak supervision and says so out loud. Test coverage is uneven:
   `index_notes.py`, `brain_ask.py` and `mcp_server.py` have unit tests, and
