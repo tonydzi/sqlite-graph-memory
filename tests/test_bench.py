@@ -108,3 +108,47 @@ def test_ci_needs_picks_only_marked_systems(tmp_path):
     live = set(cn.needing('ollama'))
     assert live == {'fidelis', 'mem0-local'}
     assert live <= bc.ci_reproduced()
+
+
+def test_tangleclaw_style_adapter_and_leaderboard_result():
+    """tangleclaw-style adapter is registered, its result validates, and it appears on LEADERBOARD.md."""
+    import importlib.util
+    adapter_path = ROOT / 'bench' / 'adapters' / 'tangleclaw.py'
+    assert adapter_path.exists(), 'missing bench/adapters/tangleclaw.py'
+    spec = importlib.util.spec_from_file_location('bench_adapter_tangleclaw', adapter_path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    assert 'tangleclaw-style' in getattr(mod, 'SYSTEMS', {}), 'tangleclaw-style not in SYSTEMS'
+    assert not ({'Project', 'Team', 'Office', 'Lab'} & mod.QWORDS), 'no domain-noun stopwords in QWORDS'
+
+    res_path = ROOT / 'bench' / 'results' / 'tangleclaw-style.json'
+    assert res_path.exists(), 'missing bench/results/tangleclaw-style.json'
+    res = json.loads(res_path.read_text(encoding='utf-8'))
+    errs = bc.check_result(res, bc.load_questions(), bc.load_vault(),
+                           bc.tree_sha256(bc.VAULT), bc.file_sha256(bc.QUESTIONS), filename=res_path)
+    assert not errs, errs
+    assert res['reproduce']['in_ci'] is True
+    assert 'tangleclaw-style' in bc.ci_reproduced()
+
+    overall = res['metrics']['overall']
+    by_class = res['metrics']['by_class']
+    assert overall['recall@5'] >= 0.76
+    assert overall['citation_faithful'] == 1.0
+    assert by_class['fact']['recall@5'] == 1.0
+    assert by_class['bridge']['recall@5'] == 1.0
+    assert by_class['temporal']['recall@5'] == 1.0
+    assert by_class['temporal']['answer_acc'] == 1.0
+    assert by_class['absent_entity']['abstain_correct'] == 1.0
+
+    board = (ROOT / 'bench' / 'LEADERBOARD.md').read_text(encoding='utf-8')
+    assert '[tangleclaw-style]' in board
+    assert '[TangleClaw](https://github.com/Jason-Vaughan/TangleClaw)' in board
+
+    out = subprocess.run([sys.executable, str(ROOT / 'bench' / 'validate.py')],
+                         capture_output=True, text=True)
+    assert out.returncode == 0 and 'VALID' in out.stdout, out.stdout + out.stderr
+    rep = subprocess.run([sys.executable, str(ROOT / 'bench' / 'validate.py'),
+                          '--reproduce', 'tangleclaw-style', '--tolerance', '0'],
+                         capture_output=True, text=True)
+    assert rep.returncode == 0, rep.stdout + rep.stderr
+

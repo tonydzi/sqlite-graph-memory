@@ -11,6 +11,7 @@ Synthetic vault: 202 notes · 91 questions (69 answerable, 22 with no answer in 
 | [fidelis](https://github.com/hermes-labs-ai/fidelis) `0.2.0` | 0.86 | 0.93 | 0.42 | 0.42 | 1.00 | 0.18 | 0.16 | yes | tonydzi |
 | [sqlite-graph-memory](https://github.com/tonydzi/sqlite-graph-memory) `0.3.0` | 0.85 | 0.91 | 0.33 | 0.33 | 1.00 | 0.45 | 0.26 | yes | tonydzi |
 | [bm25](https://en.wikipedia.org/wiki/Okapi_BM25) `reference` | 0.77 | 0.79 | 0.42 | 0.42 | 1.00 | 0.36 | 0.04 | yes | tonydzi |
+| [tangleclaw-style](https://www.sqlite.org/fts5.html) `reference` | 0.77 | 0.79 | 0.42 | 0.42 | 1.00 | 0.45 | 0.04 | yes | Jason-Vaughan |
 | [second-brain](https://github.com/stancsz/second-brain) `b17e6d5e9a1b` | 0.76 | 0.76 | 0.42 | 0.42 | 1.00 | 0.00 | 0.04 | yes | tonydzi |
 | [sqlite-fts5](https://www.sqlite.org/fts5.html) `reference` | 0.76 | 0.76 | 0.42 | 0.42 | 1.00 | 0.00 | 0.04 | yes | tonydzi |
 
@@ -23,6 +24,7 @@ Synthetic vault: 202 notes · 91 questions (69 answerable, 22 with no answer in 
 | fidelis | 1.00 | 0.73 | 0.90 | 0.17 | 1.00 |
 | sqlite-graph-memory | 1.00 | 1.00 | 0.50 | 0.08 | 1.00 |
 | bm25 | 1.00 | 1.00 | 0.00 | 0.00 | 1.00 |
+| tangleclaw-style | 1.00 | 1.00 | 0.00 | 0.00 | 1.00 |
 | second-brain | 1.00 | 0.97 | 0.00 | 0.00 | 1.00 |
 | sqlite-fts5 | 1.00 | 0.97 | 0.00 | 0.00 | 1.00 |
 
@@ -35,6 +37,7 @@ Synthetic vault: 202 notes · 91 questions (69 answerable, 22 with no answer in 
 | fidelis | 0.40 | 0.00 |
 | sqlite-graph-memory | 0.60 | 0.33 |
 | bm25 | 0.80 | 0.00 |
+| tangleclaw-style | 1.00 | 0.00 |
 | second-brain | 0.00 | 0.00 |
 | sqlite-fts5 | 0.00 | 0.00 |
 
@@ -45,5 +48,6 @@ Synthetic vault: 202 notes · 91 questions (69 answerable, 22 with no answer in 
 - **fidelis** — fidelis-memory 0.2.0 zero_llm tier, BM25+dense+RRF with the hybrid extra on, Ollama nomic-embed-text, notes stored verbatim, embeddings memoized by the adapter (same vectors). No abstention rule at this tier. Produced and rerun in CI on Linux against a pinned Ollama container held to its haswell CPU kernel (macOS gives the same answers, a few rank-8-to-10 swaps).
 - **sqlite-graph-memory** — Our own system, graph mode. Answers come from a simple extractor, not an LLM. Weakest spots: cites the superseded decision on 6/6 current-deadline questions; abstains on all 16 paraphrase questions, including the ones it retrieved; answers 55% of absent-fact questions anyway.
 - **bm25** — Keyword search with no model and an extractive answer: the floor every other row has to clear. Wins on names, scores 0.00 on paraphrase.
+- **tangleclaw-style** — In-adapter Python/SQLite reference pipeline for [TangleClaw](https://github.com/Jason-Vaughan/TangleClaw) markdown continuity: BM25 + SQLite FTS5 + 1-hop wikilinks (brain_ask._links_in) fused via ppr.rrf_fuse, YAML frontmatter superseded_by lineage promotion, capitalized-entity abstention gate (no domain-noun stopwords), and shared _extract.best_sentence floor. Resolves superseded decisions (10/10 temporal) and absent entities (10/10); scores 0.00 on paraphrase and absent_attribute (no embedding model or LLM reader).
 - **second-brain** — Run from a clone at a pinned commit (not on PyPI). Raw questions are an FTS5 syntax error in SecondBrain.search(), so the adapter quotes and OR-joins the words. Pure FTS5 ranking, no entity check: answers all 22 absent questions.
 - **sqlite-fts5** — FTS5 as shipped: SQLite's own bm25() rank over whole notes, question words OR-joined. No entity check, so it answers all 22 absent questions. Ties second-brain on every metric.
