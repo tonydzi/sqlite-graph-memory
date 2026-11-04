@@ -21,13 +21,18 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'src'))
 sys.path.insert(0, str(ROOT / 'eval'))
 
 from build_gold import (build_gold, first_paragraph, indexed_stems,  # noqa: E402
                         lang_of, read_notes)
-from run_eval import mrr_at, ndcg_at, recall_at  # noqa: E402
+from run_eval import mrr_at, ndcg_at, recall_at, SMALL_N  # noqa: E402
+import run_ablation  # noqa: E402
+from run_ablation import (DEFAULT_GRID, format_markdown, low_n_warnings,  # noqa: E402
+                          parse_grid, score_grid, summarize_grid, write_csv)
 
 PARA = ('This paragraph is long enough to be treated as a real question by the gold builder, '
         'which skips fragments shorter than a hundred characters.')
@@ -264,3 +269,166 @@ def test_selftest_exits_zero():
     r = subprocess.run([sys.executable, str(ROOT / 'eval' / 'run_eval.py'), '--selftest'],
                        capture_output=True, text=True)
     assert r.returncode == 0 and 'SELFTEST PASS' in r.stdout
+
+
+# ------------------------------------------------------------------ run_ablation.py (issue #19)
+import numpy as np  # noqa: E402
+
+
+class _FakeEncoder:
+    """Ignores the query text; always returns the same unit vector (dim 2)."""
+
+    def encode(self, texts, normalize_embeddings=True, convert_to_numpy=True):
+        return np.array([[1.0, 0.0]] * len(texts), dtype='float32')
+
+
+class _FakeReranker:
+    """Scores a candidate by what its title names: friend > home > everything else.
+
+    Models 'friend' being the true answer, visible to the reranker only once some
+    candidate-selection step (graph expansion) actually puts it in the pool.
+    """
+
+    def predict(self, pairs):
+        def score(text):
+            if 'friend' in text:
+                return 100.0
+            if 'home' in text:
+                return 50.0
+            return 10.0
+        return [score(text) for _, text in pairs]
+
+
+def _linked_vault(tmp_path):
+    """home.md links to friend.md and distant.md; stranger.md links to nothing.
+
+    Dense similarity (via _FakeEncoder, same vector for every query) ranks home
+    highest, stranger second, friend and distant lowest — so at topk=1 only home
+    is in the dense pool, and friend/distant can only arrive via graph expansion.
+    """
+    v = tmp_path / 'vault'
+    v.mkdir()
+    (v / 'home.md').write_text('See [[friend]] and [[distant]] for more.', encoding='utf-8')
+    (v / 'friend.md').write_text('Friend note body.', encoding='utf-8')
+    (v / 'distant.md').write_text('Distant note body.', encoding='utf-8')
+    (v / 'stranger.md').write_text('Unrelated stranger note.', encoding='utf-8')
+    meta = [
+        {'path': str(v / 'home.md'), 'title': 'home', 'snippet': 'home snippet', 'date': ''},
+        {'path': str(v / 'stranger.md'), 'title': 'stranger', 'snippet': 'stranger snippet', 'date': ''},
+        {'path': str(v / 'friend.md'), 'title': 'friend', 'snippet': 'friend snippet', 'date': ''},
+        {'path': str(v / 'distant.md'), 'title': 'distant', 'snippet': 'distant snippet', 'date': ''},
+    ]
+    # emb row i dotted with the fake encoder's [1, 0] query vector must reproduce
+    # the home > stranger > {friend, distant} similarity order claimed above.
+    emb = np.array([[10.0, 0.0], [5.0, 0.0], [1.0, 0.0], [1.0, 0.0]], dtype='float32')
+    return meta, emb
+
+
+def test_list_grid_prints_without_loading_any_model_or_index(tmp_path, monkeypatch):
+    monkeypatch.setenv('BRAIN_INDEX_DIR', str(tmp_path / 'does-not-exist'))
+    r = subprocess.run([sys.executable, str(ROOT / 'eval' / 'run_ablation.py'), '--list-grid'],
+                       capture_output=True, text=True, env={**dict(__import__('os').environ),
+                       'BRAIN_INDEX_DIR': str(tmp_path / 'does-not-exist')})
+    assert r.returncode == 0, r.stderr
+    assert '0-hop' in r.stdout
+
+
+def test_default_grid_covers_a_0hop_baseline_and_varies_each_axis():
+    grid = parse_grid('default')
+    names = {c['name'] for c in grid}
+    assert any(c['hops'] == 0 for c in grid)
+    assert len({c['gmax'] for c in grid}) > 1
+    assert len({c['topk'] for c in grid}) > 1
+    assert any(c['entity_gate'] is False for c in grid)
+    assert len(names) == len(grid)          # names are unique
+
+
+def test_parse_grid_accepts_a_keyval_spec():
+    grid = parse_grid('hops=0,topk=10;hops=1,gmax=5,name=mycell')
+    assert grid[0]['hops'] == 0 and grid[0]['topk'] == 10
+    assert grid[1]['hops'] == 1 and grid[1]['gmax'] == 5 and grid[1]['name'] == 'mycell'
+
+
+def test_hop_expansion_recovers_a_note_the_dense_pool_missed(tmp_path):
+    meta, emb = _linked_vault(tmp_path)
+    gold = [{'query': 'where do I keep in touch', 'cls': 'theme', 'gold': ['friend']}]
+    grid = parse_grid('hops=0,topk=1,name=0-hop;hops=1,topk=1,gmax=10,name=1-hop')
+
+    rows = score_grid(gold, grid, emb, meta, _FakeEncoder(), _FakeReranker())
+    by_cell = {r['cell']: r for r in rows}
+
+    assert by_cell['0-hop']['recall'] == 0.0     # friend never entered the top-1 dense pool
+    assert by_cell['1-hop']['recall'] == 1.0     # graph hop pulled it in, reranker surfaced it
+
+
+def test_gmax_bounds_how_many_linked_neighbours_enter_the_pool(tmp_path):
+    meta, emb = _linked_vault(tmp_path)
+    gold = [{'query': 'q', 'cls': 'theme', 'gold': ['distant']}]
+    grid = parse_grid('hops=1,topk=1,gmax=1,name=tight;hops=1,topk=1,gmax=10,name=loose')
+
+    rows = score_grid(gold, grid, emb, meta, _FakeEncoder(), _FakeReranker())
+    by_cell = {r['cell']: r for r in rows}
+
+    assert by_cell['loose']['recall'] == 1.0     # gmax=10: room for both [[friend]] and [[distant]]
+    assert by_cell['tight']['recall'] == 0.0     # gmax=1: only the first link (friend) fits
+
+
+def test_entity_gate_suppresses_the_hop_only_when_enabled(tmp_path):
+    meta, emb = _linked_vault(tmp_path)
+    gold = [{'query': 'Obsidian', 'cls': 'theme', 'gold': ['friend']}]   # a known ENTITY_TOOLS name
+    grid = parse_grid('hops=1,topk=1,gmax=10,entity_gate=1,name=gated;'
+                      'hops=1,topk=1,gmax=10,entity_gate=0,name=ungated')
+
+    rows = score_grid(gold, grid, emb, meta, _FakeEncoder(), _FakeReranker())
+    by_cell = {r['cell']: r for r in rows}
+
+    assert by_cell['gated']['recall'] == 0.0     # entity-like query: hop suppressed
+    assert by_cell['ungated']['recall'] == 1.0   # gate disabled for this cell: hop runs
+
+
+def test_markdown_and_csv_report_delta_vs_the_0hop_baseline(tmp_path):
+    rows = [
+        {'cell': '0-hop', 'cls': 'theme', 'recall': 0.0, 'mrr': 0.0, 'ndcg': 0.0},
+        {'cell': '1-hop', 'cls': 'theme', 'recall': 1.0, 'mrr': 1.0, 'ndcg': 1.0},
+    ]
+    grid = [{'name': '0-hop', 'hops': 0}, {'name': '1-hop', 'hops': 1}]
+    summary = summarize_grid(rows, grid, ['theme'])
+
+    overall_1hop = next(r for r in summary if r['cell'] == '1-hop' and r['class'] == 'overall')
+    assert overall_1hop['delta_ndcg'] == 1.0
+    baseline_row = next(r for r in summary if r['cell'] == '0-hop' and r['class'] == 'theme')
+    assert baseline_row['delta_ndcg'] == 0.0
+
+    md = format_markdown(summary)
+    assert '| 1-hop | theme |' in md and '+1.000' in md
+
+    out = tmp_path / 'ablation.csv'
+    write_csv(summary, out)
+    body = out.read_text(encoding='utf-8')
+    assert 'delta_nDCG@12' in body.splitlines()[0]
+    assert '1-hop,theme' in body.replace(' ', '')
+
+
+def test_low_n_warning_names_the_thin_cell_and_class():
+    summary = [{'cell': '0-hop', 'class': 'temporal', 'n': 3, 'recall': 1.0, 'mrr': 1.0,
+               'ndcg': 1.0, 'delta_ndcg': None},
+              {'cell': '0-hop', 'class': 'overall', 'n': 25, 'recall': 1.0, 'mrr': 1.0,
+               'ndcg': 1.0, 'delta_ndcg': None}]
+    warnings = low_n_warnings(summary)
+    assert len(warnings) == 1
+    assert 'temporal' in warnings[0] and '0-hop' in warnings[0] and str(SMALL_N) in warnings[0]
+
+
+def test_default_grid_varies_ghops_too(tmp_path):
+    """R-Gate (PR #4): the default sweep must vary all 5 axes, ghops included —
+    it previously left ghops fixed at 15 across every cell."""
+    assert len({c['ghops'] for c in DEFAULT_GRID}) > 1
+
+
+def test_parse_grid_rejects_unsupported_hop_counts():
+    """R-Gate (PR #4): score_grid only ever runs the 1-hop expand_1hop, so a cell
+    claiming hops=2 would be silently scored as a 1-hop cell and mislabeled."""
+    with pytest.raises(ValueError):
+        parse_grid('hops=2')
+    with pytest.raises(ValueError):
+        parse_grid('[{"name": "two-hop", "hops": 2}]')
