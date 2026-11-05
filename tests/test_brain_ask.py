@@ -117,6 +117,44 @@ def test_links_in_nonexistent_file(tmp_path):
     assert _links_in(missing_file) == []
 
 
+@pytest.mark.parametrize(
+    ("frontmatter", "expected"),
+    [
+        # Wikilink value -> resolved via WIKILINK_RX, same as a body link.
+        ('superseded_by: "[[decision-001]]"', ["decision-001"]),
+        # Bare (non-wikilink) value -> returned as-is.
+        ('superseded_by: decision-001', ["decision-001"]),
+        ('superseded_by: "decision-001"', ["decision-001"]),
+        # No superseded_by field at all.
+        ('title: "decision-005"', []),
+        # Empty quoted value resolves to [].
+        ('superseded_by: ""', []),
+    ],
+)
+def test_superseded_links_in_frontmatter_cases(tmp_path, frontmatter, expected):
+    from sqlite_graph_memory.brain_ask import _superseded_links_in
+
+    note = tmp_path / "note.md"
+    note.write_text("---\n%s\n---\n# body\nUnrelated [[other-note]] link.\n" % frontmatter,
+                     encoding="utf-8")
+    assert _superseded_links_in(note) == expected
+
+
+def test_superseded_links_in_no_frontmatter(tmp_path):
+    from sqlite_graph_memory.brain_ask import _superseded_links_in
+
+    note = tmp_path / "note.md"
+    note.write_text("# body\nNo frontmatter here, just [[a-link]].\n", encoding="utf-8")
+    assert _superseded_links_in(note) == []
+
+
+def test_superseded_links_in_nonexistent_file(tmp_path):
+    from sqlite_graph_memory.brain_ask import _superseded_links_in
+
+    missing_file = tmp_path / "does_not_exist.md"
+    assert _superseded_links_in(missing_file) == []
+
+
 def test_expand_1hop_resolves_folder_and_md_suffix_links(tmp_path):
     """Issue #71 audit: expand_1hop resolves [[Sub/c]] and [[c.md]] targets."""
     import numpy as np
@@ -193,6 +231,47 @@ def test_expand_1hop_single_subfolder_layout_and_precomputed_root(tmp_path, monk
     monkeypatch.setattr(ba.os.path, "commonpath", _forbid_commonpath)
     assert ba.expand_1hop(sims, meta, [0], by_base=by_base) == [1]
 
+
+def test_expand_1hop_only_superseded_follows_frontmatter_not_body_links(tmp_path):
+    """Issue #93: an entity-gated query ("Project Heron deadline (2025-02-07)") must
+    still reach an outdated note's superseded_by replacement at topk=1, while general
+    (body) wikilinks stay gated off."""
+    import numpy as np
+    from sqlite_graph_memory.brain_ask import expand_1hop, index_by_basename, looks_like_entity
+
+    query = "Project Heron deadline (2025-02-07)"
+    assert looks_like_entity(query) is True  # exactly the query shape the entity gate fires on
+
+    outdated_path = tmp_path / "decision-005.md"
+    replacement_path = tmp_path / "decision-001.md"
+    unrelated_path = tmp_path / "unrelated-note.md"
+    outdated_path.write_text(
+        '---\n'
+        'superseded_by: "[[decision-001]]"\n'
+        '---\n'
+        '# Project Heron deadline (2025-02-07)\n'
+        'Outdated. See also [[unrelated-note]].\n',
+        encoding="utf-8",
+    )
+    replacement_path.write_text("# decision-001\nCurrent decision.\n", encoding="utf-8")
+    unrelated_path.write_text("# unrelated-note\nNot the replacement.\n", encoding="utf-8")
+
+    meta = [
+        {"path": str(outdated_path), "title": "decision-005", "snippet": ""},
+        {"path": str(replacement_path), "title": "decision-001", "snippet": ""},
+        {"path": str(unrelated_path), "title": "unrelated-note", "snippet": ""},
+    ]
+    sims = np.array([0.9, 0.5, 0.8], dtype="float32")
+    by_base = index_by_basename(meta)
+    base_order = [0]  # topk=1: only the outdated note enters the candidate pool
+
+    # Fails on current main: expand_1hop has no only_superseded param at all yet, and
+    # the ordinary hop would ALSO pull in unrelated-note via the body wikilink.
+    added_full = expand_1hop(sims, meta, base_order, by_base=by_base)
+    assert added_full == [1, 2]
+
+    added_superseded_only = expand_1hop(sims, meta, base_order, by_base=by_base, only_superseded=True)
+    assert added_superseded_only == [1]  # decision-001 only, never unrelated-note
 
 
 def test_missing_embedding_index_reports_error_and_exits_nonzero(tmp_path):
