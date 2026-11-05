@@ -112,7 +112,7 @@ def test_main_ab_calls_the_prompt(tmp_path, monkeypatch):
     monkeypatch.setattr(ba, "query_sims", lambda enc, emb, q: np.ones(1))
     monkeypatch.setattr(ba, "retrieve_candidates", lambda sims, meta: [0])
     monkeypatch.setattr(ba, "expand_1hop", lambda sims, meta, order: [])
-    monkeypatch.setattr(ba, "rerank_candidates", lambda ce, q, cand, meta: [(i, 1.0) for i in cand])
+    monkeypatch.setattr(ba, "rerank_candidates", lambda ce, q, cand, meta, **kw: [(i, 1.0) for i in cand])
     monkeypatch.setenv("BRAIN_ANSWER_OUT", str(tmp_path / "out.txt"))
     calls = []
     monkeypatch.setattr(ba, "maybe_star_prompt", lambda *a, **k: calls.append(1))

@@ -2,7 +2,7 @@
 """brain_ask.py — vector retrieval + graph expansion + A/B harness over a markdown vault.
 
 Pipeline: e5-base dense retrieve (top-60, dedup by file) -> optional 1-hop wikilink
-graph expansion -> cross-encoder rerank -> top-12.
+graph expansion -> dense order (cross-encoder rerank only with --rerank) -> top-12.
 
 USAGE:
   python brain_ask.py "question"              # vector-only (Direct memory)
@@ -10,6 +10,7 @@ USAGE:
   python brain_ask.py --ab "question"         # run BOTH, diff, log to SQLite (ab_recall)
   python brain_ask.py --ask "question"        # emit a context bundle for an LLM agent
   python brain_ask.py --ppr --graph "question"  # + PageRank lane in the ORDERING (see ppr.py)
+  python brain_ask.py --rerank "question"     # opt in to the cross-encoder rerank (off by default)
 
 Config (env, all optional):
   BRAIN_INDEX_DIR   dir holding the embedding index (default: ./index)
@@ -18,6 +19,9 @@ Config (env, all optional):
   BRAIN_AB_JSON     if set, --ab also writes a structured JSON diff to this path
   SGM_PPR=1         same as --ppr: fuse personalized PageRank over [[wikilinks]] with the
                     reranker by RRF, reranker top 5 protected (off by default)
+  SGM_RERANK=1      same as --rerank. Off by default since 0.3.7: the mmarco cross-encoder
+                    lowered recall on long queries (DolphinBench Riley slice, 1000 sessions:
+                    R@5 0.61 dense vs 0.48 reranked); it still wins some short title queries.
   SGM_NO_STAR_PROMPT=1  never print the one-time GitHub star line after --ab
   SGM_CONFIG_DIR    where that line's once-per-machine marker lives
                     (default: $XDG_CONFIG_HOME or ~/.config, /sqlite-graph-memory)
@@ -332,11 +336,25 @@ def expand_1hop(sims, meta, base_order, by_base=None, ghops=GHOPS, gmax=GMAX, ro
     return added
 
 
-def rerank_candidates(ce, query, cand, meta, topn=TOPN):
-    """Cross-encoder rerank of candidate chunks -> [(chunk index, score)], best first.
-    topn=None returns the whole reranked list (the PPR fusion needs the tail)."""
-    pairs = [(query, meta[i]['title'] + '. ' + meta[i]['snippet']) for i in cand]
-    sc = ce.predict(pairs) if len(pairs) else []
+def rerank_enabled(env=None, argv=None):
+    """True when the cross-encoder rerank is asked for (--rerank or SGM_RERANK=1). Default off."""
+    env = os.environ if env is None else env
+    argv = sys.argv[1:] if argv is None else argv
+    return '--rerank' in argv or str(env.get('SGM_RERANK', '')).strip() == '1'
+
+
+def rerank_candidates(ce, query, cand, meta, topn=TOPN, sims=None):
+    """Order candidate chunks -> [(chunk index, score)], best first.
+    ce=None (the default) keeps the dense e5 similarity from `sims`; a cross-encoder `ce`
+    rescores (query, title + snippet) pairs instead.
+    topn=None returns the whole list (the PPR fusion needs the tail)."""
+    if ce is None:
+        if sims is None:
+            raise ValueError('rerank_candidates: pass sims= when no cross-encoder is loaded')
+        sc = [float(sims[i]) for i in cand]
+    else:
+        pairs = [(query, meta[i]['title'] + '. ' + meta[i]['snippet']) for i in cand]
+        sc = ce.predict(pairs) if len(pairs) else []
     return sorted(zip(cand, sc), key=lambda x: -x[1])[:topn]
 
 
@@ -439,7 +457,7 @@ def main():
         return
     ask = '--ask' in args
     graph = '--graph' in args; ab = '--ab' in args
-    flags = {'--ask', '--graph', '--ab', '--ppr'}
+    flags = {'--ask', '--graph', '--ab', '--ppr', '--rerank'}
     query = ' '.join(a for a in args if a not in flags)
     if not query or not EMB.exists():
         sys.stderr.write('need an embedding index (%s) and a query — run index_notes.py first\n' % EMB)
@@ -478,12 +496,12 @@ def main():
     elif order and ('--ppr' in args or ppr_enabled()):
         ppr_stems = ppr_lane(meta, sims, base_order)
 
-    # rerank on the matched chunk (precise)
-    ce = load_reranker(dev)
+    # dense order by default; the cross-encoder runs only when asked (--rerank / SGM_RERANK=1)
+    ce = load_reranker(dev) if rerank_enabled(argv=args) else None
     def rerank(cand):
         if not ppr_stems:
-            return rerank_candidates(ce, query, cand, meta)
-        full = rerank_candidates(ce, query, cand, meta, topn=None)   # fusion needs the tail
+            return rerank_candidates(ce, query, cand, meta, sims=sims)
+        full = rerank_candidates(ce, query, cand, meta, topn=None, sims=sims)   # fusion needs the tail
         return fuse_ppr(full, meta, ppr_stems, TOPN)
 
     # --ab: run BOTH paths in ONE process, diff, log. Answers "does graph REALLY help?"
@@ -548,7 +566,7 @@ def main():
     order = graph_order if (graph and not gated) else base_order
     reranked = rerank(order)
     scope = 'all' + (' /graph+%d' % len(graph_set) if graph else '') + (' /ppr' if ppr_stems else '')
-    lines = [f'QUERY: {query}', f'(scope={scope}; e5 {len(order)} files -> rerank; {len(meta)} chunks)', '']
+    lines = [f'QUERY: {query}', f'(scope={scope}; e5 {len(order)} files -> {"rerank" if ce is not None else "dense"}; {len(meta)} chunks)', '']
     if ask:
         lines.append('=== CONTEXT BUNDLE (paste to your agent) ===\n')
         for i, sc in reranked[:8]:

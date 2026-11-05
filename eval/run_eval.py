@@ -134,7 +134,7 @@ def score_gold(gold, progress=True, ppr=False):
                  '(BRAIN_INDEX_DIR=%s)' % (ba.EMB, ba.INDEX_DIR))
     emb, meta = ba.load_index()
     enc = ba.load_encoder(dev)
-    ce = ba.load_reranker(dev)
+    ce = ba.load_reranker(dev) if ba.rerank_enabled() else None
     by_base = ba.index_by_basename(meta)
     stem_of = lambda i: Path(meta[i]['path']).stem.lower()
 
@@ -144,17 +144,17 @@ def score_gold(gold, progress=True, ppr=False):
         sims = ba.query_sims(enc, emb, g['query'])
         base = ba.retrieve_candidates(sims, meta)
         added = ba.expand_1hop(sims, meta, base, by_base)
-        lists = {'vector': ba.rerank_candidates(ce, g['query'], base, meta)}
+        lists = {'vector': ba.rerank_candidates(ce, g['query'], base, meta, sims=sims)}
         if ppr:
             # One rerank of the graph pool serves both modes: `graph` is its top-12, exactly
             # what rerank_candidates(topn=12) returns, and `ppr` fuses the FULL list.
-            full = ba.rerank_candidates(ce, g['query'], base + added, meta, topn=None)
+            full = ba.rerank_candidates(ce, g['query'], base + added, meta, topn=None, sims=sims)
             lists['graph'] = full[:TOPN]
             lane = ba.ppr_lane(meta, sims, base)
             ppr_ran = ppr_ran or bool(lane)
             lists['ppr'] = ba.fuse_ppr(full, meta, lane, TOPN)
         else:
-            lists['graph'] = ba.rerank_candidates(ce, g['query'], base + added, meta)
+            lists['graph'] = ba.rerank_candidates(ce, g['query'], base + added, meta, sims=sims)
         res = {}
         for mode, scored in lists.items():
             ranked = [stem_of(i) for i, _ in scored]
@@ -167,7 +167,7 @@ def score_gold(gold, progress=True, ppr=False):
                      'sec': round(time.time() - tq, 2), 'res': res})
         if progress and (k + 1) % 20 == 0:
             sys.stderr.write('  %d/%d  %.0fs\n' % (k + 1, len(gold), time.time() - t0))
-    cfg = {'index_chunks': len(emb), 'embedder': ba.E5_MODEL, 'reranker': ba.RERANK_MODEL,
+    cfg = {'index_chunks': len(emb), 'embedder': ba.E5_MODEL, 'reranker': ba.RERANK_MODEL if ce is not None else 'none',
            'device': str(dev), 'topk': ba.TOPK_RETRIEVE, 'topn': TOPN,
            'sec_per_q': round((time.time() - t0) / max(len(rows), 1), 2)}
     # expand_1hop degrades to [] on any failure, by design — a broken graph must never break

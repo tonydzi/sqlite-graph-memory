@@ -70,7 +70,7 @@ TOOLS = [
         "description": (
             "Associative memory recall over linked markdown notes. "
             "Retrieves relevant context using vector search, 1-hop [[wikilink]] graph expansion, "
-            "and cross-encoder reranking. Returns a formatted context bundle."
+            "ordered by dense similarity (cross-encoder rerank is opt-in). Returns a formatted context bundle."
         ),
         "inputSchema": {
             "type": "object",
