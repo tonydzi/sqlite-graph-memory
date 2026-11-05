@@ -152,3 +152,61 @@ def test_tangleclaw_style_adapter_and_leaderboard_result():
                          capture_output=True, text=True)
     assert rep.returncode == 0, rep.stdout + rep.stderr
 
+
+def test_plain_rag_adapter_and_leaderboard_result():
+    """plain-rag adapter is registered, its ask() deduplicates chunks, and its result validates."""
+    import importlib.util
+    import types
+    adapter_path = ROOT / 'bench' / 'adapters' / 'plain_rag.py'
+    assert adapter_path.exists(), 'missing bench/adapters/plain_rag.py'
+    spec = importlib.util.spec_from_file_location('bench_adapter_plain_rag', adapter_path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    assert 'plain-rag' in getattr(mod, 'SYSTEMS', {}), 'plain-rag not in SYSTEMS'
+
+    adapter = mod.make()
+    assert adapter.info()['config']['topk_retrieve'] == 60
+    adapter.ba = types.SimpleNamespace(
+        TOPK_RETRIEVE=60,
+        query_sims=lambda enc, emb, q: [0.91, 0.88, 0.72],
+        retrieve_candidates=lambda sims, meta, topk=60: [0, 1, 2][:topk],
+    )
+    adapter.enc = object()
+    adapter.emb = object()
+    adapter.meta = [
+        {'path': '/vault/alpha.md', 'text': 'Alpha chunk 1'},
+        {'path': '/vault/alpha.md', 'text': 'Alpha chunk 2'},
+        {'path': '/vault/beta.md', 'text': 'Beta chunk 1'},
+    ]
+    adapter.raw = {
+        'alpha': 'Project Heron deadline is 2025-02-07.',
+        'beta': 'Unrelated note text.',
+    }
+    ans = adapter.ask('When is the Project Heron deadline?')
+    assert ans['retrieved'] == ['alpha', 'beta']
+    assert ans['answer'] == 'Project Heron deadline is 2025-02-07.'
+    assert ans['citations'] == [{'note': 'alpha', 'quote': 'Project Heron deadline is 2025-02-07.'}]
+    assert ans['top_score'] == 0.91
+    abstain = adapter.ask('Quantum xylophone covariance?')
+    assert abstain['retrieved'] == ['alpha', 'beta']
+    assert abstain['answer'] is None
+    assert abstain['citations'] == []
+
+    res_path = ROOT / 'bench' / 'results' / 'plain-rag.json'
+    assert res_path.exists(), 'missing bench/results/plain-rag.json'
+    res = json.loads(res_path.read_text(encoding='utf-8'))
+    errs = bc.check_result(res, bc.load_questions(), bc.load_vault(),
+                           bc.tree_sha256(bc.VAULT), bc.file_sha256(bc.QUESTIONS), filename=res_path)
+    assert not errs, errs
+    assert res['system']['config']['topk_retrieve'] == 60
+    assert res['reproduce']['in_ci'] is True
+    assert 'plain-rag' in bc.ci_reproduced()
+
+    board = (ROOT / 'bench' / 'LEADERBOARD.md').read_text(encoding='utf-8')
+    assert '[plain-rag]' in board
+
+    out = subprocess.run([sys.executable, str(ROOT / 'bench' / 'validate.py')],
+                         capture_output=True, text=True)
+    assert out.returncode == 0 and 'VALID' in out.stdout, out.stdout + out.stderr
+
+

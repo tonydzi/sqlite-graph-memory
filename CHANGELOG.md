@@ -6,6 +6,8 @@ recorded after the fact rather than backdated to look contemporaneous.
 
 ## Unreleased
 
+**Bench: `plain-rag` reference row.** Dense cosine-only baseline (`multilingual-e5-base` over 1200-char chunks, `topk=60`, no graph hop and no cross-encoder reranker) reproduced in CI, isolating what reranking and wikilink expansion change on `memory-bench`. Thanks @Jason-Vaughan (#91), who picked up #21.
+
 ## v0.3.7 - 2026-11-05
 
 **Recall: the cross-encoder rerank is off by default.** `sgm-ask`, the MCP tool and `eval/run_eval.py` now order candidates by dense e5 similarity; `--rerank` or `SGM_RERANK=1` brings the cross-encoder back. Measured before the change: on our 184-question gold set the reranker cut body nDCG@12 from 0.815 to 0.640, and on DolphinBench data (Riley, 50 tests, 1000 sessions) Recall@5 fell from 0.61 to 0.48; it still helped short title-style queries. Dense recall is also faster on CPU (about 0.04 s against 2.8 s per query on that slice). `rerank_candidates()` takes `sims=` and keeps dense order when no cross-encoder is passed.
