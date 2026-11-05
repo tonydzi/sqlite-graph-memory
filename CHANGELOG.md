@@ -16,6 +16,8 @@ recorded after the fact rather than backdated to look contemporaneous.
 
 **`eval/run_ablation.py`: gate, neighbour-admission and rank-churn columns.** Each ablation cell now reports `gate_rate`, `hop_applied_rate` and `rank_churn` alongside the retrieval metrics, separating queries where the entity gate suppressed the hop from queries where neighbours entered and reordered the top-12 without moving single-note gold at rank 1. Thanks @Jason-Vaughan (#95), who picked up #93.
 
+**`eval/build_gold.py`: short `heading` question class.** Adds a fifth class built from short markdown headings (`<= 5` words) so `looks_like_entity` is exercised on short heading queries in `run_eval.py` and `run_ablation.py`. Because `rnd.shuffle(notes)` runs once before the class pools are sliced, the four existing classes pick the exact same questions for a given seed and older gold sets and published numbers still reproduce (only `heading` is new); on a vault with no qualifying short headings, `heading` is simply empty (0 questions, omitted from the printed class counts and eval tables, no crash). Thanks @Jason-Vaughan (#96), who picked up #93.
+
 ## v0.3.7 - 2026-11-05
 
 **Recall: the cross-encoder rerank is off by default.** `sgm-ask`, the MCP tool and `eval/run_eval.py` now order candidates by dense e5 similarity; `--rerank` or `SGM_RERANK=1` brings the cross-encoder back. Measured before the change: on our 184-question gold set the reranker cut body nDCG@12 from 0.815 to 0.640, and on DolphinBench data (Riley, 50 tests, 1000 sessions) Recall@5 fell from 0.61 to 0.48; it still helped short title-style queries. Dense recall is also faster on CPU (about 0.04 s against 2.8 s per query on that slice). `rerank_candidates()` takes `sims=` and keeps dense order when no cross-encoder is passed.
@@ -27,8 +29,6 @@ way. The `uvx` lines in the docs now pin `--python 3.12`; `server.json` does too
 Registry with this release.
 
 **Shorter demo gif.** It now shows the top 5 of each list, so the graph hit fits on one screen.
-
-**`eval/build_gold.py`: short `heading` question class.** Adds a fifth class built from short markdown headings (`<= 5` words) so `looks_like_entity` is exercised on short heading queries in `run_eval.py` and `run_ablation.py`. Thanks @Jason-Vaughan (#96), who picked up #93.
 
 **`sgm-index`: a rerun re-embeds only what changed.** A manifest keyed on the content hash and the index settings lets `sgm-index` skip untouched notes; size and mtime are the fast path, the hash decides the changed set, and a corrupt manifest falls back to a full build. The default encoder still comes from `load_encoder()`, so `[lite]` installs keep working without torch. Thanks @Jason-Vaughan (#85), who picked up #17.
 

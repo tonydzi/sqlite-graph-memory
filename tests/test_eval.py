@@ -101,7 +101,8 @@ def _vault(tmp_path):
         '\n\nSee [[beta]] and [[gamma]] for the rest.\n', encoding='utf-8')
     (tmp_path / 'beta.md').write_text('---\ntitle: "Beta the second note"\n---\n\n' + PARA + '\n',
                                       encoding='utf-8')
-    (tmp_path / 'gamma.md').write_text('# Gamma the third note\n\n' + PARA + '\n', encoding='utf-8')
+    (tmp_path / 'gamma.md').write_text('# Gamma the third note\n\n## Gamma Overview\n\n' + PARA + '\n',
+                                       encoding='utf-8')
     (tmp_path / 'old-rule.md').write_text(
         '---\ntitle: "Old rule about backups"\nsuperseded_by: "[[beta]]"\n---\n\n' + PARA + '\n',
         encoding='utf-8')
@@ -129,25 +130,26 @@ def test_every_class_is_built_from_the_right_note(tmp_path):
     bridge_alpha = next(g for g in by_cls['bridge'] if g['src'] == 'alpha')
     assert bridge_alpha['gold'] == ['beta', 'gamma']       # the wikilinks ARE the answer
 
-    heading_alpha = next(g for g in by_cls['heading'] if g['src'] == 'alpha')
-    assert 1 <= len(heading_alpha['query'].split()) <= 5
-    assert looks_like_entity(heading_alpha['query'])
-    assert heading_alpha['gold'] == ['beta', 'gamma']
+    heading_gamma = next(g for g in by_cls['heading'] if g['src'] == 'gamma')
+    assert heading_gamma['query'] == 'Gamma Overview'
+    assert looks_like_entity(heading_gamma['query'])
+    assert heading_gamma['gold'] == ['gamma']
+    assert all(g['src'] != 'alpha' for g in by_cls['heading'])   # frontmatter title without body # is not a heading
 
     temporal = next(iter(by_cls['temporal']))
     assert temporal['src'] == 'old-rule' and temporal['gold'] == ['beta']
 
 
-def test_heading_class_prefers_subheadings_ignores_code_fences_and_trips_entity_gate(tmp_path):
-    """Issue #93 PR 3: short heading queries (<= 5 words) exercise looks_like_entity."""
+def test_heading_class_prefers_subheadings_ignores_code_fences_and_unrelated_links(tmp_path):
+    """Issue #93 PR 3: short heading queries (<= 5 words) target their source note, not unrelated links."""
     vault = _vault(tmp_path)
     (vault / 'alpha.md').write_text(
         '---\ntitle: "Alpha the first note"\n---\n\n'
         '```python\n# NotAHeading\n```\n\n'
-        '## Project Avocet\n\n' + PARA + '\n\nSee [[beta]] and [[gamma]] for the rest.\n',
+        '## Backup Schedule\n\n' + PARA + '\n\nSee [[beta]] and [[gamma]] for the rest.\n',
         encoding='utf-8')
     (vault / 'beta.md').write_text(
-        '---\ntitle: "Beta the second note"\n---\n\n## Backup Schedule\n\n' + PARA + '\n',
+        '---\ntitle: "Beta the second note"\n---\n\n# Project Avocet\n\n' + PARA + '\n',
         encoding='utf-8')
     gold = build_gold(read_notes(vault, INDEXED), n_per_class=10, seed=1)
     headings = [g for g in gold if g['cls'] == 'heading']
@@ -156,11 +158,13 @@ def test_heading_class_prefers_subheadings_ignores_code_fences_and_trips_entity_
         assert 1 <= len(g['query'].split()) <= 5
         assert looks_like_entity(g['query'])
         assert 'NotAHeading' not in g['query']
+        assert g['gold'] == [g['src']]
+        assert g['gold_truncated'] == 0
 
     by_src = {g['src']: g for g in headings}
-    assert by_src['alpha']['query'] == 'Project Avocet'
-    assert by_src['alpha']['gold'] == ['beta', 'gamma']
-    assert by_src['beta']['query'] == 'Backup Schedule'
+    assert by_src['alpha']['query'] == 'Backup Schedule'
+    assert by_src['alpha']['gold'] == ['alpha']     # source note, not unrelated [[beta]] / [[gamma]]
+    assert by_src['beta']['query'] == 'Project Avocet'
     assert by_src['beta']['gold'] == ['beta']
 
     # Prove entity_gate bites on a build_gold-generated heading question in run_ablation.score_grid
@@ -172,6 +176,44 @@ def test_heading_class_prefers_subheadings_ignores_code_fences_and_trips_entity_
     by_cell = {r['cell']: r for r in rows}
     assert by_cell['gated']['recall'] == 0.0
     assert by_cell['ungated']['recall'] == 1.0
+
+
+def test_heading_class_empty_when_no_qualifying_headings_and_existing_classes_reproduce_for_seed(tmp_path):
+    """A vault with no qualifying short headings produces an empty heading class (no crash),
+    and the four existing classes pick the exact same questions for a given seed."""
+    vault = _vault(tmp_path)
+    notes_with_headings = read_notes(vault, INDEXED)
+    gold_with = build_gold(notes_with_headings, n_per_class=10, seed=42)
+
+    # Strip body headings from every note (leaving frontmatter titles or >5-word headings only).
+    (vault / 'beta.md').write_text(
+        '---\ntitle: "Beta the second note"\n---\n\n'
+        '## Why this heading is deliberately much longer than five words\n\n' + PARA + '\n',
+        encoding='utf-8')
+    (vault / 'gamma.md').write_text(
+        '---\ntitle: "Gamma the third note"\n---\n\n' + PARA + '\n',
+        encoding='utf-8')
+    notes_no_headings = read_notes(vault, INDEXED)
+    gold_without = build_gold(notes_no_headings, n_per_class=10, seed=42)
+
+    assert [g for g in gold_without if g['cls'] == 'heading'] == []
+    # The four existing classes reproduce identically for the same seed.
+    assert [g for g in gold_with if g['cls'] != 'heading'] == gold_without
+
+    # CLI prints the remaining classes cleanly and exits 0 without crashing.
+    index = tmp_path / 'index'
+    index.mkdir()
+    (index / '_brain_e5_meta.pkl').write_bytes(pickle.dumps(
+        [{'path': str(vault / (s + '.md')), 'title': s, 'snippet': PARA, 'date': ''}
+         for s in sorted(INDEXED)]))
+    out = tmp_path / 'gold-no-headings.jsonl'
+    env = {**dict(__import__('os').environ), 'BRAIN_INDEX_DIR': str(index)}
+    r = subprocess.run([sys.executable, str(ROOT / 'eval' / 'build_gold.py'), str(vault),
+                        '--seed', '42', '--out', str(out)],
+                       capture_output=True, text=True, env=env)
+    assert r.returncode == 0, r.stderr
+    assert 'classes {' in r.stdout and "'heading'" not in r.stdout
+
 
 
 def test_a_note_outside_the_index_never_becomes_a_question_or_an_answer(tmp_path):
