@@ -6,9 +6,10 @@ A note's own title should retrieve that note. Its first paragraph should retriev
 The notes it `[[links]]` to are the neighbours a human decided are related. Nobody has to
 label anything, and no LLM is called — this script is pure file work plus the index meta.
 
-Four question classes, each probing a different part of the pipeline:
+Five question classes, each probing a different part of the pipeline:
 
     title     query = the note's title          -> gold = that note       (name lookup)
+    heading   query = a short markdown heading  -> gold = its [[links]] or that note (short heading lookup)
     body      query = its first paragraph       -> gold = that note       (theme lookup)
     bridge    query = its first paragraph       -> gold = its [[link]] TARGETS (the graph)
     temporal  query = an outdated note's title  -> gold = its replacement (see below)
@@ -41,8 +42,10 @@ from collections import Counter
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
+from sqlite_graph_memory.brain_ask import looks_like_entity  # noqa: E402
 from sqlite_graph_memory.index_notes import iter_notes  # noqa: E402
 
+FENCED_CODE_RX = re.compile(r'(?:```[\s\S]*?```|~~~[\s\S]*?~~~)')
 WIKILINK_RX = re.compile(r'\[\[([^\]\|#]+)(?:[|#][^\]]*)?\]\]')
 CYRILLIC_RX = re.compile(r'[а-яё]', re.I)
 
@@ -84,6 +87,27 @@ def note_title(fm, body, path):
         h = re.search(r'(?m)^#\s+(.+)$', body)
         t = h.group(1).strip() if h else Path(path).stem
     return strip_markup(t)[:200]
+
+
+def note_heading(fm, body, path):
+    """Short (<= 5 words) markdown heading or title that triggers looks_like_entity.
+
+    Prefers `##`..`######` subheadings over `#` H1 headings and frontmatter titles so notes
+    with section headings contribute non-title queries; falls back to a 2-word heading prefix
+    when a longer sentence-case heading has only its initial word capitalized.
+    """
+    clean = FENCED_CODE_RX.sub('', body or '')
+    sub = [strip_markup(m.group(1))[:200] for m in re.finditer(r'(?m)^#{2,6}\s+(.+)$', clean)]
+    h1 = [strip_markup(m.group(1))[:200] for m in re.finditer(r'(?m)^#\s+(.+)$', clean)]
+    candidates = [h for h in sub + h1 + [note_title(fm, body, path)] if len(h) >= 4]
+    for h in candidates:
+        if 1 <= len(h.split()) <= 5 and looks_like_entity(h):
+            return h
+    for h in candidates:
+        short = ' '.join(h.split()[:2])
+        if len(short) >= 4 and looks_like_entity(short):
+            return short
+    return None
 
 
 def first_paragraph(body, minlen=100, maxlen=400):
@@ -142,7 +166,8 @@ def read_notes(notes_dir, stems, folders=None):
         sup_m = WIKILINK_RX.findall(sup) if sup else []
         sup = sup_m[0].strip().lower() if sup_m else (sup.strip().lower() if sup else None)
         notes.append({'stem': p.stem.lower(), 'folder': (p.relative_to(root).parts[:-1] or ('',))[0],
-                      'title': note_title(fm, body, p), 'para': first_paragraph(body),
+                      'title': note_title(fm, body, p), 'heading': note_heading(fm, body, p),
+                      'para': first_paragraph(body),
                       'links': links, 'sup': sup if sup in stems else None})
     return notes
 
@@ -153,7 +178,8 @@ BRIDGE_MAX_GOLD = 8
 def build_gold(notes, n_per_class, seed):
     """-> list of question dicts. Sampling is seeded, so the same vault gives the same set.
 
-    `bridge` keeps at most BRIDGE_MAX_GOLD link targets per question, because Recall@12
+    `bridge` and linked `heading` questions keep at most BRIDGE_MAX_GOLD link targets per
+    question, because Recall@12
     cannot reward more gold answers than it has slots for, and a note with thirty links would
     score badly no matter how good retrieval is. The cut is recorded per question as
     `gold_truncated`, so a low bridge score can be read honestly rather than blamed on the
@@ -163,14 +189,20 @@ def build_gold(notes, n_per_class, seed):
     notes = list(notes)
     rnd.shuffle(notes)
     pools = {'title':    [n for n in notes if len(n['title']) >= 8],
+             'heading':  [n for n in notes if n.get('heading') and (n['links'] or n['heading'] != n['title'])],
              'body':     [n for n in notes if n['para']],
              'bridge':   [n for n in notes if n['para'] and len(n['links']) >= 2],
              'temporal': [n for n in notes if n['sup']]}
     gold = []
-    for cls in ('title', 'body', 'bridge', 'temporal'):
+    for cls in ('title', 'heading', 'body', 'bridge', 'temporal'):
         for n in pools[cls][:n_per_class]:
-            q = n['para'] if cls in ('body', 'bridge') else n['title']
-            if cls == 'bridge':
+            if cls in ('body', 'bridge'):
+                q = n['para']
+            elif cls == 'heading':
+                q = n['heading']
+            else:
+                q = n['title']
+            if cls == 'bridge' or (cls == 'heading' and n['links']):
                 g, dropped = n['links'][:BRIDGE_MAX_GOLD], max(0, len(n['links']) - BRIDGE_MAX_GOLD)
             elif cls == 'temporal':
                 g, dropped = [n['sup']], 0
@@ -217,7 +249,7 @@ def main():
         print('  ! %d bridge questions had more than %d links; the rest were cut, because '
               'Recall@12 has only 12 slots' % (cut, BRIDGE_MAX_GOLD))
     print('  classes %s · languages %s' % (dict(counts), dict(Counter(g['lang'] for g in gold))))
-    for cls in ('title', 'body', 'bridge', 'temporal'):
+    for cls in ('title', 'heading', 'body', 'bridge', 'temporal'):
         if counts[cls] < 20:
             print('  ! %s: only %d questions — too few to judge a change by; treat as a smoke test'
                   % (cls, counts[cls]))
