@@ -40,52 +40,61 @@ from sqlite_graph_memory import brain_ask as ba  # noqa: E402
 from run_eval import SMALL_N, mrr_at, ndcg_at, recall_at  # noqa: E402
 
 
-def _default_cell():
-    return {'hops': 1, 'ghops': ba.GHOPS, 'gmax': ba.GMAX, 'topk': ba.TOPK_RETRIEVE,
+def _default_cell(topk_retrieve=None):
+    return {'hops': 1, 'ghops': ba.GHOPS, 'gmax': ba.GMAX,
+            'topk': ba.TOPK_RETRIEVE if topk_retrieve is None else topk_retrieve,
             'entity_gate': True}
 
 
-def _fill_cell(partial, index):
-    cell = _default_cell()
+def _fill_cell(partial, index, topk_retrieve=None):
+    cell = _default_cell(topk_retrieve=topk_retrieve)
     cell.update(partial)
     if not cell.get('name'):
         cell['name'] = 'cell-%d' % index
     if cell['hops'] not in (0, 1):
         raise ValueError("cell %r: hops must be 0 or 1 (score_grid only runs the 1-hop "
                          "expand_1hop), got %r" % (cell['name'], cell['hops']))
+    if cell['topk'] < 1:
+        raise ValueError("cell %r: topk must be >= 1, got %r" % (cell['name'], cell['topk']))
     return cell
 
 
-DEFAULT_GRID = [
-    _fill_cell({'name': '0-hop', 'hops': 0}, 0),
-    _fill_cell({'name': '1-hop'}, 1),
-    _fill_cell({'name': 'gmax-10', 'gmax': 10}, 2),
-    _fill_cell({'name': 'gmax-20', 'gmax': 20}, 3),
-    _fill_cell({'name': 'gmax-80', 'gmax': 80}, 4),
-    _fill_cell({'name': 'topk-20', 'topk': 20}, 5),
-    _fill_cell({'name': 'topk-80', 'topk': 80}, 6),
-    _fill_cell({'name': 'ghops-5', 'ghops': 5}, 7),
-    _fill_cell({'name': 'ghops-30', 'ghops': 30}, 8),
-    _fill_cell({'name': 'entity-gate-off', 'entity_gate': False}, 9),
+_DEFAULT_CELL_SPECS = [
+    {'name': '0-hop', 'hops': 0},
+    {'name': '1-hop'},
+    {'name': 'gmax-10', 'gmax': 10},
+    {'name': 'gmax-20', 'gmax': 20},
+    {'name': 'gmax-80', 'gmax': 80},
+    {'name': 'topk-15', 'topk': 15},
+    {'name': 'topk-20', 'topk': 20},
+    {'name': 'topk-80', 'topk': 80},
+    {'name': 'ghops-5', 'ghops': 5},
+    {'name': 'ghops-30', 'ghops': 30},
+    {'name': 'entity-gate-off', 'entity_gate': False},
 ]
+DEFAULT_GRID = [_fill_cell(c, i) for i, c in enumerate(_DEFAULT_CELL_SPECS)]
 GRID_PRESETS = {'default': DEFAULT_GRID}
 
 _BOOL_KEYS = {'entity_gate'}
 _STR_KEYS = {'name'}
 
 
-def parse_grid(spec):
+def parse_grid(spec, topk_retrieve=None):
     """'default' | a path or literal JSON array of cell dicts | ';'-separated key=val cells."""
     spec = (spec or 'default').strip()
     if spec in GRID_PRESETS:
-        return GRID_PRESETS[spec]
+        if topk_retrieve is None:
+            return GRID_PRESETS[spec]
+        return [_fill_cell(c, i, topk_retrieve=topk_retrieve)
+                for i, c in enumerate(_DEFAULT_CELL_SPECS)]
 
     path = Path(spec)
     if path.exists():
         spec = path.read_text(encoding='utf-8')
 
     if spec.lstrip().startswith('['):
-        return [_fill_cell(c, i) for i, c in enumerate(json.loads(spec))]
+        return [_fill_cell(c, i, topk_retrieve=topk_retrieve)
+                for i, c in enumerate(json.loads(spec))]
 
     cells = []
     for i, part in enumerate(spec.split(';')):
@@ -101,7 +110,7 @@ def parse_grid(spec):
                 partial[k] = v
             else:
                 partial[k] = int(v)
-        cells.append(_fill_cell(partial, i))
+        cells.append(_fill_cell(partial, i, topk_retrieve=topk_retrieve))
     return cells
 
 
@@ -219,6 +228,8 @@ def main():
     ap.add_argument('--grid', default='default',
                     help="'default', a JSON array of cells, a path to one, or "
                          "';'-separated key=val cells (default: %(default)s)")
+    ap.add_argument('--pool', '--topk-retrieve', dest='topk_retrieve', type=int, default=None,
+                    help='override default dense candidate pool size (topk) for cells that do not set topk')
     ap.add_argument('--list-grid', action='store_true',
                     help='print the named grid cells and exit (no model/index load)')
     ap.add_argument('--out', help='output prefix for <prefix>.csv/.md (default: eval/ablation-<ts>)')
@@ -230,7 +241,13 @@ def main():
     if a.rerank:
         os.environ['SGM_RERANK'] = '1'
 
-    grid = parse_grid(a.grid)
+    pool = a.topk_retrieve
+    if pool is None:
+        pool, _ = ba._parse_pool([])
+    elif pool < 1:
+        return ap.error('--pool / --topk-retrieve must be >= 1')
+
+    grid = parse_grid(a.grid, topk_retrieve=pool)
     if a.list_grid:
         print_grid(grid)
         return 0

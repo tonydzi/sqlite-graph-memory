@@ -296,3 +296,31 @@ def test_missing_embedding_index_reports_error_and_exits_nonzero(tmp_path):
     assert result.stdout == ""
     assert "need an embedding index" in result.stderr
     assert "index_notes.py first" in result.stderr
+
+
+def test_parse_pool_flag_and_env_override_without_changing_default():
+    from sqlite_graph_memory import brain_ask as ba
+
+    assert ba.TOPK_RETRIEVE == 60
+    pool, rest = ba._parse_pool(["--graph", "how does memory work"], env={})
+    assert pool is None
+    assert rest == ["--graph", "how does memory work"]
+
+    pool, rest = ba._parse_pool(["--pool", "15", "--graph", "how does memory work"], env={})
+    assert pool == 15
+    assert rest == ["--graph", "how does memory work"]
+
+    pool, rest = ba._parse_pool(["--topk-retrieve=20", "query"], env={"BRAIN_TOPK_RETRIEVE": "15"})
+    assert pool == 20
+    assert rest == ["query"]
+
+    pool, rest = ba._parse_pool(["query"], env={"BRAIN_TOPK_RETRIEVE": "15"})
+    assert pool == 15
+    assert rest == ["query"]
+
+    with pytest.raises(SystemExit):
+        ba._parse_pool(["--pool", "0"], env={})
+    with pytest.raises(SystemExit):
+        ba._parse_pool(["--pool", "abc"], env={})
+    with pytest.raises(SystemExit):
+        ba._parse_pool(["--pool"], env={})

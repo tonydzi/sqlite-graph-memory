@@ -432,3 +432,31 @@ def test_parse_grid_rejects_unsupported_hop_counts():
         parse_grid('hops=2')
     with pytest.raises(ValueError):
         parse_grid('[{"name": "two-hop", "hops": 2}]')
+
+
+def test_pool_override_wires_topk_retrieve_without_changing_default():
+    """Issue #92: --pool / topk_retrieve overrides default cell topk while leaving
+    explicit topk cells and the library default (60) untouched."""
+    default_grid = parse_grid('default')
+    by_name = {c['name']: c for c in default_grid}
+    assert by_name['0-hop']['topk'] == 60
+    assert by_name['1-hop']['topk'] == 60
+    assert by_name['topk-15']['topk'] == 15
+    assert by_name['topk-20']['topk'] == 20
+
+    overridden = parse_grid('default', topk_retrieve=15)
+    by_name_15 = {c['name']: c for c in overridden}
+    assert by_name_15['0-hop']['topk'] == 15
+    assert by_name_15['1-hop']['topk'] == 15
+    assert by_name_15['topk-20']['topk'] == 20
+    assert by_name_15['topk-80']['topk'] == 80
+
+    custom = parse_grid('hops=0,name=vec;hops=1,topk=30,name=explicit', topk_retrieve=15)
+    assert custom[0]['topk'] == 15
+    assert custom[1]['topk'] == 30
+
+    r = subprocess.run([sys.executable, str(ROOT / 'eval' / 'run_ablation.py'),
+                        '--list-grid', '--pool', '15'],
+                       capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    assert '1-hop                 1    15   40   15  True' in r.stdout

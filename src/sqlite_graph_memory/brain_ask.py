@@ -9,11 +9,13 @@ USAGE:
   python brain_ask.py --graph "question"      # vector + graph expansion (Associative)
   python brain_ask.py --ab "question"         # run BOTH, diff, log to SQLite (ab_recall)
   python brain_ask.py --ask "question"        # emit a context bundle for an LLM agent
+  python brain_ask.py --pool 15 --graph "q"   # override dense candidate pool size (default: 60)
   python brain_ask.py --ppr --graph "question"  # + PageRank lane in the ORDERING (see ppr.py)
   python brain_ask.py --rerank "question"     # opt in to the cross-encoder rerank (off by default)
 
 Config (env, all optional):
   BRAIN_INDEX_DIR   dir holding the embedding index (default: ./index)
+  BRAIN_TOPK_RETRIEVE  dense candidate pool size before rerank (default: 60; CLI --pool overrides)
   TURNSTATE_DB      SQLite db for A/B telemetry (default: ./turnstate.db)
   BRAIN_ANSWER_OUT  file to mirror the answer into (default: ./_brain_answer.txt)
   BRAIN_AB_JSON     if set, --ab also writes a structured JSON diff to this path
@@ -480,12 +482,56 @@ def maybe_star_prompt(stream=None, env=None, interactive=None):
         return False
 
 
+def _parse_pool(args, env=None):
+    """Extract optional `--pool N` / `--topk-retrieve N` (or BRAIN_TOPK_RETRIEVE) -> (int|None, remaining_args)."""
+    env = os.environ if env is None else env
+    pool = None
+    env_val = (env.get('BRAIN_TOPK_RETRIEVE') or '').strip()
+    if env_val:
+        try:
+            pool = int(env_val)
+        except ValueError as exc:
+            sys.stderr.write('invalid BRAIN_TOPK_RETRIEVE=%r (expected positive integer)\n' % env_val)
+            raise SystemExit(2) from exc
+        if pool < 1:
+            sys.stderr.write('invalid BRAIN_TOPK_RETRIEVE=%r (must be >= 1)\n' % env_val)
+            raise SystemExit(2)
+    rest = []
+    i = 0
+    while i < len(args):
+        a = args[i]
+        if a in ('--pool', '--topk-retrieve'):
+            if i + 1 >= len(args):
+                sys.stderr.write('%s requires a positive integer argument\n' % a)
+                raise SystemExit(2)
+            raw = args[i + 1]
+            i += 2
+        elif a.startswith('--pool=') or a.startswith('--topk-retrieve='):
+            flag, _, raw = a.partition('=')
+            a = flag
+            i += 1
+        else:
+            rest.append(a)
+            i += 1
+            continue
+        try:
+            pool = int(raw)
+        except ValueError as exc:
+            sys.stderr.write('invalid %s value %r (expected positive integer)\n' % (a, raw))
+            raise SystemExit(2) from exc
+        if pool < 1:
+            sys.stderr.write('invalid %s value %r (must be >= 1)\n' % (a, raw))
+            raise SystemExit(2)
+    return pool, rest
+
+
 def main():
     args = sys.argv[1:]
     if '--version' in args:
         from sqlite_graph_memory import __version__
         print('sgm-ask %s' % __version__)
         return
+    pool, args = _parse_pool(args)
     ask = '--ask' in args
     graph = '--graph' in args; ab = '--ab' in args
     flags = {'--ask', '--graph', '--ab', '--ppr', '--rerank'}
@@ -502,7 +548,7 @@ def main():
     sims = query_sims(enc, emb, query)
 
     # dense retrieve -> dedup by path (best chunk per file) -> top-K unique files
-    order = retrieve_candidates(sims, meta)
+    order = retrieve_candidates(sims, meta) if pool is None else retrieve_candidates(sims, meta, topk=pool)
 
     # Graph expansion: follow 1-hop OUTGOING wikilinks from the top vector hits, pull in
     # those neighbour notes (resolved to already-indexed chunks), then let the reranker
