@@ -28,6 +28,8 @@ Registry with this release.
 
 **Shorter demo gif.** It now shows the top 5 of each list, so the graph hit fits on one screen.
 
+**`eval/build_gold.py`: short `heading` question class.** Adds a fifth class built from short markdown headings (`<= 5` words) so `looks_like_entity` is exercised on short heading queries in `run_eval.py` and `run_ablation.py`. Thanks @Jason-Vaughan (#96), who picked up #93.
+
 **`sgm-index`: a rerun re-embeds only what changed.** A manifest keyed on the content hash and the index settings lets `sgm-index` skip untouched notes; size and mtime are the fast path, the hash decides the changed set, and a corrupt manifest falls back to a full build. The default encoder still comes from `load_encoder()`, so `[lite]` installs keep working without torch. Thanks @Jason-Vaughan (#85), who picked up #17.
 
 **Recall: folder-style wikilinks resolve in the graph hop.** `[[folder/note]]` links now reach their note in `expand_1hop` the same way `sgm-stats` counts them, preferring the exact vault-relative path; the vault root is computed once per index, not per link. Thanks @Jason-Vaughan (#84), who picked up #71.
