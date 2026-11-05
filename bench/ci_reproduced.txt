@@ -1,6 +1,7 @@
 # Systems the bench workflow reruns from a clean checkout on every push (.github/workflows/bench.yml).
 # Only systems that need no API key and no paid service can be listed. A maintainer edits this file.
 bm25
+plain-rag          # dense chunk RAG with e5-base cosine only (no graph, no cross-encoder reranker)
 sqlite-graph-memory
 sqlite-graph-memory-vector
 sqlite-fts5
