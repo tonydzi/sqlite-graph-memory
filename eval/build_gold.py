@@ -9,7 +9,7 @@ label anything, and no LLM is called — this script is pure file work plus the 
 Five question classes, each probing a different part of the pipeline:
 
     title     query = the note's title          -> gold = that note       (name lookup)
-    heading   query = a short markdown heading  -> gold = its [[links]] or that note (short heading lookup)
+    heading   query = a short markdown heading  -> gold = that note       (heading lookup)
     body      query = its first paragraph       -> gold = that note       (theme lookup)
     bridge    query = its first paragraph       -> gold = its [[link]] TARGETS (the graph)
     temporal  query = an outdated note's title  -> gold = its replacement (see below)
@@ -89,24 +89,19 @@ def note_title(fm, body, path):
     return strip_markup(t)[:200]
 
 
-def note_heading(fm, body, path):
-    """Short (<= 5 words) markdown heading or title that triggers looks_like_entity.
+def note_heading(body):
+    """First short (<= 5 words) markdown heading in `body` that triggers looks_like_entity.
 
-    Prefers `##`..`######` subheadings over `#` H1 headings and frontmatter titles so notes
-    with section headings contribute non-title queries; falls back to a 2-word heading prefix
-    when a longer sentence-case heading has only its initial word capitalized.
+    Prefers `##`..`######` subheadings over `#` H1 headings so notes with section headings
+    contribute non-title queries; fenced code blocks are ignored, and frontmatter titles are
+    not used as headings.
     """
     clean = FENCED_CODE_RX.sub('', body or '')
     sub = [strip_markup(m.group(1))[:200] for m in re.finditer(r'(?m)^#{2,6}\s+(.+)$', clean)]
     h1 = [strip_markup(m.group(1))[:200] for m in re.finditer(r'(?m)^#\s+(.+)$', clean)]
-    candidates = [h for h in sub + h1 + [note_title(fm, body, path)] if len(h) >= 4]
-    for h in candidates:
-        if 1 <= len(h.split()) <= 5 and looks_like_entity(h):
+    for h in sub + h1:
+        if len(h) >= 4 and 1 <= len(h.split()) <= 5 and looks_like_entity(h):
             return h
-    for h in candidates:
-        short = ' '.join(h.split()[:2])
-        if len(short) >= 4 and looks_like_entity(short):
-            return short
     return None
 
 
@@ -145,7 +140,7 @@ def indexed_stems(index_dir):
 
 
 def read_notes(notes_dir, stems, folders=None):
-    """Every indexed note, parsed into the fields the four classes need."""
+    """Every indexed note, parsed into the fields the five classes need."""
     root = Path(notes_dir)
     paths = []
     # The indexer's own walk: hidden files and dirs, conflict copies and BRAIN_INDEX_HIDDEN
@@ -166,7 +161,7 @@ def read_notes(notes_dir, stems, folders=None):
         sup_m = WIKILINK_RX.findall(sup) if sup else []
         sup = sup_m[0].strip().lower() if sup_m else (sup.strip().lower() if sup else None)
         notes.append({'stem': p.stem.lower(), 'folder': (p.relative_to(root).parts[:-1] or ('',))[0],
-                      'title': note_title(fm, body, p), 'heading': note_heading(fm, body, p),
+                      'title': note_title(fm, body, p), 'heading': note_heading(body),
                       'para': first_paragraph(body),
                       'links': links, 'sup': sup if sup in stems else None})
     return notes
@@ -178,8 +173,7 @@ BRIDGE_MAX_GOLD = 8
 def build_gold(notes, n_per_class, seed):
     """-> list of question dicts. Sampling is seeded, so the same vault gives the same set.
 
-    `bridge` and linked `heading` questions keep at most BRIDGE_MAX_GOLD link targets per
-    question, because Recall@12
+    `bridge` keeps at most BRIDGE_MAX_GOLD link targets per question, because Recall@12
     cannot reward more gold answers than it has slots for, and a note with thirty links would
     score badly no matter how good retrieval is. The cut is recorded per question as
     `gold_truncated`, so a low bridge score can be read honestly rather than blamed on the
@@ -189,7 +183,7 @@ def build_gold(notes, n_per_class, seed):
     notes = list(notes)
     rnd.shuffle(notes)
     pools = {'title':    [n for n in notes if len(n['title']) >= 8],
-             'heading':  [n for n in notes if n.get('heading') and (n['links'] or n['heading'] != n['title'])],
+             'heading':  [n for n in notes if n.get('heading')],
              'body':     [n for n in notes if n['para']],
              'bridge':   [n for n in notes if n['para'] and len(n['links']) >= 2],
              'temporal': [n for n in notes if n['sup']]}
@@ -202,7 +196,7 @@ def build_gold(notes, n_per_class, seed):
                 q = n['heading']
             else:
                 q = n['title']
-            if cls == 'bridge' or (cls == 'heading' and n['links']):
+            if cls == 'bridge':
                 g, dropped = n['links'][:BRIDGE_MAX_GOLD], max(0, len(n['links']) - BRIDGE_MAX_GOLD)
             elif cls == 'temporal':
                 g, dropped = [n['sup']], 0
