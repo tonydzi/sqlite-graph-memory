@@ -20,6 +20,10 @@ Per cell/class, the summary also reports:
                       an entity-gate-off cell for two very different reasons — the gate
                       firing, or the hop firing but adding nothing the reranker needed
                       (issue #93) — and only hop_applied_rate tells those apart.
+    rank_churn        share of queries where this cell's top-12 differs at all from the
+                      0-hop baseline's, for the same query. A single-note gold pins
+                      rank #1 regardless of what fills ranks 2..12, so delta_ndcg can
+                      read 0.0 while the hop still reordered the rest of the page.
 
 The dense embedding and its similarity scores are computed ONCE per query (the model
 load and the encode() call are the expensive parts) and reused across every cell: a
@@ -139,7 +143,7 @@ def load_gold(path):
 
 def score_grid(gold, grid, emb, meta, enc, ce, by_base=None):
     """Score every grid cell against gold.
-    -> [{cell, cls, recall, mrr, ndcg, gated, hop_applied}, ...].
+    -> [{cell, cls, recall, mrr, ndcg, gated, hop_applied, rank_changed}, ...].
 
     `gated` is whether this cell's entity_gate suppressed the hop for this query,
     independent of `hops` (it reflects what the gate alone would have done).
@@ -147,6 +151,10 @@ def score_grid(gold, grid, emb, meta, enc, ce, by_base=None):
     this (query, cell) — the thing a metric delta can't show when the gold note
     was already in `base` (issue #93: gate-on and gate-off score identically
     because admission, not suppression, is what moved).
+    `rank_changed` is whether this cell's top-12 ranking differs at all from the
+    0-hop baseline cell's, for this same query — a single-note gold pins rank #1
+    regardless of what fills ranks 2..12, so recall/mrr/ndcg can read unchanged
+    (delta_ndcg == 0.0) while the hop still reordered everything below it.
 
     One dense pass (query_sims + the max-topk retrieve) per query; only the rerank,
     which depends on each cell's own candidate set, runs once per (query, cell).
@@ -154,12 +162,14 @@ def score_grid(gold, grid, emb, meta, enc, ce, by_base=None):
     by_base = by_base or ba.index_by_basename(meta)
     stem_of = lambda i: Path(meta[i]['path']).stem.lower()
     max_topk = max(c['topk'] for c in grid)
+    baseline_name = next((c['name'] for c in grid if c['hops'] == 0), grid[0]['name'])
 
     rows = []
     for g in gold:
         sims = ba.query_sims(enc, emb, g['query'])
         order_max = ba.retrieve_candidates(sims, meta, topk=max_topk)
         is_entity = ba.looks_like_entity(g['query'])
+        cell_results = []
         for cell in grid:
             base = order_max[:cell['topk']]
             gated = cell['entity_gate'] and is_entity
@@ -167,20 +177,25 @@ def score_grid(gold, grid, emb, meta, enc, ce, by_base=None):
                      if cell['hops'] and base and not gated else [])
             scored = ba.rerank_candidates(ce, g['query'], base + added, meta, sims=sims)
             ranked = [stem_of(i) for i, _ in scored]
+            cell_results.append((cell, ranked, gated, added))
+        base_ranked = next((r for c, r, _, _ in cell_results if c['name'] == baseline_name), None)
+        for cell, ranked, gated, added in cell_results:
             rows.append({'cell': cell['name'], 'cls': g['cls'],
                          'recall': recall_at(ranked, g['gold']),
                          'mrr': mrr_at(ranked, g['gold']),
                          'ndcg': ndcg_at(ranked, g['gold']),
-                         'gated': gated, 'hop_applied': bool(added)})
+                         'gated': gated, 'hop_applied': bool(added),
+                         'rank_changed': base_ranked is not None and ranked != base_ranked})
     return rows
 
 
 def summarize_grid(rows, grid, classes):
     """-> ordered rows of {cell, class, n, recall, mrr, ndcg, delta_ndcg, gate_rate,
-    hop_applied_rate}, one per (cell, class) plus (cell, 'overall'); delta_ndcg is vs
-    the 0-hop baseline cell (the grid's first hops=0 cell, else its first cell) for
-    the same class. gate_rate/hop_applied_rate default to 0.0 for rows lacking those
-    keys (older score_grid output, or hand-built rows in a caller's own tests)."""
+    hop_applied_rate, rank_churn}, one per (cell, class) plus (cell, 'overall');
+    delta_ndcg is vs the 0-hop baseline cell (the grid's first hops=0 cell, else its
+    first cell) for the same class. gate_rate/hop_applied_rate/rank_churn default to
+    0.0 for rows lacking those keys (older score_grid output, or hand-built rows in a
+    caller's own tests)."""
     baseline = next((c['name'] for c in grid if c['hops'] == 0), grid[0]['name'])
     by_cell_cls = {}
     for r in rows:
@@ -191,7 +206,8 @@ def summarize_grid(rows, grid, classes):
         return {'n': n, 'recall': sum(r['recall'] for r in rs) / n,
                 'mrr': sum(r['mrr'] for r in rs) / n, 'ndcg': sum(r['ndcg'] for r in rs) / n,
                 'gate_rate': sum(r.get('gated', False) for r in rs) / n,
-                'hop_applied_rate': sum(r.get('hop_applied', False) for r in rs) / n}
+                'hop_applied_rate': sum(r.get('hop_applied', False) for r in rs) / n,
+                'rank_churn': sum(r.get('rank_changed', False) for r in rs) / n}
 
     out = []
     for cell in grid:
@@ -209,13 +225,13 @@ def summarize_grid(rows, grid, classes):
 
 
 def format_markdown(summary):
-    lines = ['| cell | class | n | Recall@12 | MRR | nDCG@12 | delta_nDCG@12 | gate_rate | hop_applied_rate |',
-             '|---|---|---|---|---|---|---|---|---|']
+    lines = ['| cell | class | n | Recall@12 | MRR | nDCG@12 | delta_nDCG@12 | gate_rate | hop_applied_rate | rank_churn |',
+             '|---|---|---|---|---|---|---|---|---|---|']
     for r in summary:
         d = '' if r['delta_ndcg'] is None else '%+.3f' % r['delta_ndcg']
-        lines.append('| %s | %s | %d | %.3f | %.3f | %.3f | %s | %.3f | %.3f |'
+        lines.append('| %s | %s | %d | %.3f | %.3f | %.3f | %s | %.3f | %.3f | %.3f |'
                      % (r['cell'], r['class'], r['n'], r['recall'], r['mrr'], r['ndcg'], d,
-                        r['gate_rate'], r['hop_applied_rate']))
+                        r['gate_rate'], r['hop_applied_rate'], r['rank_churn']))
     return '\n'.join(lines)
 
 
@@ -223,11 +239,12 @@ def write_csv(summary, path):
     with open(path, 'w', newline='', encoding='utf-8') as f:
         w = csv.writer(f)
         w.writerow(['cell', 'class', 'n', 'Recall@12', 'MRR', 'nDCG@12', 'delta_nDCG@12',
-                    'gate_rate', 'hop_applied_rate'])
+                    'gate_rate', 'hop_applied_rate', 'rank_churn'])
         for r in summary:
             w.writerow([r['cell'], r['class'], r['n'], round(r['recall'], 4), round(r['mrr'], 4),
                        round(r['ndcg'], 4), '' if r['delta_ndcg'] is None else round(r['delta_ndcg'], 4),
-                       round(r['gate_rate'], 4), round(r['hop_applied_rate'], 4)])
+                       round(r['gate_rate'], 4), round(r['hop_applied_rate'], 4),
+                       round(r['rank_churn'], 4)])
 
 
 def low_n_warnings(summary, small_n=SMALL_N):
