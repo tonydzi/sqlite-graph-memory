@@ -29,6 +29,7 @@ import argparse
 import csv
 import datetime
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -221,7 +222,11 @@ def main():
     ap.add_argument('--out', help='output prefix for <prefix>.csv/.md (default: eval/ablation-<ts>)')
     ap.add_argument('--csv', help='CSV path (overrides the --out-derived one)')
     ap.add_argument('--md', help='Markdown path (overrides the --out-derived one)')
+    ap.add_argument('--rerank', action='store_true',
+                    help='score with the cross-encoder rerank (off by default; same as SGM_RERANK=1)')
     a = ap.parse_args()
+    if a.rerank:
+        os.environ['SGM_RERANK'] = '1'
 
     grid = parse_grid(a.grid)
     if a.list_grid:

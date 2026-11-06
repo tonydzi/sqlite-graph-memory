@@ -4,8 +4,10 @@
 Two rows on the board, one per retrieval mode, so the graph has to earn its column:
 
     sqlite-graph-memory          dense retrieve -> 1-hop [[wikilinks]] -> rerank, with the
-                                 entity gate on (what `sgm-ask --graph` does)
-    sqlite-graph-memory-vector   dense retrieve -> rerank (what `sgm-ask` does by default)
+                                 entity gate on (what `sgm-ask --graph --rerank` does)
+    sqlite-graph-memory-vector   dense retrieve -> rerank (what `sgm-ask --rerank` does)
+    Both rows still use the cross-encoder; since 0.3.7 plain `sgm-ask` orders by dense
+    similarity, so these rows describe the opt-in path until the bench is re-run.
 
 The library retrieves; it does not answer. Answers and citations come from the shared
 extractive floor in _extract.py, and abstention from one rule fixed before the first run:

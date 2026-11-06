@@ -257,7 +257,11 @@ def main():
     ap.add_argument('--ppr', action='store_true',
                     help='also score the PageRank lane (graph + PPR/RRF, reranker top 5 protected)')
     ap.add_argument('--selftest', action='store_true', help='check the metrics and exit')
+    ap.add_argument('--rerank', action='store_true',
+                    help='score with the cross-encoder rerank (off by default; same as SGM_RERANK=1)')
     a = ap.parse_args()
+    if a.rerank:
+        os.environ['SGM_RERANK'] = '1'
 
     if a.selftest: return selftest()
     if not a.gold:
