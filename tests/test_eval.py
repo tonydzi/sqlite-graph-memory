@@ -28,7 +28,8 @@ sys.path.insert(0, str(ROOT / 'src'))
 sys.path.insert(0, str(ROOT / 'eval'))
 
 from build_gold import (build_gold, first_paragraph, indexed_stems,  # noqa: E402
-                        lang_of, read_notes)
+                        lang_of, note_heading, read_notes)
+from sqlite_graph_memory.brain_ask import looks_like_entity  # noqa: E402
 from run_eval import mrr_at, ndcg_at, recall_at, SMALL_N  # noqa: E402
 import run_ablation  # noqa: E402
 from run_ablation import (DEFAULT_GRID, format_markdown, low_n_warnings,  # noqa: E402
@@ -100,7 +101,8 @@ def _vault(tmp_path):
         '\n\nSee [[beta]] and [[gamma]] for the rest.\n', encoding='utf-8')
     (tmp_path / 'beta.md').write_text('---\ntitle: "Beta the second note"\n---\n\n' + PARA + '\n',
                                       encoding='utf-8')
-    (tmp_path / 'gamma.md').write_text('# Gamma the third note\n\n' + PARA + '\n', encoding='utf-8')
+    (tmp_path / 'gamma.md').write_text('# Gamma the third note\n\n## Gamma Overview\n\n' + PARA + '\n',
+                                       encoding='utf-8')
     (tmp_path / 'old-rule.md').write_text(
         '---\ntitle: "Old rule about backups"\nsuperseded_by: "[[beta]]"\n---\n\n' + PARA + '\n',
         encoding='utf-8')
@@ -128,8 +130,52 @@ def test_every_class_is_built_from_the_right_note(tmp_path):
     bridge_alpha = next(g for g in by_cls['bridge'] if g['src'] == 'alpha')
     assert bridge_alpha['gold'] == ['beta', 'gamma']       # the wikilinks ARE the answer
 
+    heading_gamma = next(g for g in by_cls['heading'] if g['src'] == 'gamma')
+    assert heading_gamma['query'] == 'Gamma Overview'
+    assert looks_like_entity(heading_gamma['query'])
+    assert heading_gamma['gold'] == ['gamma']
+    assert all(g['src'] != 'alpha' for g in by_cls['heading'])   # frontmatter title without body # is not a heading
+
     temporal = next(iter(by_cls['temporal']))
     assert temporal['src'] == 'old-rule' and temporal['gold'] == ['beta']
+
+
+def test_heading_class_prefers_subheadings_ignores_code_fences_and_unrelated_links(tmp_path):
+    """Issue #93 PR 3: short heading queries (<= 5 words) target their source note, not unrelated links."""
+    vault = _vault(tmp_path)
+    (vault / 'alpha.md').write_text(
+        '---\ntitle: "Alpha the first note"\n---\n\n'
+        '```python\n# NotAHeading\n```\n\n'
+        '## Backup Schedule\n\n' + PARA + '\n\nSee [[beta]] and [[gamma]] for the rest.\n',
+        encoding='utf-8')
+    (vault / 'beta.md').write_text(
+        '---\ntitle: "Beta the second note"\n---\n\n# Project Avocet\n\n' + PARA + '\n',
+        encoding='utf-8')
+    gold = build_gold(read_notes(vault, INDEXED), n_per_class=10, seed=1)
+    headings = [g for g in gold if g['cls'] == 'heading']
+    assert headings
+    for g in headings:
+        assert 1 <= len(g['query'].split()) <= 5
+        assert looks_like_entity(g['query'])
+        assert 'NotAHeading' not in g['query']
+        assert g['gold'] == [g['src']]
+        assert g['gold_truncated'] == 0
+
+    by_src = {g['src']: g for g in headings}
+    assert by_src['alpha']['query'] == 'Backup Schedule'
+    assert by_src['alpha']['gold'] == ['alpha']     # source note, not unrelated [[beta]] / [[gamma]]
+    assert by_src['beta']['query'] == 'Project Avocet'
+    assert by_src['beta']['gold'] == ['beta']
+
+    # Prove entity_gate bites on a build_gold-generated heading question in run_ablation.score_grid
+    meta, emb = _linked_vault(tmp_path)
+    heading_q = [{'query': by_src['alpha']['query'], 'cls': 'heading', 'gold': ['friend']}]
+    grid = parse_grid('hops=1,topk=1,gmax=10,entity_gate=1,name=gated;'
+                      'hops=1,topk=1,gmax=10,entity_gate=0,name=ungated')
+    rows = score_grid(heading_q, grid, emb, meta, _FakeEncoder(), _FakeReranker())
+    by_cell = {r['cell']: r for r in rows}
+    assert by_cell['gated']['recall'] == 0.0
+    assert by_cell['ungated']['recall'] == 1.0
 
 
 def test_a_note_outside_the_index_never_becomes_a_question_or_an_answer(tmp_path):
@@ -229,7 +275,7 @@ def test_build_gold_cli_writes_a_frozen_file(tmp_path):
                         '--out', str(out)], capture_output=True, text=True, env=env)
     assert r.returncode == 0, r.stderr
     rows = [json.loads(l) for l in out.read_text(encoding='utf-8').splitlines() if l.strip()]
-    assert {r_['cls'] for r_ in rows} == {'title', 'body', 'bridge', 'temporal'}
+    assert {r_['cls'] for r_ in rows} == {'title', 'heading', 'body', 'bridge', 'temporal'}
     assert all(r_['gold'] for r_ in rows)
 
 
