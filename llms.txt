@@ -2,6 +2,8 @@
 
 > Persistent memory for Claude Code, Cursor, Codex and any MCP client, built over a folder of markdown notes you already keep (Obsidian vaults included). Vector search finds entry points, the [[wikilinks]] in the notes are the graph, a cross-encoder reranks. One SQLite file for telemetry and the per-turn ledger, no graph database, no extraction pass. MIT, Python >= 3.9, version 0.3.1 on PyPI. Status: pilot.
 
+Relation to Karpathy's LLM Wiki (https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f, April 2026): in that pattern an agent writes and maintains an interlinked markdown wiki; sgm is the search tool over such a wiki (MCP + CLI), read-only, with wikilinks as the graph. It does not write notes. Independent, no affiliation or endorsement.
+
 Who it is for: one person or one agent setup with a markdown knowledge base that wants associative recall without running a graph database. Not a framework, not multi-tenant.
 
 ## Three commands

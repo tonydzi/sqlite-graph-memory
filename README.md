@@ -7,6 +7,8 @@ misses by following the links between your notes. It is an MCP server and a CLI 
 folder of markdown, Obsidian vaults included: `pip install`, point it at the folder, and
 Claude Code, Cursor, Codex or any other MCP client can recall from it.
 
+It fits [Andrej Karpathy's LLM Wiki pattern](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) (April 2026), where an agent maintains an interlinked markdown wiki and a search tool over the pages is the first helper he suggests adding: sgm is that search layer, read-only, and it follows your `[[wikilinks]]` as a graph. Independent project, not affiliated with or endorsed by him.
+
 ![sgm-index builds the index of the 202-note bench vault, then sgm-ask --ab shows tool-lanternfish entering the top 5 only through a graph hop; the one-minute CPU indexing wait is cut](docs/demo.gif)
 
 **Your agent forgets everything between sessions, and plain vector search gives it back
