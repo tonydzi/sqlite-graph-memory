@@ -146,8 +146,9 @@ exists so you can measure which one wins on your own notes.
 
 Graph RAG on SQLite for AI agents — a working pilot, not a framework. It is the extracted
 memory layer of a personal "second brain" agent setup: vector search finds the entry
-points, the `[[wikilinks]]` you already wrote by hand are the graph, and a cross-encoder
-reranks what the hop dragged in.
+points, the `[[wikilinks]]` you already wrote by hand are the graph, and dense similarity
+orders what the hop dragged in (a cross-encoder rerank is opt-in with `--rerank`; see below
+for why it is no longer the default).
 SQLite is the only database ([`schema.sql`](src/sqlite_graph_memory/schema.sql)).
 
 Status: **pilot**, and the word is load-bearing: it runs daily in one real setup (an index of ~28k curated notes, ~93k chunks, rebuilt nightly from a ~270k-file
@@ -170,12 +171,14 @@ For a single-user agent over a markdown knowledge base, all three are overkill:
 - **SQLite is enough** — the only things worth persisting are derived state (a per-turn
   ledger) and telemetry, and both are defined in [`schema.sql`](src/sqlite_graph_memory/schema.sql).
   One file, stdlib driver, zero ops.
-- The expensive part of RAG quality is a **reranker**, not graph infrastructure — see the
-  rerank step in `brain_ask.py`.
+- **Measure before adding a stage.** The pilot shipped a cross-encoder reranker from day one;
+  measured later, it lowered recall on long queries (our 184-question gold set: body nDCG@12
+  0.640 reranked vs 0.815 dense; DolphinBench Riley slice, 1000 sessions: R@5 0.48 vs 0.61).
+  Since 0.3.7 it is off by default and stays available as `--rerank` / `SGM_RERANK=1`.
 
 So the pilot's bet: *vector retrieval for entry points, hand-curated wikilinks for
-association, a cross-encoder to keep serendipity honest, SQLite for everything that must
-persist.* All four steps live in one file, `brain_ask.py`, in that order.
+association, SQLite for everything that must persist.* All steps live in one file,
+`brain_ask.py`, in that order.
 
 ## Architecture
 
@@ -189,7 +192,8 @@ markdown notes (with [[wikilinks]])
         ├── brain_ask.py        recall pipeline:
         │       1. dense retrieve  top-60 chunks, dedup by file
         │       2. --graph         +1-hop wikilink neighbours of top-15 hits (max 40)
-        │       3. rerank          cross-encoder → top-12
+        │       3. order           dense similarity → top-12
+        │                          (--rerank: cross-encoder instead, opt-in)
         │       4. --ab            run vector-only AND vector+graph, diff,
         │                          log the delta to SQLite (ab_recall)
         │
@@ -208,7 +212,7 @@ an edge table only when hop depth or corpus size demands it.
 ### Design choices that survived contact with reality
 
 - **Graph expansion is candidate generation, not ranking** (`brain_ask.py`). Neighbours go
-  into the same reranker pool as vector hits, so an irrelevant linked note gets buried.
+  into the same ranking pool as vector hits, so an irrelevant linked note gets buried.
   That is what makes 1-hop expansion safe to leave on.
 - **Entity gate** (`looks_like_entity` in `brain_ask.py`). A/B telemetry showed graph
   expansion helps *theme* queries ("approaches to agent memory") but hurts *name/tool*

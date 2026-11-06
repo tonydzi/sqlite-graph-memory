@@ -29,6 +29,7 @@ import argparse
 import csv
 import datetime
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -147,7 +148,7 @@ def score_grid(gold, grid, emb, meta, enc, ce, by_base=None):
             gated = cell['entity_gate'] and is_entity
             added = (ba.expand_1hop(sims, meta, base, by_base, ghops=cell['ghops'], gmax=cell['gmax'])
                      if cell['hops'] and base and not gated else [])
-            scored = ba.rerank_candidates(ce, g['query'], base + added, meta)
+            scored = ba.rerank_candidates(ce, g['query'], base + added, meta, sims=sims)
             ranked = [stem_of(i) for i, _ in scored]
             rows.append({'cell': cell['name'], 'cls': g['cls'],
                          'recall': recall_at(ranked, g['gold']),
@@ -221,7 +222,11 @@ def main():
     ap.add_argument('--out', help='output prefix for <prefix>.csv/.md (default: eval/ablation-<ts>)')
     ap.add_argument('--csv', help='CSV path (overrides the --out-derived one)')
     ap.add_argument('--md', help='Markdown path (overrides the --out-derived one)')
+    ap.add_argument('--rerank', action='store_true',
+                    help='score with the cross-encoder rerank (off by default; same as SGM_RERANK=1)')
     a = ap.parse_args()
+    if a.rerank:
+        os.environ['SGM_RERANK'] = '1'
 
     grid = parse_grid(a.grid)
     if a.list_grid:
@@ -236,7 +241,7 @@ def main():
     dev = ba.pick_device()
     emb, meta = ba.load_index()
     enc = ba.load_encoder(dev)
-    ce = ba.load_reranker(dev)
+    ce = ba.load_reranker(dev) if ba.rerank_enabled() else None
     by_base = ba.index_by_basename(meta)
 
     rows = score_grid(gold, grid, emb, meta, enc, ce, by_base)
