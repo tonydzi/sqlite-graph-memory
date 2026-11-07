@@ -150,6 +150,31 @@ def _links_in(path):
     return [m.strip() for m in WIKILINK_RX.findall(t)]
 
 
+FRONTMATTER_RX = re.compile(r'^---\r?\n(.*?)\r?\n---', re.DOTALL)
+SUPERSEDED_BY_RX = re.compile(r'^superseded_by\s*:\s*"?(.+?)"?\s*$', re.MULTILINE)
+
+
+def _superseded_links_in(path):
+    """The `superseded_by` TARGET(s) from a note's YAML frontmatter (issue #93).
+
+    Followed regardless of the entity gate: a query that trips looks_like_entity()
+    still needs to reach the replacement of an outdated note, even though general
+    wikilink expansion is gated off for that query."""
+    try: t = Path(path).read_text(encoding='utf-8', errors='ignore')
+    except Exception: return []
+    fm = FRONTMATTER_RX.match(t)
+    if not fm:
+        return []
+    m = SUPERSEDED_BY_RX.search(fm.group(1))
+    if not m:
+        return []
+    val = m.group(1).strip().strip('"').strip("'").strip()
+    if not val:
+        return []
+    links = [l.strip() for l in WIKILINK_RX.findall(val) if l.strip()]
+    return links if links else [val]
+
+
 
 # --------------------------------------------------------------------------- pipeline
 # The retrieval pipeline lives in these functions so that anything measuring it
@@ -306,9 +331,14 @@ def _resolve_target_chunks(tgt, by_base, meta, root=None):
     return exact if exact else suffix_matches
 
 
-def expand_1hop(sims, meta, base_order, by_base=None, ghops=GHOPS, gmax=GMAX, root=None):
+def expand_1hop(sims, meta, base_order, by_base=None, ghops=GHOPS, gmax=GMAX, root=None,
+                 only_superseded=False):
     """Follow 1-hop OUTGOING wikilinks from the top vector hits and return the neighbour
     chunks to ADD to the candidate set; the reranker decides whether they are relevant.
+
+    only_superseded=True follows only a note's superseded_by frontmatter target instead
+    of every wikilink (issue #93): the entity gate uses this to still reach a replacement
+    note while leaving general wikilink expansion gated off.
 
     Bounded by ghops/gmax. CRASH-SAFETY: any failure returns [] and the caller degrades to
     vector-only -- worst case you get the old result, never an empty or broken recall."""
@@ -322,7 +352,8 @@ def expand_1hop(sims, meta, base_order, by_base=None, ghops=GHOPS, gmax=GMAX, ro
             root = vault_root(meta)
         in_order = set(base_order)
         for i in base_order[:ghops]:
-            for tgt in _links_in(meta[i]['path']):
+            targets = _superseded_links_in(meta[i]['path']) if only_superseded else _links_in(meta[i]['path'])
+            for tgt in targets:
                 idxs = _resolve_target_chunks(tgt, by_base, meta, root=root)
                 if not idxs: continue
                 best = max(idxs, key=lambda j: sims[j])   # best chunk of neighbour for THIS query
@@ -560,10 +591,16 @@ def main():
         return
 
     # GATE: wiki-graph helps THEME queries, hurts ENTITY/name queries -> skip graph for entities.
+    # Exception (issue #93): a superseded_by target still resolves even when gated, so an
+    # outdated note's replacement isn't dropped just because the query looks entity-like.
     gated = graph and looks_like_entity(query)
     if gated:
-        sys.stderr.write("wiki-graph gated OFF (entity-like query) -> Direct only\n")
-    order = graph_order if (graph and not gated) else base_order
+        sys.stderr.write("wiki-graph gated OFF (entity-like query) -> Direct only, except superseded_by\n")
+        sup_added = expand_1hop(sims, meta, base_order, only_superseded=True)
+        order = base_order + sup_added
+        graph_set = set(sup_added)
+    else:
+        order = graph_order if graph else base_order
     reranked = rerank(order)
     scope = 'all' + (' /graph+%d' % len(graph_set) if graph else '') + (' /ppr' if ppr_stems else '')
     lines = [f'QUERY: {query}', f'(scope={scope}; e5 {len(order)} files -> {"rerank" if ce is not None else "dense"}; {len(meta)} chunks)', '']

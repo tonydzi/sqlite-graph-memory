@@ -146,8 +146,10 @@ def score_grid(gold, grid, emb, meta, enc, ce, by_base=None):
         for cell in grid:
             base = order_max[:cell['topk']]
             gated = cell['entity_gate'] and is_entity
-            added = (ba.expand_1hop(sims, meta, base, by_base, ghops=cell['ghops'], gmax=cell['gmax'])
-                     if cell['hops'] and base and not gated else [])
+            # Gated cells still follow superseded_by (issue #93), matching brain_ask.main().
+            added = (ba.expand_1hop(sims, meta, base, by_base, ghops=cell['ghops'], gmax=cell['gmax'],
+                                     only_superseded=gated)
+                     if cell['hops'] and base else [])
             scored = ba.rerank_candidates(ce, g['query'], base + added, meta, sims=sims)
             ranked = [stem_of(i) for i, _ in scored]
             rows.append({'cell': cell['name'], 'cls': g['cls'],
