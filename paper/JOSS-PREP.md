@@ -1,16 +1,16 @@
-# JOSS submission readiness (lane B, mandate 07.09.2026)
+# JOSS submission readiness (updated 8 November 2026)
 
-Target: https://joss.theoj.org — submission AFTER this checklist is green.
+Checked against https://joss.readthedocs.io/en/latest/submitting.html on 8 November 2026.
 
-- [x] OSI license (MIT)
-- [x] paper.md + paper.bib (this folder)
-- [x] README with installation + example usage
-- [ ] Automated test suite runnable offline (JOSS hard requirement) — smoke tests for index_notes/brain_ask with a tiny fixture corpus, no GPU
-- [ ] CONTRIBUTING.md (community guidelines: how to contribute, report issues, seek support)
-- [ ] Release tag (JOSS reviews a tagged version)
-- [ ] Optional: CI running the tests
+- [x] OSI license (MIT, LICENSE file)
+- [x] paper.md in the current JOSS section order, paper.bib
+- [x] README with installation and usage
+- [x] Automated tests runnable offline, CI on Python 3.9 to 3.13
+- [x] CONTRIBUTING.md, SUPPORT.md, SECURITY.md
+- [x] Tagged releases (v0.3.x), changelog
+- [ ] **Six months of public history.** The repository became public on 3 July 2026. JOSS desk-rejects
+      anything under six months with active development across that period. Earliest eligible
+      submission date: **3 January 2027**.
+- [ ] Research impact evidence beyond the author (citations, other groups using it)
 
-Why not submitted today: without tests + CONTRIBUTING the editorial
-pre-review bounces the submission; one bounce costs weeks. Finish the two
-items, tag, then submit (ORCID login; scope: software submission, ~1000 words
-paper). Acceptance later = legal arXiv appeal basis for the companion preprint.
+Do not submit before 3 January 2027: a desk rejection means waiting "six months or more" to resubmit.
