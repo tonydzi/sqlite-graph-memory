@@ -386,27 +386,108 @@ def test_entity_gate_suppresses_the_hop_only_when_enabled(tmp_path):
     assert by_cell['ungated']['recall'] == 1.0   # gate disabled for this cell: hop runs
 
 
+def test_hop_applied_is_false_when_the_gate_suppresses_it_even_though_entity_gate_is_true(tmp_path):
+    """issue #93: a row's recall/ndcg can't say WHY a cell didn't change — the gate
+    firing and the hop adding nothing look identical from the metrics alone."""
+    meta, emb = _linked_vault(tmp_path)
+    gold = [{'query': 'Obsidian', 'cls': 'theme', 'gold': ['friend']}]
+    grid = parse_grid('hops=1,topk=1,gmax=10,entity_gate=1,name=gated')
+
+    row = score_grid(gold, grid, emb, meta, _FakeEncoder(), _FakeReranker())[0]
+    assert row['gated'] is True
+    assert row['hop_applied'] is False
+
+
+def test_hop_applied_is_true_only_when_the_hop_actually_admits_a_new_candidate(tmp_path):
+    """Distinguishes 'hop didn't run because hops=0' from 'hop ran but the gate blocked
+    it' from 'hop ran and added something' — three different reasons a metric can be
+    unchanged, only one of which is the entity gate."""
+    meta, emb = _linked_vault(tmp_path)
+    gold = [{'query': 'where do I keep in touch', 'cls': 'theme', 'gold': ['friend']}]
+    grid = parse_grid('hops=0,topk=1,name=0-hop;hops=1,topk=1,gmax=10,name=1-hop')
+
+    rows = score_grid(gold, grid, emb, meta, _FakeEncoder(), _FakeReranker())
+    by_cell = {r['cell']: r for r in rows}
+
+    assert by_cell['0-hop']['gated'] is False and by_cell['0-hop']['hop_applied'] is False
+    assert by_cell['1-hop']['gated'] is False and by_cell['1-hop']['hop_applied'] is True
+
+
+def _single_hop_vault(tmp_path):
+    """gold.md links to neighbor.md; dense similarity ranks gold far above neighbor, so
+    at topk=1 only gold is in the dense pool and neighbor can only arrive via the hop.
+    The _FakeReranker always scores gold ('home') above neighbor ('stranger'), so gold
+    stays rank #1 whether or not the hop ran."""
+    v = tmp_path / 'vault'
+    v.mkdir()
+    (v / 'gold.md').write_text('See [[neighbor]] for more.', encoding='utf-8')
+    (v / 'neighbor.md').write_text('Neighbor note body.', encoding='utf-8')
+    meta = [
+        {'path': str(v / 'gold.md'), 'title': 'home', 'snippet': 'home snippet', 'date': ''},
+        {'path': str(v / 'neighbor.md'), 'title': 'stranger', 'snippet': 'stranger snippet', 'date': ''},
+    ]
+    emb = np.array([[10.0, 0.0], [1.0, 0.0]], dtype='float32')
+    return meta, emb
+
+
+def test_rank_churn_is_positive_even_when_delta_ndcg_is_zero(tmp_path):
+    """issue #93 finding #2: a neighbour entering top-12 at rank 2 never moves a
+    single-note gold pinned at rank 1, so delta_ndcg reads 0.0 — but the ranking still
+    changed, and rank_churn is the column that shows it."""
+    meta, emb = _single_hop_vault(tmp_path)
+    gold = [{'query': 'where is my note', 'cls': 'theme', 'gold': ['gold']}]
+    grid = parse_grid('hops=0,topk=1,name=0-hop;hops=1,topk=1,gmax=10,name=1-hop')
+
+    rows = score_grid(gold, grid, emb, meta, _FakeEncoder(), _FakeReranker())
+    by_cell = {r['cell']: r for r in rows}
+    assert by_cell['0-hop']['rank_changed'] is False
+    assert by_cell['1-hop']['rank_changed'] is True
+
+    summary = summarize_grid(rows, grid, ['theme'])
+    overall_1hop = next(r for r in summary if r['cell'] == '1-hop' and r['class'] == 'overall')
+    assert overall_1hop['delta_ndcg'] == 0.0
+    assert overall_1hop['rank_churn'] == 1.0
+
+
 def test_markdown_and_csv_report_delta_vs_the_0hop_baseline(tmp_path):
     rows = [
-        {'cell': '0-hop', 'cls': 'theme', 'recall': 0.0, 'mrr': 0.0, 'ndcg': 0.0},
-        {'cell': '1-hop', 'cls': 'theme', 'recall': 1.0, 'mrr': 1.0, 'ndcg': 1.0},
+        {'cell': '0-hop', 'cls': 'theme', 'recall': 0.0, 'mrr': 0.0, 'ndcg': 0.0,
+         'gated': False, 'hop_applied': False, 'rank_changed': False},
+        {'cell': '1-hop', 'cls': 'theme', 'recall': 1.0, 'mrr': 1.0, 'ndcg': 1.0,
+         'gated': False, 'hop_applied': True, 'rank_changed': True},
     ]
     grid = [{'name': '0-hop', 'hops': 0}, {'name': '1-hop', 'hops': 1}]
     summary = summarize_grid(rows, grid, ['theme'])
 
     overall_1hop = next(r for r in summary if r['cell'] == '1-hop' and r['class'] == 'overall')
     assert overall_1hop['delta_ndcg'] == 1.0
+    assert overall_1hop['hop_applied_rate'] == 1.0
+    assert overall_1hop['rank_churn'] == 1.0
     baseline_row = next(r for r in summary if r['cell'] == '0-hop' and r['class'] == 'theme')
     assert baseline_row['delta_ndcg'] == 0.0
+    assert baseline_row['hop_applied_rate'] == 0.0
+    assert baseline_row['rank_churn'] == 0.0
 
     md = format_markdown(summary)
     assert '| 1-hop | theme |' in md and '+1.000' in md
+    assert 'hop_applied_rate' in md.splitlines()[0] and 'rank_churn' in md.splitlines()[0]
 
     out = tmp_path / 'ablation.csv'
     write_csv(summary, out)
     body = out.read_text(encoding='utf-8')
-    assert 'delta_nDCG@12' in body.splitlines()[0]
+    assert 'delta_nDCG@12' in body.splitlines()[0] and 'rank_churn' in body.splitlines()[0]
     assert '1-hop,theme' in body.replace(' ', '')
+
+
+def test_summarize_grid_defaults_gate_rate_for_rows_without_the_new_fields():
+    """Older score_grid output (or a caller's own hand-built rows) has no gated /
+    hop_applied / rank_changed keys; summarize_grid must not KeyError on them."""
+    rows = [{'cell': '0-hop', 'cls': 'theme', 'recall': 1.0, 'mrr': 1.0, 'ndcg': 1.0}]
+    grid = [{'name': '0-hop', 'hops': 0}]
+    summary = summarize_grid(rows, grid, ['theme'])
+    assert summary[0]['gate_rate'] == 0.0
+    assert summary[0]['hop_applied_rate'] == 0.0
+    assert summary[0]['rank_churn'] == 0.0
 
 
 def test_low_n_warning_names_the_thin_cell_and_class():

@@ -14,6 +14,8 @@ recorded after the fact rather than backdated to look contemporaneous.
 
 **`sgm-ask` and `eval/run_ablation.py`: `--pool` override for the dense candidate pool.** `--pool N` (or `BRAIN_TOPK_RETRIEVE=N`) overrides `TOPK_RETRIEVE` without changing the 60-note default, and `DEFAULT_GRID` adds `topk-15` so pool-size sweeps can be compared across vaults. Thanks @Jason-Vaughan (#97), who picked up #92.
 
+**`eval/run_ablation.py`: gate, neighbour-admission and rank-churn columns.** Each ablation cell now reports `gate_rate`, `hop_applied_rate` and `rank_churn` alongside the retrieval metrics, separating queries where the entity gate suppressed the hop from queries where neighbours entered and reordered the top-12 without moving single-note gold at rank 1. Thanks @Jason-Vaughan (#95), who picked up #93.
+
 ## v0.3.7 - 2026-11-05
 
 **Recall: the cross-encoder rerank is off by default.** `sgm-ask`, the MCP tool and `eval/run_eval.py` now order candidates by dense e5 similarity; `--rerank` or `SGM_RERANK=1` brings the cross-encoder back. Measured before the change: on our 184-question gold set the reranker cut body nDCG@12 from 0.815 to 0.640, and on DolphinBench data (Riley, 50 tests, 1000 sessions) Recall@5 fell from 0.61 to 0.48; it still helped short title-style queries. Dense recall is also faster on CPU (about 0.04 s against 2.8 s per query on that slice). `rerank_candidates()` takes `sims=` and keeps dense order when no cross-encoder is passed.
