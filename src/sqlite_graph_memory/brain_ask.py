@@ -569,9 +569,9 @@ def main():
     # Graph expansion: 1-hop outgoing wikilinks from the top vector hits, bounded and
     # opt-in (--graph / --ab) so base recall is untouched. Serendipity the reranker keeps honest.
     base_order = list(order); added = []
-    hop_source_count = 0
+    hop_source_paths = set()
     if (graph or ab) and order:
-        hop_source_count = min(len(base_order), GHOPS)
+        hop_source_paths = {meta[i]['path'] for i in base_order[:GHOPS]}
         added = expand_1hop(sims, meta, base_order)
     graph_order = base_order + added; graph_set = set(added)
 
@@ -657,10 +657,10 @@ def main():
         sup_added = expand_1hop(sims, meta, base_order, only_superseded=True)
         order = base_order + sup_added
         graph_set = set(sup_added)
-        hop_source_count = min(len(base_order), GHOPS)
+        hop_source_paths = {meta[i]['path'] for i in base_order[:GHOPS]}
     else:
         order = graph_order if graph else base_order
-    if (graph or ab) and hop_source_count > 0 and len(UNREADABLE_PATHS) >= hop_source_count:
+    if (graph or ab) and hop_source_paths and UNREADABLE_PATHS.issuperset(hop_source_paths):
         sample_path = next(iter(UNREADABLE_PATHS))
         FALLBACK_NOTES.append('NOTE: could not read notes for graph expansion (%s); recalled vector results only. '
                               'Rebuild the index with absolute paths: sgm-index /path/to/notes' % sample_path)

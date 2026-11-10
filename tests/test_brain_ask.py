@@ -331,10 +331,13 @@ def test_unreadable_notes_emit_fallback_note(tmp_path, monkeypatch):
     import numpy as np
     from sqlite_graph_memory import brain_ask as ba
 
-    fake_meta = [{"path": "/nonexistent/path/note1.md", "title": "Note 1", "snippet": "snippet 1", "date": "2025-01-01"}]
+    fake_meta = [
+        {"path": "/nonexistent/path/note1.md", "title": "Note 1", "snippet": "snippet 1", "date": "2025-01-01"},
+        {"path": "/nonexistent/path/note1.md", "title": "Note 1 chunk 2", "snippet": "snippet 2", "date": "2025-01-01"},
+    ]
     emb_file = tmp_path / "_brain_e5.npy"
     meta_file = tmp_path / "_brain_e5_meta.pkl"
-    np.save(emb_file, np.ones((1, 4), dtype="float32"))
+    np.save(emb_file, np.ones((2, 4), dtype="float32"))
     meta_file.write_bytes(pickle.dumps(fake_meta))
 
     monkeypatch.setattr(ba, "EMB", emb_file)
