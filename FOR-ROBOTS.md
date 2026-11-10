@@ -33,7 +33,8 @@ vault and has no tests.
    first, because a rebuild that *deletes* superseded edges destroys history.
 5. **A memory layer must never make the agent worse than no memory layer.** The graph hop and
    the Stop-hook are both wrapped so any failure degrades to the previous behavior: vector-only
-   recall, no ledger row. Build every memory feature to fail back to plain retrieval.
+   recall, no ledger row. (The Stop-hook is not on the recall path at all; see 8.) Build every
+   memory feature to fail back to plain retrieval.
 6. **Measure the memory, do not believe it.** `--ab` runs both pipelines on every real query
    and logs how many notes the graph actually promoted, to the `ab_recall` table
    ([`schema.sql`](schema.sql)). "Associative memory helps" should be a SQL query, not a vibe.
@@ -41,7 +42,8 @@ vault and has no tests.
    a cross-encoder over a wide candidate pool is the expensive part that actually moves recall.
 8. **A per-turn ledger costs zero tokens.** `turnstate_hook.py` parses the transcript tail
    after each turn and appends one row — ask, summary, files, tools, commands, decisions —
-   with pure stdlib. Session memory does not require a model call.
+   with pure stdlib. Session memory does not require a model call. The ledger is telemetry:
+   recall never reads it, so past turns do not influence what recall returns.
 
 ## Files worth reading, in order
 
