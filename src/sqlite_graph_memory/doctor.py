@@ -12,11 +12,9 @@ import sqlite3
 import sys
 from pathlib import Path
 
-from sqlite_graph_memory import brain_ask
-
 OK, WARN, FAIL = 'ok', 'warn', 'fail'
 MARK = {OK: '[ok]  ', WARN: '[warn]', FAIL: '[FAIL]'}
-FEEDBACK = brain_ask.FEEDBACK_URL
+FEEDBACK = 'https://github.com/tonydzi/sqlite-graph-memory/discussions/categories/ideas'
 
 
 def check_python(version=None):
@@ -40,7 +38,12 @@ def _intel_mac(system=None, machine=None):
 
 def check_embeddings(system=None, machine=None):
     """The heavy half. Without it the graph and the SQLite parts work, indexing and recall do not."""
-    if brain_ask.backend() == 'onnx':
+    try:
+        from sqlite_graph_memory import brain_ask
+        is_onnx = (brain_ask.backend() == 'onnx')
+    except Exception:
+        is_onnx = (os.getenv('SGM_BACKEND', '').strip().lower() == 'onnx')
+    if is_onnx:
         try:
             import onnxruntime
             import tokenizers  # noqa: F401
@@ -59,9 +62,13 @@ def check_embeddings(system=None, machine=None):
         import torch
         import sentence_transformers
     except ModuleNotFoundError as exc:
-        return (WARN, 'The embeddings extra is not installed (%s missing).' % exc.name,
-                'Only needed to index and recall. Install it with: pip install "sqlite-graph-memory[lite]"'
-                '   (or [embeddings] for torch and a GPU)')
+        if exc.name in ('torch', 'sentence_transformers'):
+            return (WARN, 'The embeddings extra is not installed (%s missing).' % exc.name,
+                    'Only needed to index and recall. Install it with: pip install "sqlite-graph-memory[lite]"'
+                    '   (or [embeddings] for torch and a GPU)')
+        why = '%s: %s' % (type(exc).__name__, str(exc).splitlines()[0] if str(exc) else '')
+        return FAIL, 'torch or sentence-transformers fails to import (%s).' % why, \
+            'Reinstall in a fresh virtualenv: pip install --force-reinstall "sqlite-graph-memory[embeddings]"'
     except Exception as exc:  # torch dies at import on a numpy it was not built for
         why = '%s: %s' % (type(exc).__name__, str(exc).splitlines()[0] if str(exc) else '')
         if _intel_mac(system, machine) and np_major >= 2:
@@ -77,16 +84,31 @@ def check_embeddings(system=None, machine=None):
 
 
 def _hf_cache_dirs():
-    roots = [os.getenv('HF_HUB_CACHE'), os.getenv('SENTENCE_TRANSFORMERS_HOME')]
-    hf_home = os.getenv('HF_HOME') or str(Path.home() / '.cache' / 'huggingface')
-    roots.append(str(Path(hf_home) / 'hub'))
-    return [Path(r) for r in roots if r]
+    roots = []
+    if os.getenv('HF_HUB_CACHE'):
+        roots.append(Path(os.environ['HF_HUB_CACHE']))
+    elif os.getenv('HF_HOME'):
+        roots.append(Path(os.environ['HF_HOME']) / 'hub')
+    else:
+        xdg = os.getenv('XDG_CACHE_HOME')
+        base = Path(xdg) if xdg else Path.home() / '.cache'
+        roots.append(base / 'huggingface' / 'hub')
+
+    if os.getenv('SENTENCE_TRANSFORMERS_HOME'):
+        roots.append(Path(os.environ['SENTENCE_TRANSFORMERS_HOME']))
+
+    return [r for r in roots if r]
 
 
 def check_models():
     """Look for the two model folders in the local cache. Never downloads anything."""
+    try:
+        from sqlite_graph_memory import brain_ask
+        models = (brain_ask.E5_MODEL, brain_ask.RERANK_MODEL)
+    except Exception:
+        models = ('intfloat/multilingual-e5-base', 'cross-encoder/mmarco-mMiniLMv2-L12-H384-v1')
     missing = []
-    for name in (brain_ask.E5_MODEL, brain_ask.RERANK_MODEL):
+    for name in models:
         folder = 'models--' + name.replace('/', '--')
         if not any((d / folder).exists() for d in _hf_cache_dirs()):
             missing.append(name)
@@ -97,7 +119,14 @@ def check_models():
 
 
 def check_index(index_dir=None):
-    d = Path(index_dir) if index_dir else brain_ask.INDEX_DIR
+    if index_dir:
+        d = Path(index_dir)
+    else:
+        try:
+            from sqlite_graph_memory import brain_ask
+            d = brain_ask.INDEX_DIR
+        except Exception:
+            d = Path(os.getenv('BRAIN_INDEX_DIR', 'index'))
     emb, meta = d / '_brain_e5.npy', d / '_brain_e5_meta.pkl'
     if not emb.exists() and not meta.exists():
         return (WARN, 'No index in %s.' % d.resolve(),
@@ -105,6 +134,25 @@ def check_index(index_dir=None):
     if emb.exists() != meta.exists():
         left = meta.name if emb.exists() else emb.name
         return FAIL, 'The index is half there: %s is missing.' % left, 'Rebuild it: sgm-index /path/to/your/notes'
+    try:
+        import pickle
+        import numpy as np
+        raw_meta = meta.read_bytes()
+        if not raw_meta:
+            return FAIL, 'The index is empty: %s is 0 bytes.' % meta.name, 'Rebuild it: sgm-index /path/to/your/notes'
+        m = pickle.loads(raw_meta)
+        if not isinstance(m, list):
+            return FAIL, 'The index is corrupt: %s is not a list.' % meta.name, 'Rebuild it: sgm-index /path/to/your/notes'
+        if emb.stat().st_size == 0:
+            return FAIL, 'The index is empty: %s is 0 bytes.' % emb.name, 'Rebuild it: sgm-index /path/to/your/notes'
+        e = np.load(emb)
+        if len(e.shape) != 2 or e.shape[0] != len(m):
+            rows = e.shape[0] if len(e.shape) > 0 else 0
+            return FAIL, 'The index is corrupt: %s rows (%d) != %s chunks (%d).' % (
+                emb.name, rows, meta.name, len(m)), 'Rebuild it: sgm-index /path/to/your/notes'
+    except Exception as exc:
+        why = str(exc).splitlines()[0] if str(exc) else type(exc).__name__
+        return FAIL, 'The index is unreadable or truncated (%s).' % why, 'Rebuild it: sgm-index /path/to/your/notes'
     return OK, 'Index found in %s (%.1f MB).' % (d.resolve(), emb.stat().st_size / 1e6), ''
 
 
