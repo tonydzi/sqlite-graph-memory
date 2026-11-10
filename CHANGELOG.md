@@ -6,7 +6,7 @@ recorded after the fact rather than backdated to look contemporaneous.
 
 ## Unreleased
 
-**`sgm-doctor`: four edge-case fixes from review.** Imports `brain_ask` lazily so a missing or broken NumPy prints a plain-words `[FAIL]` instead of an unhandled traceback; marks missing transitive dependencies of `sentence-transformers` as `[FAIL]` rather than a missing extra warning; isolates custom `HF_HUB_CACHE` / `HF_HOME` directories without mixing in default caches and respects `XDG_CACHE_HOME`; and validates index `.npy` array shape against metadata chunks so truncated or 0-byte index files report `[FAIL]` (closes #107).
+**`sgm-doctor`: four edge-case fixes from review.** Thanks @Kaap10 (#110): imports `brain_ask` lazily so a missing or broken NumPy prints a plain-words `[FAIL]` instead of an unhandled traceback; marks missing transitive dependencies of `sentence-transformers` as `[FAIL]` rather than a missing extra warning; isolates custom `HF_HUB_CACHE` / `HF_HOME` directories without mixing in default caches and respects `XDG_CACHE_HOME`; and validates index `.npy` array shape against metadata chunks so truncated or 0-byte index files report `[FAIL]` (closes #107).
 
 **Credits that predate the credit gate.** `scripts/credit_gate.py` checks merges since 2026-10-19, so two earlier outside contributions were never named here: @HeaTTap wrote the first tests for `looks_like_entity()` and `_links_in()` (#6, shipped in bench-v0.1), and @Deva4287 corrected the README test status (#7, same release). Recorded now so the changelog names every outside author.
 

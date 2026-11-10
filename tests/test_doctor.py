@@ -69,9 +69,14 @@ def test_doctor_importable_when_numpy_is_none():
 def test_transitive_dependency_missing_fails_not_warns(monkeypatch):
     monkeypatch.setenv("SGM_BACKEND", "torch")
     import builtins
+    import types
     real_import = builtins.__import__
 
     def fake_import(name, *args, **kwargs):
+        if name == "torch":
+            m = types.ModuleType("torch")
+            m.__version__ = "2.0.0"
+            return m
         if name == "sentence_transformers":
             raise ModuleNotFoundError("No module named 'safetensors'", name="safetensors")
         return real_import(name, *args, **kwargs)
