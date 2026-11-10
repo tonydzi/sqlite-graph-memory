@@ -6,6 +6,10 @@ recorded after the fact rather than backdated to look contemporaneous.
 
 ## Unreleased
 
+## v0.3.8 - 2026-11-10
+
+Five of the six entries below came from one outside contributor in one week. Thank you, @Jason-Vaughan.
+
 **Bench: `mempalace` row.** MemPalace 3.11.0 with its defaults (`miner.mine()` projects mode, ChromaDB default embedder, `search_memories(n_results=20)`, no LLM) under the shared extractive answer floor. R@5 0.82, answer 0.42; it never abstains on the 22 questions with no answer in the vault (0.00). Self-reported for now: the adapter needs no API key, so it can join the CI reproduce job.
 
 **Bench: `plain-rag` reference row.** Dense cosine-only baseline (`multilingual-e5-base` over 1200-char chunks, `topk=60`, no graph hop and no cross-encoder reranker) reproduced in CI, isolating what reranking and wikilink expansion change on `memory-bench`. Thanks @Jason-Vaughan (#91), who picked up #21.
