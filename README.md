@@ -172,7 +172,8 @@ For a single-user agent over a markdown knowledge base, all three are overkill:
   No extraction pass, and edge quality beats anything a model would mine.
 - **SQLite is enough** — the only things worth persisting are derived state (a per-turn
   ledger) and telemetry, and both are defined in [`schema.sql`](src/sqlite_graph_memory/schema.sql).
-  One file, stdlib driver, zero ops.
+  One file, stdlib driver, zero ops. The ledger is telemetry, not memory: recall never reads it,
+  so past turns do not change what `brain_ask.py` or the MCP server return.
 - **Measure before adding a stage.** The pilot shipped a cross-encoder reranker from day one;
   measured later, it lowered recall on long queries (our 184-question gold set: body nDCG@12
   0.640 reranked vs 0.815 dense; DolphinBench Riley slice, 1000 sessions: R@5 0.48 vs 0.61).
@@ -204,6 +205,8 @@ markdown notes (with [[wikilinks]])
                                 (ask, summary, files, tools, commands, decisions)
                                 to SQLite (turns). 0 LLM tokens, pure stdlib.
                                 turnstate_show.py = read-only viewer.
+                                Off the recall path: nothing in recall
+                                reads this table.
 ```
 
 [`schema.sql`](src/sqlite_graph_memory/schema.sql) documents both tables. The graph is **not** materialized in SQL:
@@ -221,9 +224,9 @@ an edge table only when hop depth or corpus size demands it.
   lookups ("NotebookLM"): a name's card links to everything, so the hop pulls in noise.
   The heuristic in `brain_ask.py` is deliberately conservative, and switches the graph off
   only for name-shaped queries.
-- **Crash-safety as a policy.** The graph hop (`brain_ask.py`) and the Stop-hook
-  (`turnstate_hook.py`) are both wrapped, so any failure degrades to the previous behavior:
-  vector-only recall, no ledger row.
+- **Crash-safety as a policy.** The graph hop (`brain_ask.py`) is wrapped, so a failure
+  degrades recall to vector-only. The Stop-hook (`turnstate_hook.py`) is wrapped too, but it
+  sits off the recall path: a failure costs one ledger row and nothing else.
   A memory layer must never make the agent worse than having no memory layer.
 - **Measure, don't believe.** `--ab` runs both pipelines on every real query and logs how
   many notes the graph promoted into the top-N, to `ab_recall` in [`schema.sql`](src/sqlite_graph_memory/schema.sql).
@@ -266,7 +269,8 @@ Run any of them on a base install and they tell you which extra is missing rathe
 raising `ModuleNotFoundError` — that path is covered by `tests/test_optional_extra.py`.
 
 To enable the per-turn ledger in Claude Code, register the Stop hook (the exact block is
-`examples/claude-code-stop-hook.json`, which calls `sgm-turnstate-hook`), then:
+`examples/claude-code-stop-hook.json`, which calls `sgm-turnstate-hook`), then read it back with
+`sgm-turnstate-show`. The ledger records what each turn did; recall never reads it.
 
 ```bash
 sgm-turnstate-show --stats
