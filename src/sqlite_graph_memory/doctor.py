@@ -7,6 +7,7 @@ Passport
   rail: stdlib only. torch is imported inside a try block, because importing it is the check.
 """
 import os
+import pickle
 import platform
 import sqlite3
 import sys
@@ -105,6 +106,16 @@ def check_index(index_dir=None):
     if emb.exists() != meta.exists():
         left = meta.name if emb.exists() else emb.name
         return FAIL, 'The index is half there: %s is missing.' % left, 'Rebuild it: sgm-index /path/to/your/notes'
+    try:
+        data = pickle.loads(meta.read_bytes())
+        if isinstance(data, list) and data:
+            sample = data[:50]
+            unreadable = [m['path'] for m in sample if isinstance(m, dict) and 'path' in m and not Path(m['path']).exists()]
+            if len(unreadable) == len(sample):
+                return (WARN, 'Note paths in index do not resolve (%s).' % unreadable[0],
+                        'Rebuild the index with absolute paths: sgm-index /path/to/notes')
+    except Exception:
+        pass
     return OK, 'Index found in %s (%.1f MB).' % (d.resolve(), emb.stat().st_size / 1e6), ''
 
 

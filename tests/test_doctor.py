@@ -24,9 +24,21 @@ def test_half_index_fails(tmp_path):
 
 
 def test_full_index_ok(tmp_path):
+    import pickle
     (tmp_path / "_brain_e5.npy").write_bytes(b"x")
-    (tmp_path / "_brain_e5_meta.pkl").write_bytes(b"x")
+    (tmp_path / "_brain_e5_meta.pkl").write_bytes(pickle.dumps([]))
     assert doctor.check_index(tmp_path)[0] == doctor.OK
+
+
+def test_index_with_unresolvable_relative_paths_warns(tmp_path):
+    import pickle
+    (tmp_path / "_brain_e5.npy").write_bytes(b"x")
+    meta = [{"path": "relative/path/that/does/not/exist/note.md", "title": "note"}]
+    (tmp_path / "_brain_e5_meta.pkl").write_bytes(pickle.dumps(meta))
+    status, what, fix = doctor.check_index(tmp_path)
+    assert status == doctor.WARN
+    assert "paths in index do not resolve" in what
+    assert "sgm-index" in fix
 
 
 def test_models_missing_when_cache_is_empty(tmp_path, monkeypatch):
