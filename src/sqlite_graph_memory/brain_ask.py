@@ -143,10 +143,16 @@ FENCED_CODE_RX = re.compile(r'(?:```[\s\S]*?```|~~~[\s\S]*?~~~)')
 INLINE_CODE_RX = re.compile(r'`+[^`\n]*`+')
 WIKILINK_RX = re.compile(r'\[\[([^\]\|#]+)')
 
+UNREADABLE_PATHS = set()
+
+
 def _links_in(path):
     """Outgoing wikilink TARGETS in a note (alias/heading stripped, code ignored)."""
-    try: t = Path(path).read_text(encoding='utf-8', errors='ignore')
-    except Exception: return []
+    try:
+        t = Path(path).read_text(encoding='utf-8', errors='ignore')
+    except Exception:
+        UNREADABLE_PATHS.add(str(path))
+        return []
     t = FENCED_CODE_RX.sub('', t)
     t = INLINE_CODE_RX.sub('', t)
     return [m.strip() for m in WIKILINK_RX.findall(t)]
@@ -162,8 +168,11 @@ def _superseded_links_in(path):
     Followed regardless of the entity gate: a query that trips looks_like_entity()
     still needs to reach the replacement of an outdated note, even though general
     wikilink expansion is gated off for that query."""
-    try: t = Path(path).read_text(encoding='utf-8', errors='ignore')
-    except Exception: return []
+    try:
+        t = Path(path).read_text(encoding='utf-8', errors='ignore')
+    except Exception:
+        UNREADABLE_PATHS.add(str(path))
+        return []
     fm = FRONTMATTER_RX.match(t)
     if not fm:
         return []
@@ -526,6 +535,7 @@ def _parse_pool(args, env=None):
 
 
 def main():
+    UNREADABLE_PATHS.clear()
     args = sys.argv[1:]
     if '--version' in args:
         from sqlite_graph_memory import __version__
@@ -559,7 +569,9 @@ def main():
     # Graph expansion: 1-hop outgoing wikilinks from the top vector hits, bounded and
     # opt-in (--graph / --ab) so base recall is untouched. Serendipity the reranker keeps honest.
     base_order = list(order); added = []
+    hop_source_count = 0
     if (graph or ab) and order:
+        hop_source_count = min(len(base_order), GHOPS)
         added = expand_1hop(sims, meta, base_order)
     graph_order = base_order + added; graph_set = set(added)
 
@@ -645,8 +657,13 @@ def main():
         sup_added = expand_1hop(sims, meta, base_order, only_superseded=True)
         order = base_order + sup_added
         graph_set = set(sup_added)
+        hop_source_count = min(len(base_order), GHOPS)
     else:
         order = graph_order if graph else base_order
+    if (graph or ab) and hop_source_count > 0 and len(UNREADABLE_PATHS) >= hop_source_count:
+        sample_path = next(iter(UNREADABLE_PATHS))
+        FALLBACK_NOTES.append('NOTE: could not read notes for graph expansion (%s); recalled vector results only. '
+                              'Rebuild the index with absolute paths: sgm-index /path/to/notes' % sample_path)
     reranked = rerank(order)
     scope = 'all' + (' /graph+%d' % len(graph_set) if graph else '') + (' /ppr' if ppr_stems else '')
     lines = [f'QUERY: {query}', f'(scope={scope}; e5 {len(order)} files -> {"rerank" if ce is not None else "dense"}; {len(meta)} chunks)', '']

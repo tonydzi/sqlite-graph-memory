@@ -324,3 +324,36 @@ def test_parse_pool_flag_and_env_override_without_changing_default():
         ba._parse_pool(["--pool", "abc"], env={})
     with pytest.raises(SystemExit):
         ba._parse_pool(["--pool"], env={})
+
+
+def test_unreadable_notes_emit_fallback_note(tmp_path, monkeypatch):
+    import pickle
+    import numpy as np
+    from sqlite_graph_memory import brain_ask as ba
+
+    fake_meta = [{"path": "/nonexistent/path/note1.md", "title": "Note 1", "snippet": "snippet 1", "date": "2025-01-01"}]
+    emb_file = tmp_path / "_brain_e5.npy"
+    meta_file = tmp_path / "_brain_e5_meta.pkl"
+    np.save(emb_file, np.ones((1, 4), dtype="float32"))
+    meta_file.write_bytes(pickle.dumps(fake_meta))
+
+    monkeypatch.setattr(ba, "EMB", emb_file)
+    monkeypatch.setattr(ba, "META", meta_file)
+    monkeypatch.setattr(ba, "load_index", lambda **kwargs: (np.load(emb_file), fake_meta))
+
+    class DummyEncoder:
+        def encode(self, texts, **kwargs):
+            return np.ones((len(texts), 4), dtype="float32")
+
+    monkeypatch.setattr(ba, "load_encoder", lambda dev=None: DummyEncoder())
+    monkeypatch.setattr(ba, "FALLBACK_NOTES", [])
+    monkeypatch.setattr(sys, "argv", ["sgm-ask", "--graph", "what is this note"])
+    monkeypatch.setenv("BRAIN_ANSWER_OUT", str(tmp_path / "answer.txt"))
+
+    ba.main()
+
+    answer = (tmp_path / "answer.txt").read_text(encoding="utf-8")
+    assert answer.startswith("NOTE:")
+    assert "could not read notes for graph expansion" in answer
+    assert "/nonexistent/path/note1.md" in answer
+

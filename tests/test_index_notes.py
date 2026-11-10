@@ -69,3 +69,24 @@ def test_bom_does_not_break_frontmatter(tmp_path):
 def test_unreadable_file_is_skipped_not_fatal(tmp_path):
     (tmp_path / "weird.md").write_bytes(b"\xff\xfe\x00binary junk")
     assert read_note(tmp_path / "weird.md") is not None
+
+
+def test_build_index_stores_resolved_paths(tmp_path, monkeypatch):
+    from sqlite_graph_memory.index_notes import build_index
+    import pickle
+    notes_dir = tmp_path / "notes"
+    notes_dir.mkdir()
+    (notes_dir / "test.md").write_text("Hello world note content long enough to pass forty chars.", encoding="utf-8")
+    out_dir = tmp_path / "index"
+
+    class FakeEncoder:
+        def encode(self, texts, **_):
+            return [[1.0] for _ in texts]
+
+    # Run build_index with a relative path
+    monkeypatch.chdir(tmp_path)
+    build_index(Path("notes"), out_dir=out_dir, encoder=FakeEncoder())
+    meta = pickle.loads((out_dir / "_brain_e5_meta.pkl").read_bytes())
+    assert len(meta) == 1
+    assert Path(meta[0]["path"]).is_absolute()
+    assert meta[0]["path"] == str((notes_dir / "test.md").resolve())

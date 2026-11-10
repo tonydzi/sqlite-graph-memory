@@ -175,7 +175,7 @@ def build_index(notes_dir, out_dir=None, encoder=None, full=False):
     manifest_path = out_dir / '_brain_e5_manifest.json'
     settings = _settings_fingerprint()
 
-    notes = iter_notes(notes_dir)
+    notes = [p.resolve() for p in iter_notes(notes_dir)]
 
     do_full = full
     old_meta, old_emb, old_files = [], None, {}
