@@ -62,6 +62,38 @@ def _links_in(path):
     return f(path)
 
 
+def _normalize_target(tgt):
+    # Same normalization as the graph hop's _resolve_target_chunks, so both lanes
+    # read [[note]], [[note.md]] and [[folder/note]] the same way.
+    try:
+        from sqlite_graph_memory.brain_ask import _normalize_target as f
+    except ImportError:                       # run as a loose script next to brain_ask.py
+        from brain_ask import _normalize_target as f
+    return f(tgt)
+
+
+def _resolve_target(tgt, idx, paths):
+    """Node for a wikilink target; None when no note matches.
+
+    Bare targets are the stem. A folder-qualified target must also match a path suffix:
+    [[projects/alpha]] points at projects/alpha.md, not at every note named alpha.
+    """
+    norm = _normalize_target(tgt)
+    if not norm:
+        return None
+    if '/' not in norm:
+        return idx.get(norm)
+    u = idx.get(norm.rsplit('/', 1)[-1])
+    if u is None:
+        return None
+    suffix = '/' + norm
+    for p in paths[u]:
+        rel = Path(p).with_suffix('').as_posix().lstrip('/').lower()
+        if rel == norm or ('/' + rel).endswith(suffix):
+            return u
+    return None
+
+
 class Graph:
     """File-level wikilink graph in CSR form: node = lowercase file stem."""
 
@@ -141,7 +173,7 @@ def build(meta):
         seen = set()
         for p in files:
             for tgt in _links_in(p):
-                v = idx.get(tgt.strip().lower())
+                v = _resolve_target(tgt, idx, paths)
                 if v is None or v == u or v in seen:
                     continue
                 seen.add(v)

@@ -180,6 +180,23 @@ def test_brain_ask_hooks_survive_a_missing_module(monkeypatch, capsys):
     assert 'fell back' in capsys.readouterr().err
 
 
+# ------------------------------------------------------------------ wikilink targets
+def test_folder_qualified_and_md_targets_are_edges(tmp_path):
+    """[[projects/alpha]] and [[alpha.md]] resolve like the 1-hop lane (issue #103)."""
+    (tmp_path / 'projects').mkdir()
+    (tmp_path / 'projects' / 'alpha.md').write_text('# alpha\n', encoding='utf-8')
+    (tmp_path / 'hub.md').write_text('see [[projects/alpha]] and [[alpha.md]]\n', encoding='utf-8')
+    (tmp_path / 'wrong.md').write_text('see [[other/alpha]]\n', encoding='utf-8')
+    meta = [{'path': str(tmp_path / 'hub.md'), 'sha': 'hub'},
+            {'path': str(tmp_path / 'projects' / 'alpha.md'), 'sha': 'alpha'},
+            {'path': str(tmp_path / 'wrong.md'), 'sha': 'wrong'}]
+    g = ppr.build(meta)
+    assert g.stems == ['hub', 'alpha', 'wrong']
+    assert g.n_edges == 1
+    assert g.indices.tolist() == [g.idx['alpha']]
+    assert g.indptr.tolist() == [0, 1, 1, 1]
+
+
 # ------------------------------------------------------------------ the graph mode is untouched
 class _FakeCE:
     def predict(self, pairs):
