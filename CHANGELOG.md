@@ -8,6 +8,8 @@ recorded after the fact rather than backdated to look contemporaneous.
 
 **Credits that predate the credit gate.** `scripts/credit_gate.py` checks merges since 2026-10-19, so two earlier outside contributions were never named here: @HeaTTap wrote the first tests for `looks_like_entity()` and `_links_in()` (#6, shipped in bench-v0.1), and @Deva4287 corrected the README test status (#7, same release). Recorded now so the changelog names every outside author.
 
+**Recall: the PPR lane resolves `[[folder/note]]` and `[[note.md]]` links.** `ppr.build()` now normalises a wikilink target the way the 1-hop lane does, so `SGM_PPR=1` and the graph hop count the same edges instead of the PageRank lane silently dropping folder-qualified and `.md` targets. Thanks @bfs2021 (#108), who picked up #103.
+
 ## v0.3.8 - 2026-11-10
 
 Five of the six entries below came from one outside contributor in one week. Thank you, @Jason-Vaughan.
