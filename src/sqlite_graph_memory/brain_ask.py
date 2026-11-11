@@ -143,13 +143,23 @@ FENCED_CODE_RX = re.compile(r'(?:```[\s\S]*?```|~~~[\s\S]*?~~~)')
 INLINE_CODE_RX = re.compile(r'`+[^`\n]*`+')
 WIKILINK_RX = re.compile(r'\[\[([^\]\|#]+)')
 
-def _links_in(path):
-    """Outgoing wikilink TARGETS in a note (alias/heading stripped, code ignored)."""
-    try: t = Path(path).read_text(encoding='utf-8', errors='ignore')
-    except Exception: return []
+def links_in_text(t):
+    """Outgoing wikilink TARGETS in note text (alias/heading stripped, code ignored)."""
     t = FENCED_CODE_RX.sub('', t)
     t = INLINE_CODE_RX.sub('', t)
     return [m.strip() for m in WIKILINK_RX.findall(t)]
+
+
+def read_for_links(path):
+    """Note text exactly as the graph hop reads it, or None if unreadable."""
+    try: return Path(path).read_text(encoding='utf-8', errors='ignore')
+    except Exception: return None
+
+
+def _links_in(path):
+    """Outgoing wikilink TARGETS in a note (alias/heading stripped, code fences ignored)."""
+    t = read_for_links(path)
+    return links_in_text(t) if t is not None else []
 
 
 FRONTMATTER_RX = re.compile(r'^---\r?\n(.*?)\r?\n---', re.DOTALL)

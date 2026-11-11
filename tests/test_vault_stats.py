@@ -284,3 +284,92 @@ def test_folder_link_prefers_exact_vault_relative_path_over_suffix_match(tmp_pat
     assert sorted(edges) == [("a", "sub/c")]
 
 
+# ------------------------------------------------------------------ breaker panel regressions (2026-10-26)
+
+@pytest.mark.parametrize("fm", [
+    "type: [concept]",
+    "type: [note, concept]",
+    "type:\n  - concept",
+    "type:\n  - note\n  - concept",
+    "type: concept # evergreen",
+    "type: Concept",
+])
+def test_type_concept_in_any_yaml_form(tmp_path, fm):
+    _write(tmp_path, "c", fm=fm + "\nupdated: 2020-01-01")
+    m = _metric(_run(tmp_path), "stale_concepts")
+    assert m["value"] == 100.0, fm
+
+
+def test_type_block_list_does_not_swallow_the_next_key(tmp_path):
+    # `type:` empty and the next line is another key, not a list item.
+    _write(tmp_path, "c", fm="type:\nupdated: 2020-01-01")
+    assert _metric(_run(tmp_path), "stale_concepts")["verdict"] == "n/a"
+
+
+def test_frontmatter_only_note_without_final_newline(tmp_path):
+    (tmp_path / "c.md").write_text("---\ntype: concept\nupdated: 2020-01-01\n---",
+                                   encoding="utf-8")
+    assert _metric(_run(tmp_path), "stale_concepts")["value"] == 100.0
+
+
+@pytest.mark.parametrize("flag,val", [
+    ("--threshold-stale-days", "nan"),
+    ("--threshold-stale-days", "inf"),
+    ("--threshold-stale-days", "1e9"),
+    ("--threshold-stale-days", "-1"),
+    ("--threshold-orphan-warn", "nan"),
+])
+def test_bad_threshold_is_rejected_with_fail_code(tmp_path, flag, val):
+    _ring(tmp_path, 20, extra=3)
+    with pytest.raises(SystemExit) as e:
+        vault_stats.main([str(tmp_path), flag, val])
+    assert e.value.code == 2
+
+
+def test_early_today_does_not_crash(tmp_path):
+    _write(tmp_path, "c", fm="type: concept\nupdated: 0001-01-01")
+    code = vault_stats.main([str(tmp_path), "--json", "--today", "0001-01-02"])
+    assert code in (0, 1, 2)
+
+
+def test_crash_exits_fail_not_warn(tmp_path, monkeypatch, capsys):
+    _ring(tmp_path, 20, extra=3)
+    def boom(*a, **k):
+        raise RuntimeError("disk on fire")
+    monkeypatch.setattr(vault_stats, "compute", boom)
+    assert vault_stats.main([str(tmp_path)]) == 2
+    assert "disk on fire" in capsys.readouterr().err
+
+
+def test_unreadable_notes_are_counted_and_warn(tmp_path, monkeypatch):
+    _ring(tmp_path, 20, extra=3)
+    real = vault_stats.read_for_links
+    monkeypatch.setattr(vault_stats, "read_for_links",
+                        lambda p: None if Path(p).stem in ("p3", "p7") else real(p))
+    r = _run(tmp_path)
+    m = _metric(r, "unreadable")
+    assert m["value"] == 2 and m["examples"] == ["p3", "p7"]
+    assert r["exit_code"] >= 1
+
+
+def test_duplicate_names_do_not_inflate_degree(tmp_path):
+    # 30 README.md in 30 folders; 20 notes each link [[README]] once plus 3 ring links.
+    for i in range(30):
+        (tmp_path / f"d{i}").mkdir()
+        _write(tmp_path / f"d{i}", "README", ["p0"])
+    for i in range(20):
+        _write(tmp_path, f"p{i}", ["README"] + [f"p{(i + k) % 20}" for k in range(1, 4)])
+    r = _run(tmp_path)
+    # 20 pages x 4 link names + 30 READMEs x 1 = 110 links over 50 pages
+    assert _metric(r, "avg_degree")["value"] == 2.2
+    assert _metric(r, "orphan_rate")["value"] == 0.0        # every README is reached
+
+
+def test_each_note_is_read_once(tmp_path, monkeypatch):
+    _ring(tmp_path, 20, extra=3)
+    _write(tmp_path, "c", ["p0"], fm="type: concept\nupdated: 2026-10-01")
+    calls = []
+    real = vault_stats.read_for_links
+    monkeypatch.setattr(vault_stats, "read_for_links", lambda p: calls.append(p) or real(p))
+    _run(tmp_path)
+    assert len(calls) == 21 and len(set(calls)) == 21

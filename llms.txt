@@ -39,6 +39,20 @@ command = "sgm-mcp"
 env = { BRAIN_INDEX_DIR = "/path/to/your/index" }
 ```
 
+## Health check (no model, no index)
+
+```bash
+sgm-stats ./notes            # add --json for machines, --today YYYY-MM-DD to pin staleness
+```
+
+Four numbers about the wikilink graph recall walks, each ok/warn/fail: orphan rate (ok <5%, fail >15%), links per page (ok 3-8, fail <2 or >10), share of pages in the main connected component (ok >=80%), share of concept pages with `updated` older than 90 days (warn >50%). Exit code 0 ok, 1 warn, 2 fail, so it can run in cron. Every threshold is a `--threshold-*` flag. On the bench vault: 26.2% orphans (fail), 4.65 links per page, 100% in one component.
+
+## Turn ledger (Stop hook)
+
+`sgm-turnstate-hook` appends one SQLite row per assistant turn (zero tokens, stdlib); wire it as a Claude Code Stop hook from `examples/claude-code-stop-hook.json`. `sgm-turnstate-show --stats` reads the ledger.
+
+Install or first run gone wrong: run `sgm-doctor` first. It checks Python, numpy, torch, the models and your index in plain words and prints the fix for each.
+
 ## Benchmark (memory-bench v0.1, bench/)
 
 Synthetic 202-note vault, 91 questions (69 answerable, 22 with no answer in the vault). Every number is recomputed by CI from per-question outputs.

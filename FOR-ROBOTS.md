@@ -53,6 +53,7 @@ vault and has no tests.
 | [`schema.sql`](schema.sql) | both persisted tables (`turns`, `ab_recall`); the only database |
 | `index_notes.py` | chunk + embed a folder of markdown |
 | `turnstate_hook.py` | zero-token per-turn ledger as an agent Stop hook |
+| `vault_stats.py` | `sgm-stats`: is the link graph healthy enough for graph recall to help? exit 0/1/2 |
 | [`docs/bitemporal.md`](docs/bitemporal.md) | validity windows for edges, and the honest day-1 A/B result |
 | `examples/claude-code-stop-hook.json` | the exact hook registration block |
 

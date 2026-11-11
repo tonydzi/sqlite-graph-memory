@@ -19,6 +19,8 @@ graph database, no ETL, no entity-extraction pass.
 - `brain_ask.py` — the recall pipeline: dense retrieve → optional `--graph` 1-hop wikilink
   expansion → cross-encoder rerank → top-12. `--ab` runs vector-only *and* vector+graph, diffs
   them, and logs the delta to SQLite.
+- `vault_stats.py` (`sgm-stats`) — four health numbers for the wikilink graph, ok/warn/fail,
+  exit 0/1/2. Reuses `iter_notes` and `brain_ask`'s link parser; no model, no index.
 - `turnstate_hook.py` — agent Stop-hook; appends one row per assistant turn. Zero tokens, pure
   stdlib. `turnstate_show.py` is the read-only viewer.
 - `eval/build_gold.py` + `eval/run_eval.py` — the retrieval ruler: a gold set built
@@ -40,6 +42,7 @@ python index_notes.py <folder-of-markdown>     # build an index over a small sam
 python brain_ask.py "<question>" --graph       # recall, with graph expansion
 python brain_ask.py "<question>" --ab          # both arms + the logged delta
 python turnstate_show.py                       # what the ledger captured
+python vault_stats.py <folder-of-markdown>    # graph health: orphans, degree, components, staleness
 ```
 
 **If you touch retrieval, numbers are not optional.** Build a gold set once, keep the file, and

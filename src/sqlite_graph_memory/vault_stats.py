@@ -9,7 +9,7 @@ and target resolution as ``brain_ask`` (``_links_in``, basename match, case-inse
 A second parser would report on a graph recall never sees.
 
   orphan rate      pages with no inbound link          ok <5%   warn 5-15%   fail >15%
-  avg degree       resolved outgoing links per page    ok 3-8   warn 2-3 / 8-10   fail <2 or >10
+  avg degree       resolved link names per page        ok 3-8   warn 2-3 / 8-10   fail <2 or >10
   main component   share of pages in the largest       ok >=80%  warn below
                    weakly connected component
   stale concepts   concept pages whose `updated`       warn >50%
@@ -22,9 +22,13 @@ exist and links from a page to itself are not edges. A concept page is one with
 ``type: concept`` in its frontmatter or one that lives in a folder named ``concepts``
 inside the vault. Stale share is over all concept pages; undated ones (no date, or a
 date that is not a real day) are named in the detail and never count as stale.
-Verdicts are taken on the same rounded value the report prints.
+Verdicts are taken on the same rounded value the report prints. Degree counts the link
+names a page resolves, not the pages they fan out to: ``[[README]]`` with 300 README.md
+files in the vault is one link, not 300. Each note is read once.
 
-Exit code: 0 all ok, 1 any warn, 2 any fail -- so it can sit in cron as a watchdog.
+Exit code: 0 all ok, 1 any warn, 2 any fail -- so it can sit in cron as a watchdog. Notes
+that cannot be read are counted, named and make the run at least a warn; a crash or a bad
+flag exits 2, never 1, so a broken watchdog is never mistaken for a soft warning.
 Zero model calls, zero network, stdlib + the two sibling modules.
 """
 import argparse
@@ -36,8 +40,8 @@ from collections import defaultdict
 from pathlib import Path
 
 from sqlite_graph_memory import __version__
-from sqlite_graph_memory.brain_ask import _links_in, _normalize_target
-from sqlite_graph_memory.index_notes import FM_RX, iter_notes, read_note
+from sqlite_graph_memory.brain_ask import _normalize_target, links_in_text, read_for_links
+from sqlite_graph_memory.index_notes import FM_RX, iter_notes
 
 DEFAULTS = {
     'orphan_warn': 5.0, 'orphan_fail': 15.0,
@@ -48,7 +52,8 @@ DEFAULTS = {
 }
 RANK = {'ok': 0, 'warn': 1, 'fail': 2, 'n/a': 0}
 
-TYPE_RX = re.compile(r"""(?m)^type:\s*["']?([^"'\n]+?)["']?\s*$""")
+# `type:` value on its own line, then any `  - item` lines under it (YAML block list).
+TYPE_RX = re.compile(r"""(?m)^type:[ \t]*([^\n]*)((?:\n[ \t]+-[^\n]*)*)""")
 UPDATED_RX = re.compile(r"""(?m)^updated:\s*["']?(\d{4}-\d{2}-\d{2})""")
 DATE_RX = re.compile(r"""(?m)^date:\s*["']?(\d{4}-\d{2}-\d{2})""")
 
@@ -57,9 +62,10 @@ class EmptyVault(Exception):
     """No note under the folder: an unmounted or wrong path, reported as fail."""
 
 
-def build_graph(notes_dir):
-    """(pages, edges): pages = {relative path without .md: Path},
-    edges = {(src, dst)} between real pages."""
+def scan(notes_dir):
+    """Read every note once. Returns pages {key: Path}, edges {(src, dst)}, the number
+    of resolved link names, concepts [(key, date or None)] and unreadable [key].
+    Only what the metrics need is kept: no note text, no per-page frontmatter."""
     root = Path(notes_dir)
     pages, by_path, by_stem = {}, defaultdict(list), defaultdict(list)
     for p in iter_notes(root):
@@ -67,25 +73,43 @@ def build_graph(notes_dir):
         pages[key] = p
         by_path[key.lower()].append(key)
         by_stem[p.stem.lower()].append(key)
-    edges = set()
+    edges, n_links, concepts, unreadable = set(), 0, [], []
     for src, path in pages.items():
-        for tgt in _links_in(path):
-            norm = _normalize_target(tgt)
-            if not norm:
+        text = read_for_links(path)
+        if text is None:
+            unreadable.append(src)
+            continue
+        m = FM_RX.match(text.lstrip('\ufeff'))
+        c = _concept(src, m.group(1) if m else '')
+        if c:
+            concepts.append(c)
+        names = set()
+        for tgt in links_in_text(text):
+            name = _normalize_target(tgt)
+            if not name:
                 continue
-            if '/' in norm:
-                dsts = by_path.get(norm, ())
+            if '/' in name:
+                dsts = by_path.get(name, ())
                 if not dsts:
-                    suffix = '/' + norm
+                    suffix = '/' + name
                     dsts = [
-                        k for k in by_stem.get(norm.rsplit('/', 1)[-1], ())
+                        k for k in by_stem.get(name.rsplit('/', 1)[-1], ())
                         if ('/' + k.lower()).endswith(suffix)
                     ]
             else:
-                dsts = by_stem.get(norm, ())
+                dsts = by_stem.get(name, ())
             for dst in dsts:
                 if dst != src:
                     edges.add((src, dst))
+                    names.add(name)
+        n_links += len(names)
+    return pages, edges, n_links, concepts, unreadable
+
+
+def build_graph(notes_dir):
+    """(pages, edges): pages = {relative path without .md: Path},
+    edges = {(src, dst)} between real pages."""
+    pages, edges = scan(notes_dir)[:2]
     return pages, edges
 
 
@@ -116,20 +140,40 @@ def _parse_day(s):
         return None
 
 
+def fm_types(fm):
+    """Values of `type:` as a set: scalar, quoted, `[a, b]`, block list, `# comment`."""
+    m = TYPE_RX.search(fm)
+    if not m:
+        return set()
+    raw = [m.group(1)] + [l.split('-', 1)[1] for l in m.group(2).splitlines() if l.strip()]
+    out = set()
+    for chunk in raw:
+        chunk = re.sub(r'(^|\s)#.*$', '', chunk).strip().strip('[]')
+        for item in chunk.split(','):
+            item = item.strip().strip('"\'').strip().lower()
+            if item:
+                out.add(item)
+    return out
+
+
+def _concept(key, fm):
+    """(key, date or None) if the page is a concept page, else None."""
+    if 'concept' not in fm_types(fm) and \
+            not any(part.lower() == 'concepts' for part in Path(key).parent.parts):
+        return None
+    d = UPDATED_RX.search(fm) or DATE_RX.search(fm)
+    return key, _parse_day(d.group(1)) if d else None
+
+
 def concept_dates(pages):
-    """[(key, date or None)] for every concept page."""
+    """[(key, date or None)] for every concept page in {key: Path}."""
     out = []
     for key, path in pages.items():
-        text = read_note(path) or ''
-        m = FM_RX.match(text)
-        fm = m.group(1) if m else ''
-        t = TYPE_RX.search(fm)
-        is_concept = (t and t.group(1).strip().lower() == 'concept') or \
-            any(part.lower() == 'concepts' for part in Path(key).parent.parts)
-        if not is_concept:
-            continue
-        d = UPDATED_RX.search(fm) or DATE_RX.search(fm)
-        out.append((key, _parse_day(d.group(1)) if d else None))
+        text = read_for_links(path) or ''
+        m = FM_RX.match(text.lstrip('\ufeff'))
+        c = _concept(key, m.group(1) if m else '')
+        if c:
+            out.append(c)
     return out
 
 
@@ -148,7 +192,7 @@ def verdict_degree(v, th):
 def compute(notes_dir, today=None, th=None):
     th = {**DEFAULTS, **(th or {})}
     today = today or datetime.date.today()
-    pages, edges = build_graph(notes_dir)
+    pages, edges, n_links, concepts, unreadable = scan(notes_dir)
     n = len(pages)
     if n == 0:
         raise EmptyVault(f"sgm-stats: no notes under {notes_dir}")
@@ -158,13 +202,15 @@ def compute(notes_dir, today=None, th=None):
         indeg[dst] += 1
     orphans = sorted(p for p in pages if indeg[p] == 0)
     orphan_pct = round(100.0 * len(orphans) / n, 1)
-    degree = round(len(edges) / n, 2)
+    degree = round(n_links / n, 2)
     main, n_comp = largest_component(pages, edges)
     main_pct = round(100.0 * main / n, 1)
 
-    concepts = concept_dates(pages)
     dated = [(s, d) for s, d in concepts if d is not None]
-    cutoff = today - datetime.timedelta(days=int(th['stale_days']))
+    try:
+        cutoff = today - datetime.timedelta(days=int(th['stale_days']))
+    except OverflowError:
+        cutoff = datetime.date.min
     stale = sorted(s for s, d in dated if d < cutoff)
     if concepts:
         stale_pct = round(100.0 * len(stale) / len(concepts), 1)
@@ -179,7 +225,7 @@ def compute(notes_dir, today=None, th=None):
          'examples': orphans[:5]},
         {'name': 'avg_degree', 'value': degree, 'unit': 'links/page',
          'verdict': verdict_degree(degree, th),
-         'detail': f"{len(edges)} resolved links over {n} pages"},
+         'detail': f"{n_links} resolved links over {n} pages"},
         {'name': 'main_component', 'value': main_pct, 'unit': '%',
          'verdict': 'ok' if main_pct >= th['component_ok'] else 'warn',
          'detail': f"{main} of {n} pages; {n_comp} component{'' if n_comp == 1 else 's'}"},
@@ -192,6 +238,12 @@ def compute(notes_dir, today=None, th=None):
                     if concepts else "no concept pages"),
          'examples': stale[:5]},
     ]
+    if unreadable:
+        metrics.append({'name': 'unreadable', 'value': len(unreadable), 'unit': 'files',
+                        'verdict': 'warn',
+                        'detail': f"{len(unreadable)} of {n} notes could not be read; "
+                                  "the numbers above exclude their links and frontmatter",
+                        'examples': sorted(unreadable)[:5]})
     worst = max(RANK[m['verdict']] for m in metrics)
     return {'notes_dir': str(notes_dir), 'pages': n, 'metrics': metrics,
             'verdict': ['ok', 'warn', 'fail'][worst], 'exit_code': worst}
@@ -206,7 +258,32 @@ def render(report):
     return '\n'.join(lines)
 
 
+def _finite(s):
+    v = float(s)
+    if v != v or v in (float('inf'), float('-inf')):
+        raise argparse.ArgumentTypeError(f"not a finite number: {s}")
+    return v
+
+
+def _days(s):
+    v = int(s)
+    if not 0 <= v <= 36500:
+        raise argparse.ArgumentTypeError(f"days must be 0..36500: {s}")
+    return v
+
+
 def main(argv=None):
+    try:
+        return _main(argv)
+    except SystemExit:
+        raise
+    except Exception:                       # crash = fail (2), never warn (1)
+        import traceback
+        traceback.print_exc()
+        return 2
+
+
+def _main(argv=None):
     ap = argparse.ArgumentParser(prog='sgm-stats', description=__doc__.split('\n\n')[0])
     ap.add_argument('notes_dir')
     ap.add_argument('--version', action='version', version=f'%(prog)s {__version__}')
@@ -214,7 +291,8 @@ def main(argv=None):
     ap.add_argument('--today', type=datetime.date.fromisoformat,
                     help='date to measure staleness against (YYYY-MM-DD; default: today)')
     for key, val in DEFAULTS.items():
-        ap.add_argument('--threshold-' + key.replace('_', '-'), dest=key, type=float,
+        ap.add_argument('--threshold-' + key.replace('_', '-'), dest=key,
+                        type=_days if key == 'stale_days' else _finite,
                         default=val, help=f'default {val}')
     a = ap.parse_args(argv)
     if not Path(a.notes_dir).is_dir():
