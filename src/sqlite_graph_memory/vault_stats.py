@@ -53,7 +53,7 @@ DEFAULTS = {
 RANK = {'ok': 0, 'warn': 1, 'fail': 2, 'n/a': 0}
 
 # `type:` value on its own line, then any `  - item` lines under it (YAML block list).
-TYPE_RX = re.compile(r"""(?m)^type:[ \t]*([^\n]*)((?:\n[ \t]+-[^\n]*)*)""")
+TYPE_RX = re.compile(r"""(?m)^type:[ \t]*([^\n]*)((?:\n[ \t]*-[ \t][^\n]*)*)""")
 UPDATED_RX = re.compile(r"""(?m)^updated:\s*["']?(\d{4}-\d{2}-\d{2})""")
 DATE_RX = re.compile(r"""(?m)^date:\s*["']?(\d{4}-\d{2}-\d{2})""")
 
@@ -148,7 +148,11 @@ def fm_types(fm):
     raw = [m.group(1)] + [l.split('-', 1)[1] for l in m.group(2).splitlines() if l.strip()]
     out = set()
     for chunk in raw:
-        chunk = re.sub(r'(^|\s)#.*$', '', chunk).strip().strip('[]')
+        quoted = re.match(r"""\s*(["'])(.*?)\1\s*(#.*)?$""", chunk)
+        if quoted:                       # a `#` inside quotes is text, not a comment
+            chunk = quoted.group(2)
+        else:
+            chunk = re.sub(r'(^|\s)#.*$', '', chunk).strip().strip('[]')
         for item in chunk.split(','):
             item = item.strip().strip('"\'').strip().lower()
             if item:
@@ -254,6 +258,8 @@ def render(report):
     for m in report['metrics']:
         val = 'n/a' if m['value'] is None else f"{m['value']}{'%' if m['unit'] == '%' else ''}"
         lines.append(f"{m['verdict'].upper():<5} {m['name']:<15} {val:>7}   {m['detail']}")
+        if m['name'] == 'unreadable' and m.get('examples'):
+            lines.append(' ' * 32 + 'e.g. ' + ', '.join(m['examples']))
     lines += ['', f"verdict: {report['verdict']}"]
     return '\n'.join(lines)
 
