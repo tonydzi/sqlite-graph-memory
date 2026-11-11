@@ -12,6 +12,8 @@ recorded after the fact rather than backdated to look contemporaneous.
 
 **Recall: the PPR lane resolves `[[folder/note]]` and `[[note.md]]` links.** `ppr.build()` now normalises a wikilink target the way the 1-hop lane does, so `SGM_PPR=1` and the graph hop count the same edges instead of the PageRank lane silently dropping folder-qualified and `.md` targets. Thanks @bfs2021 (#108), who picked up #103.
 
+**Docs: the Stop-hook ledger is telemetry, not a recall input.** `README.md` and `FOR-ROBOTS.md` now say where the per-turn ledger is introduced that recall never reads it, so past turns do not change what `brain_ask.py` or the MCP server return, and the crash-safety note no longer implies the Stop-hook sits on the recall path. Thanks @dbdefault (#112), who picked up #105.
+
 ## v0.3.8 - 2026-11-10
 
 Five of the six entries below came from one outside contributor in one week. Thank you, @Jason-Vaughan.
