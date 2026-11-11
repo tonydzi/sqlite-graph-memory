@@ -37,3 +37,20 @@ def test_llms_txt_recall_matches_leaderboard():
         assert len(lines) == 1, "llms.txt has no single line for %s" % system
         assert "R@5 %s, R@10 %s" % (r5, r10) in lines[0], (
             "llms.txt says %r, LEADERBOARD.md says R@5 %s, R@10 %s" % (lines[0], r5, r10))
+
+
+def _console_scripts():
+    text = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    block = text.split("[project.scripts]", 1)[1].split("\n[", 1)[0]
+    return [m.group(1) for m in re.finditer(r"(?m)^([A-Za-z0-9_.-]+)\s*=", block)]
+
+
+def test_llms_txt_names_every_console_script():
+    """llms.txt is what an agent reads before installing; a command missing there is a
+    command no agent knows exists. sgm-stats, sgm-turnstate-hook and sgm-turnstate-show
+    shipped without a line here."""
+    scripts = _console_scripts()
+    assert "sgm-stats" in scripts and len(scripts) >= 5
+    text = (ROOT / "llms.txt").read_text(encoding="utf-8")
+    missing = [s for s in scripts if not re.search(r"(?<![\w-])%s(?![\w-])" % re.escape(s), text)]
+    assert not missing, "llms.txt does not mention: %s" % ", ".join(missing)

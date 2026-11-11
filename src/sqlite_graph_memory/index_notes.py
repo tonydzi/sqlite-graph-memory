@@ -32,7 +32,9 @@ CHUNK_CHARS = 1200
 CHUNK_OVERLAP = 200
 SNIPPET_CHARS = 600
 
-FM_RX = re.compile(r'^---\r?\n(.*?)\r?\n---\r?\n', re.S)
+# The closing fence may be the last line of the file: a note that is all frontmatter
+# and has no final newline is still a note with frontmatter.
+FM_RX = re.compile(r'^---\r?\n(.*?)\r?\n---[ \t]*(?:\r?\n|\Z)', re.S)
 
 try:
     from sqlite_graph_memory import brain_ask as _ba
