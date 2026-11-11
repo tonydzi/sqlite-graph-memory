@@ -291,6 +291,8 @@ def test_folder_link_prefers_exact_vault_relative_path_over_suffix_match(tmp_pat
     "type: [note, concept]",
     "type:\n  - concept",
     "type:\n  - note\n  - concept",
+    "type:\n- concept",
+    "type: 'concept'  # evergreen",
     "type: concept # evergreen",
     "type: Concept",
 ])
@@ -373,3 +375,17 @@ def test_each_note_is_read_once(tmp_path, monkeypatch):
     monkeypatch.setattr(vault_stats, "read_for_links", lambda p: calls.append(p) or real(p))
     _run(tmp_path)
     assert len(calls) == 21 and len(set(calls)) == 21
+
+
+def test_hash_inside_quotes_is_not_a_comment(tmp_path):
+    _write(tmp_path, "c", fm='type: "concept # draft"\nupdated: 2020-01-01')
+    assert _metric(_run(tmp_path), "stale_concepts")["verdict"] == "n/a"
+
+
+def test_unreadable_notes_are_named_in_text_output(tmp_path, monkeypatch, capsys):
+    _ring(tmp_path, 20, extra=3)
+    real = vault_stats.read_for_links
+    monkeypatch.setattr(vault_stats, "read_for_links",
+                        lambda p: None if Path(p).stem == "p3" else real(p))
+    vault_stats.main([str(tmp_path)])
+    assert "e.g. p3" in capsys.readouterr().out
