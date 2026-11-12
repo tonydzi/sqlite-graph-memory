@@ -1,0 +1,35 @@
+{
+  "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
+  "name": "sqlite-graph-memory",
+  "displayName": "sqlite-graph-memory",
+  "version": "0.3.8",
+  "description": "Recall over your markdown notes as a local stdio MCP server: vector search finds entry points, your [[wikilinks]] are the graph, a cross-encoder reranks. No graph database, no server to run; telemetry in one SQLite file. Build the index once with `sgm-index /path/to/notes`.",
+  "author": {
+    "name": "Anton Dziatkovskii",
+    "url": "https://github.com/tonydzi"
+  },
+  "homepage": "https://github.com/tonydzi/sqlite-graph-memory",
+  "repository": "https://github.com/tonydzi/sqlite-graph-memory",
+  "documentationUrl": "https://github.com/tonydzi/sqlite-graph-memory#readme",
+  "supportUrl": "https://github.com/tonydzi/sqlite-graph-memory/issues",
+  "license": "MIT",
+  "keywords": ["memory", "agent-memory", "mcp", "obsidian", "wikilinks", "graph-rag", "sqlite"],
+  "userConfig": {
+    "index_dir": {
+      "type": "directory",
+      "title": "Index directory",
+      "description": "Folder holding the index built by `sgm-index /path/to/notes` (it sets BRAIN_INDEX_DIR).",
+      "required": true
+    }
+  },
+  "mcpServers": {
+    "sqlite-graph-memory": {
+      "command": "uvx",
+      "args": ["--python", "3.12", "--with", "sqlite-graph-memory[lite]==0.3.8", "sqlite-graph-memory"],
+      "env": {
+        "BRAIN_INDEX_DIR": "${user_config.index_dir}",
+        "TURNSTATE_DB": "${CLAUDE_PLUGIN_DATA}/turnstate.db"
+      }
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "sqlite-graph-memory",
+  "owner": {
+    "name": "Anton Dziatkovskii",
+    "url": "https://github.com/tonydzi"
+  },
+  "metadata": {
+    "description": "Recall over your markdown notes: vector search plus your [[wikilinks]] as a graph, in SQLite.",
+    "version": "0.3.8"
+  },
+  "plugins": [
+    {
+      "name": "sqlite-graph-memory",
+      "source": "./",
+      "description": "Recall over your markdown notes as a local stdio MCP server: vector search plus your [[wikilinks]] as a graph, cross-encoder rerank, telemetry in SQLite.",
+      "version": "0.3.8",
+      "license": "MIT",
+      "category": "memory"
+    }
+  ]
+}

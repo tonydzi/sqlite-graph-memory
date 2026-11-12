@@ -38,6 +38,14 @@ Then point your client at the server. Use the absolute path of that index folder
 
 **Claude Code**
 
+As a plugin (asks for the index folder on install, Claude Code 2.1.275 or later):
+
+```
+/plugin install sqlite-graph-memory --marketplace tonydzi/sqlite-graph-memory
+```
+
+Or register the server by hand:
+
 ```bash
 claude mcp add sqlite-graph-memory -e BRAIN_INDEX_DIR=$HOME/.sgm-index -- uvx --python 3.12 --with 'sqlite-graph-memory[lite]' sqlite-graph-memory
 ```
