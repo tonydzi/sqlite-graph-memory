@@ -5,7 +5,7 @@ Written for AI coding agents, and equally readable by a human contributor. Short
 ## What this repo is
 
 The extracted memory layer of a personal second-brain agent setup: vector retrieval for entry
-points, hand-curated `[[wikilinks]]` for association, a cross-encoder rerank, and SQLite for the
+points, hand-curated `[[wikilinks]]` for association, dense ordering (cross-encoder rerank is opt-in since 0.3.7), and SQLite for the
 only two things worth persisting — a per-turn ledger and A/B telemetry.
 
 **Status: pilot.** It runs daily in one real setup and it is deliberately minimal. It is not a
@@ -17,7 +17,7 @@ graph database, no ETL, no entity-extraction pass.
 - **Python + SQLite (stdlib driver).** `requirements.txt` covers the embedding/rerank models only.
 - `index_notes.py` — chunk + embed a markdown folder (e5-base) into a `.npy`/`.pkl` index.
 - `brain_ask.py` — the recall pipeline: dense retrieve → optional `--graph` 1-hop wikilink
-  expansion → cross-encoder rerank → top-12. `--ab` runs vector-only *and* vector+graph, diffs
+  expansion → dense order (cross-encoder rerank only with `--rerank`) → top-12. `--ab` runs vector-only *and* vector+graph, diffs
   them, and logs the delta to SQLite.
 - `turnstate_hook.py` — agent Stop-hook; appends one row per assistant turn. Zero tokens, pure
   stdlib. `turnstate_show.py` is the read-only viewer.
