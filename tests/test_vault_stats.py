@@ -382,6 +382,12 @@ def test_hash_inside_quotes_is_not_a_comment(tmp_path):
     assert _metric(_run(tmp_path), "stale_concepts")["verdict"] == "n/a"
 
 
+def test_comma_inside_quotes_is_one_value(tmp_path):
+    _write(tmp_path, "c", fm='type: "note, concept"\nupdated: 2020-01-01')
+    assert _metric(_run(tmp_path), "stale_concepts")["verdict"] == "n/a"
+    assert vault_stats.fm_types('type: "note, concept"') == {"note, concept"}
+    assert vault_stats.fm_types("type: [note, concept]") == {"note", "concept"}
+
 def test_unreadable_notes_are_named_in_text_output(tmp_path, monkeypatch, capsys):
     _ring(tmp_path, 20, extra=3)
     real = vault_stats.read_for_links

@@ -149,10 +149,12 @@ def fm_types(fm):
     out = set()
     for chunk in raw:
         quoted = re.match(r"""\s*(["'])(.*?)\1\s*(#.*)?$""", chunk)
-        if quoted:                       # a `#` inside quotes is text, not a comment
-            chunk = quoted.group(2)
-        else:
-            chunk = re.sub(r'(^|\s)#.*$', '', chunk).strip().strip('[]')
+        if quoted:                       # one quoted scalar: `#` and `,` inside are text
+            item = quoted.group(2).strip().lower()
+            if item:
+                out.add(item)
+            continue
+        chunk = re.sub(r'(^|\s)#.*$', '', chunk).strip().strip('[]')
         for item in chunk.split(','):
             item = item.strip().strip('"\'').strip().lower()
             if item:
