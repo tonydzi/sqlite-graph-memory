@@ -10,8 +10,6 @@
   },
   "homepage": "https://github.com/tonydzi/sqlite-graph-memory",
   "repository": "https://github.com/tonydzi/sqlite-graph-memory",
-  "documentationUrl": "https://github.com/tonydzi/sqlite-graph-memory#readme",
-  "supportUrl": "https://github.com/tonydzi/sqlite-graph-memory/issues",
   "license": "MIT",
   "keywords": [
     "memory",
@@ -36,14 +34,10 @@
       "args": [
         "run",
         "--locked",
-        "--quiet",
-        "--project",
-        "${CLAUDE_PLUGIN_ROOT}",
-        "sqlite-graph-memory"
+        "${CLAUDE_PLUGIN_ROOT}/server.py"
       ],
       "env": {
-        "BRAIN_INDEX_DIR": "${user_config.index_dir}",
-        "TURNSTATE_DB": "${CLAUDE_PLUGIN_DATA}/turnstate.db"
+        "CLAUDE_PLUGIN_OPTION_INDEX_DIR": "${user_config.index_dir}"
       }
     }
   }
