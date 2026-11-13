@@ -9,6 +9,8 @@ Claude Code, Cursor, Codex or any other MCP client can recall from it.
 
 It fits [Andrej Karpathy's LLM Wiki pattern](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) (April 2026), where an agent maintains an interlinked markdown wiki and a search tool over the pages is the first helper he suggests adding: sgm is that search layer, read-only, and it follows your `[[wikilinks]]` as a graph. Independent project, not affiliated with or endorsed by him.
 
+This package is layers 4 and 5 of a larger memory design (always-loaded instructions, auto memory, curated vault, verbatim originals, retrieval, turn ledger). The whole picture and a step-by-step install for you or your agent: [MEMORY.md in the starter kit](https://github.com/tonydzi/second-brain-starter-kit/blob/master/MEMORY.md) ([по-русски](https://github.com/tonydzi/second-brain-starter-kit/blob/master/MEMORY.ru.md)).
+
 ![sgm-index builds the index of the 202-note bench vault, then sgm-ask --ab shows tool-lanternfish entering the top 5 only through a graph hop; the one-minute CPU indexing wait is cut](docs/demo.gif)
 
 **Your agent forgets everything between sessions, and plain vector search gives it back
