@@ -6,6 +6,8 @@ recorded after the fact rather than backdated to look contemporaneous.
 
 ## Unreleased
 
+**Plugin moved to `plugin/` with a locked runtime.** The Claude plugin directory refuses a PyPI version as a pin, so the plugin now starts the server with `uv run --locked` from its own folder, where `uv.lock` pins `sqlite-graph-memory[lite]` and every dependency by hash, with Intel Mac, Apple Silicon, Linux and Windows resolved separately (onnxruntime 1.32 has no Intel Mac wheel). The directory now checks only that folder, not the whole repo. Install command unchanged; plugins need `uv`.
+
 **Claude Code plugin.** `.claude-plugin/plugin.json` and `marketplace.json` make the repo installable with `/plugin install sqlite-graph-memory --marketplace tonydzi/sqlite-graph-memory`. It registers the same stdio server on `[lite]` (ONNX, no torch), asks for the index folder once, and keeps telemetry in the plugin's data folder. Checked 2026-11-12: `claude plugin validate . --strict` passes; installed into an empty `CLAUDE_CONFIG_DIR`, `claude mcp list` reports the server connected and `memory_recall` answers over a five-note synthetic folder.
 
 **`sgm-doctor`: four edge-case fixes from review.** Thanks @Kaap10 (#110): imports `brain_ask` lazily so a missing or broken NumPy prints a plain-words `[FAIL]` instead of an unhandled traceback; marks missing transitive dependencies of `sentence-transformers` as `[FAIL]` rather than a missing extra warning; isolates custom `HF_HUB_CACHE` / `HF_HOME` directories without mixing in default caches and respects `XDG_CACHE_HOME`; and validates index `.npy` array shape against metadata chunks so truncated or 0-byte index files report `[FAIL]` (closes #107).
