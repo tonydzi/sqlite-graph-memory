@@ -16,9 +16,12 @@ telemetry out of the user's project folder.
 import os
 from pathlib import Path
 
+# The folder chosen in the plugin settings wins over a BRAIN_INDEX_DIR inherited from the shell.
 idx = os.environ.get("CLAUDE_PLUGIN_OPTION_INDEX_DIR")
-if idx and not os.environ.get("BRAIN_INDEX_DIR"):
+if idx:
     os.environ["BRAIN_INDEX_DIR"] = idx
+# Model downloads from Hugging Face without its usage telemetry (PRIVACY.md).
+os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
 if not os.environ.get("TURNSTATE_DB"):
     base = os.environ.get("CLAUDE_PLUGIN_DATA") or str(Path.home() / ".sqlite-graph-memory")
     Path(base).mkdir(parents=True, exist_ok=True)

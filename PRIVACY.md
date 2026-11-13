@@ -15,13 +15,17 @@ there is nothing we receive, store or share.
 
 - The index (`.npy`, `.pkl`, manifest) in the folder you choose (`BRAIN_INDEX_DIR`).
 - An optional local SQLite file with recall telemetry (`TURNSTATE_DB`; the plugin keeps it in its
-  own data folder). It records queries and which notes were returned. It never leaves your machine.
+  own data folder, or in `~/.sqlite-graph-memory/` when Claude Code does not provide one). It records
+  queries and which notes were returned. It never leaves your machine.
+- Each MCP recall writes its answer to a temporary file in your system temp folder, reads it back and
+  returns it to the agent.
 - The optional Claude Code Stop hook writes a per-turn ledger to a local SQLite file you configure.
 
 ## What it sends over the network
 
 - Nothing about you or your notes. The only network traffic is downloading the open embedding and
-  reranker models from Hugging Face on first use, and Python packages when `uv`/`pip` installs them.
+  reranker models from Hugging Face on first use, and Python packages when `uv`/`pip` installs them. The plugin
+  turns off Hugging Face usage telemetry for those downloads (`HF_HUB_DISABLE_TELEMETRY=1`).
 - The code makes no other network calls.
 
 ## Retention and deletion
