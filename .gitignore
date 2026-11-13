@@ -9,3 +9,4 @@ eval/gold-*.jsonl
 eval/scores-*.jsonl
 dist/
 *.egg-info/
+plugin/.venv/
