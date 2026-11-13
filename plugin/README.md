@@ -19,6 +19,6 @@ your `[[wikilinks]]` are the graph. No graph database, no server to run.
    ```
 
 The server exposes one tool, `memory_recall`. It is read-only: the agent recalls, you write the notes.
-The runtime is pinned by `uv.lock` in this folder (`uv run --locked`).
+The runtime is pinned by `server.py.lock` in this folder (`uv run --locked server.py`).
 
 Project, docs and issues: https://github.com/tonydzi/sqlite-graph-memory
