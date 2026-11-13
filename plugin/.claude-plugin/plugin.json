@@ -40,5 +40,6 @@
         "CLAUDE_PLUGIN_OPTION_INDEX_DIR": "${user_config.index_dir}"
       }
     }
-  }
+  },
+  "privacyPolicyUrl": "https://github.com/tonydzi/sqlite-graph-memory/blob/main/PRIVACY.md"
 }
