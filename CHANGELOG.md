@@ -4,7 +4,7 @@ What shipped, in plain words. Entries below v0.1.3 were written on 2026-09-05 fr
 release notes that already existed — the file itself did not exist until then, so those three are
 recorded after the fact rather than backdated to look contemporaneous.
 
-## Unreleased
+## v0.3.9 - 2026-11-14
 
 **Plugin moved to `plugin/` with a locked runtime.** The Claude plugin directory refuses a PyPI version as a pin, so the plugin now starts the server with `uv run --locked` from its own folder, where `uv.lock` pins `sqlite-graph-memory[lite]` and every dependency by hash, with Intel Mac, Apple Silicon, Linux and Windows resolved separately (onnxruntime 1.32 has no Intel Mac wheel). The directory now checks only that folder, not the whole repo. Install command unchanged; plugins need `uv`. The server starts as `uv run --locked ${CLAUDE_PLUGIN_ROOT}/server.py`, a launcher whose `server.py.lock` pins everything (Intel Macs held at onnxruntime 1.23.2) and which maps the plugin option `CLAUDE_PLUGIN_OPTION_INDEX_DIR` to `BRAIN_INDEX_DIR`.
 
