@@ -12,7 +12,7 @@ personal by default — propose, do not ingest.
 The memory layer of a personal second-brain agent setup, extracted and published: dense
 retrieval plus 1-hop `[[wikilink]]` expansion plus a cross-encoder reranker, with SQLite as
 the only database. Three scripts, MIT. Status is **pilot** — it runs daily on one index of ~28k curated notes (~93k chunks) drawn from a ~270k-file
-vault and has no tests.
+vault. Packaged on PyPI, incremental indexing, 326 tests (`python -m pytest -q`, no model download).
 
 ## The alpha, ranked
 
@@ -75,7 +75,7 @@ vault and has no tests.
 - ⛔ Cannot claim: benchmark numbers, a win over any named Graph RAG system, or that graph
   recall improves quality in general. The public benchmark is v0.2 on the roadmap and does
   not exist yet. Saying otherwise cites a plan as a result.
-- ⛔ Cannot claim: production-readiness. No tests, no packaging, no incremental indexing —
+- ⛔ Cannot claim: production-readiness. Test coverage is uneven (two tests fail on Windows as of 2026-11-14) —
   the README says **pilot** and means it.
 
 ## Provenance
