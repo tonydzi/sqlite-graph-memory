@@ -63,8 +63,7 @@ product: the software includes a paired evaluation protocol with a query-class-s
 and a public leaderboard (`bench/`). This article does not claim that graph expansion improves retrieval; it provides the means to test that on private data.
 A query-side entity gate switches expansion off for short name or tool lookups, where
 it added noise in pilot runs; a note's `superseded_by` link is still followed, so replaced facts
-stay reachable. Persisted bitemporal edges exist only as a design note
-(`docs/bitemporal.md`). The test suite needs no model
+stay reachable. The test suite needs no model
 download or network.
 
 # Research impact statement
@@ -103,13 +102,13 @@ synthetic vault.
 
 # AI usage disclosure
 
-Generative AI tools were used in this project: Claude Code (Anthropic) and Codex
-CLI (OpenAI) for code generation, refactoring, test scaffolding and documentation,
-and Claude for drafting and copy-editing this paper. The human author set the
-problem, the design decisions above and the evaluation protocol, and reviewed, edited
-and validated all generated code and text. Correctness was checked by the test suite,
-by a continuous-integration job that sabotages the metric on purpose, and by a second
-model family reviewing the author's changes.
+Generative AI was used throughout: Claude Code (Anthropic; Opus 5 and 5.5, Sonnet 5.5,
+Fable 5 and 5.1) and Codex CLI (OpenAI; GPT-6) for code, refactoring, tests and
+documentation, and Claude for drafting and copy-editing this paper. The model is
+recorded in the `Assisted-by` trailer of 101 of the repository's 169 commits. The human
+author set the problem, the design decisions above and the evaluation protocol, and
+reviewed, edited and validated all generated code and text. Correctness was checked by
+the test suite and a second model family reviewing the author's changes.
 
 # Acknowledgements
 
