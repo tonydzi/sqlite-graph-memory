@@ -23,11 +23,11 @@ bibliography: paper.bib
 note corpus (an Obsidian or Logseq vault, or any folder of Markdown). It combines
 dense vector retrieval (multilingual-e5), a bounded one-hop expansion over the
 *human-curated wikilink graph* that such corpora already contain, and cross-encoder
-reranking. The index (vectors, chunk metadata, ledger) is stored in one SQLite file and served through the Model
-Context Protocol (MCP) and a command-line interface. Wikilinks are read from the
+reranking. The index (a float32 NumPy matrix and a pickled chunk-metadata file) lives in one directory and is served through the Model
+Context Protocol (MCP) and a command-line interface; a SQLite file holds only the per-turn ledger and the A/B log. Wikilinks are read from the
 notes at query time and are not copied into a graph database, which avoids a
-separately maintained edge copy; the index itself still needs a refresh after edits. A per-turn memory ledger records what the agent retrieved and decided, which turns agent memory into
-queryable telemetry (recording costs no model tokens; the agent's own output does).
+separately maintained edge copy; the index itself still needs a refresh after edits. A per-turn ledger records what the agent retrieved and decided, which turns agent memory into
+queryable telemetry.
 
 # Statement of need
 
@@ -36,9 +36,7 @@ Each link is a deliberate claim that two notes are related. Researchers who stud
 retrieval over personal corpora, and practitioners who wire long-term memory into
 coding agents, need a small and inspectable system that (a) consumes this human graph
 as it is, (b) runs on a laptop against a private corpus (the software itself sends nothing off the
-machine; what an MCP client then does with retrieved passages is outside its control),
-and (c) exposes its own behaviour for measurement. The software targets these two
-groups. It was extracted from a deployment used daily on a corpus of about 7,500
+machine), and (c) exposes its own behaviour for measurement. It was extracted from a deployment used daily on a corpus of about 7,500
 chunks.
 
 # State of the field
@@ -48,29 +46,26 @@ The dominant Graph RAG recipes build the graph with a language model: GraphRAG
 an open knowledge graph for associative retrieval, and Zep [@zep] maintains a
 temporal knowledge graph for agent memory. Their extraction step costs tokens, can
 invent edges, and needs a graph store that must be kept in sync with the corpus.
-Obsidian-oriented MCP servers mostly offer keyword or vector search and ignore the
-link structure. I built a new tool rather than contributing to these systems
-because the design question is different: the graph here is given, not inferred, so
-the contribution is the query-time use of an existing graph and the means to measure
-whether it helps, not a better extractor.
+I built a new tool because the design question differs: the graph is given, not
+inferred, so the contribution is query-time use of an existing graph and the means
+to measure whether it helps, not a better extractor.
 
 # Software design
 
 Three decisions shape the code. First, the wikilink walk is used only for candidate
 generation: neighbours of the top vector hits enter the pool, and the cross-encoder
-reranker remains the sole arbiter of final ranking. The expansion limit bounds candidate growth; its effect on quality is an empirical
-question, because reranking can still promote irrelevant neighbours. A switch turns
-the expansion off for ablation. Second, SQLite
-is the only store, with a documented schema shipped inside the wheel, so an index is
-one file that can be copied, diffed and backed up. Third, measurement is part of the
+reranker remains the sole arbiter of final ranking. The expansion limit bounds candidate growth; its effect on quality is empirical.
+A switch turns
+the expansion off for ablation. Second, storage is
+plain: the index is one directory of files, SQLite holds only the turn ledger and the A/B log
+under a documented schema, and there is no graph or vector database to run. Third, measurement is part of the
 product: the software includes a paired evaluation protocol with a query-class-stratified benchmark (entity, theme, bridge, compare,
-temporal) (`eval/`, `bench/`). This article does not claim that graph expansion improves retrieval; it provides the means to test that on private data. An owner of a
-linked corpus can replicate the evaluation without disclosing the corpus.
-Facts that change over time are kept bitemporally (`docs/bitemporal.md`), with
-superseded links resolved through the entity gate. The test suite needs no model
-download or network, because embedding libraries are imported lazily and the tests
-use small fixture corpora, and one
-continuous-integration check deliberately breaks the nDCG metric to prove that the
+temporal; `eval/`) and a public leaderboard (`bench/`). This article does not claim that graph expansion improves retrieval; it provides the means to test that on private data.
+A note's `superseded_by` link is followed even when the entity gate is closed, so
+replaced facts stay reachable; persisted bitemporal edges exist only as a design note
+(`docs/bitemporal.md`). The test suite needs no model
+download or network, and one
+continuous-integration check deliberately breaks the evaluation metric to prove that the
 suite would notice.
 
 # Research impact statement
@@ -79,18 +74,17 @@ The protocol and pilot telemetry are described in a companion preprint
 [@dziatkovskii2026graphrag], and the operating context in [@dziatkovskii2026fleet];
 both are archived on Zenodo with DOIs. The repository is public since 3 July 2026 and
 has tagged releases, a changelog, continuous integration on Python 3.9 to 3.13, and a
-published PyPI package. Outside contributors have merged pull requests, including
-the ablation diagnostics added to the evaluation script, and the same author maintains a separate LangChain
-retriever package built on it. The author uses the system daily as personal
-agent memory. Adoption beyond the authors is small: at the time of writing the
+published PyPI package. Outside contributors have merged pull requests, and the same author maintains a separate LangChain
+retriever package built on it. Adoption beyond the author is small: at the time of writing the
 repository has 15 stars and 15 forks (GitHub, 16 November 2026), and I do not claim more.
 
 The repository also ships `bench/`, an open leaderboard (memory-bench v0.1: a
 synthetic vault of 202 notes and 91 questions) in which memory systems are compared
 on recall@5 and on abstaining when the answer is absent. Rows marked CI-reproduced are
 rerun in continuous integration, and two reference rows were contributed by an outside
-author. Table 1 compares version 0.3.0 with a plain dense baseline that uses the same
-chunker and bi-encoder, and with BM25.
+author. Its question classes are fact, bridge, paraphrase, paraphrase-bridge and
+temporal. Table 1 compares version 0.3.0 with a plain dense baseline that uses the same
+chunker and bi-encoder but no graph hop and no reranker, and with BM25.
 
 | system | R@5 | bridge R@5 | paraphrase R@5 | abstains when absent |
 |---|---:|---:|---:|---:|
@@ -99,11 +93,13 @@ chunker and bi-encoder, and with BM25.
 | sqlite-graph-memory, graph mode | 0.85 | 1.00 | 0.50 | 0.45 |
 | BM25 | 0.77 | 1.00 | 0.00 | 0.36 |
 
-Table: Recall@5 and abstention on memory-bench v0.1 (`bench/LEADERBOARD.md`).
+Table: memory-bench v0.1 (`bench/LEADERBOARD.md`).
 
-On this vault graph mode does not beat the dense baseline overall: expansion helps
-bridge questions (1.00 against 0.87), while the cross-encoder demotes paraphrase hits
-(0.50 against 1.00). This is a property of one synthetic vault, not a general claim.
+On this vault graph mode does not beat the dense baseline overall. Within the same
+reranked pipeline, expansion moves bridge R@5 from 0.97 to 1.00 and paraphrase R@5
+from 0.80 to 0.50 (overall 0.88 to 0.85); the rest of the gap to plain dense retrieval
+comes from the reranking and abstention stage, which was not ablated separately. This
+is a property of one synthetic vault, not a general claim.
 
 # AI usage disclosure
 
