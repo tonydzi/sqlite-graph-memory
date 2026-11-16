@@ -1,5 +1,5 @@
 ---
-title: 'sqlite-graph-memory: Graph RAG over human-curated wikilinks on SQLite'
+title: 'sqlite-graph-memory: Graph RAG over human-curated wikilinks for agent memory'
 tags:
   - Python
   - retrieval-augmented generation
@@ -21,9 +21,9 @@ bibliography: paper.bib
 
 `sqlite-graph-memory` is a retrieval layer for AI agents that work over a linked
 note corpus (an Obsidian or Logseq vault, or any folder of Markdown). It combines
-dense vector retrieval (multilingual-e5), a bounded one-hop expansion over the
-*human-curated wikilink graph* that such corpora already contain, and cross-encoder
-reranking. The index (a float32 NumPy matrix and a pickled chunk-metadata file) lives in one directory and is served through the Model
+dense vector retrieval (`multilingual-e5-base`, 1,200-character chunks, top 60), a
+bounded one-hop expansion over the *human-curated wikilink graph* that such corpora
+already contain, and optional cross-encoder reranking (off by default since 0.3.7). The index (a float32 NumPy matrix and a pickled chunk-metadata file) lives in one directory and is served through the Model
 Context Protocol (MCP) and a command-line interface; a SQLite file holds only the per-turn ledger and the A/B log. Wikilinks are read from the
 notes at query time and are not copied into a graph database, which avoids a
 separately maintained edge copy; the index itself still needs a refresh after edits. A per-turn ledger records what the agent retrieved and decided, which turns agent memory into
@@ -36,8 +36,7 @@ Each link is a deliberate claim that two notes are related. Researchers who stud
 retrieval over personal corpora, and practitioners who wire long-term memory into
 coding agents, need a small and inspectable system that (a) consumes this human graph
 as it is, (b) runs on a laptop against a private corpus (the software itself sends nothing off the
-machine), and (c) exposes its own behaviour for measurement. It was extracted from a deployment used daily on a corpus of about 7,500
-chunks.
+machine), and (c) exposes its own behaviour for measurement.
 
 # State of the field
 
@@ -53,16 +52,17 @@ to measure whether it helps, not a better extractor.
 # Software design
 
 Three decisions shape the code. First, the wikilink walk is used only for candidate
-generation: neighbours of the top vector hits enter the pool, and the cross-encoder
-reranker remains the sole arbiter of final ranking. The expansion limit bounds candidate growth; its effect on quality is empirical.
+generation: neighbours of the top 15 vector hits (at most 40) enter the pool, and
+ranking stays with the dense similarity or, when enabled, the cross-encoder. The expansion limit bounds candidate growth; its effect on quality is empirical.
 A switch turns
 the expansion off for ablation. Second, storage is
 plain: the index is one directory of files, SQLite holds only the turn ledger and the A/B log
 under a documented schema, and there is no graph or vector database to run. Third, measurement is part of the
 product: the software includes a paired evaluation protocol with a query-class-stratified benchmark (entity, theme, bridge, compare,
 temporal; `eval/`) and a public leaderboard (`bench/`). This article does not claim that graph expansion improves retrieval; it provides the means to test that on private data.
-A note's `superseded_by` link is followed even when the entity gate is closed, so
-replaced facts stay reachable; persisted bitemporal edges exist only as a design note
+A query-side entity gate switches expansion off for short name or tool lookups, where
+it added noise; a note's `superseded_by` link is still followed, so replaced facts
+stay reachable. Persisted bitemporal edges exist only as a design note
 (`docs/bitemporal.md`). The test suite needs no model
 download or network, and one
 continuous-integration check deliberately breaks the evaluation metric to prove that the
@@ -74,17 +74,18 @@ The protocol and pilot telemetry are described in a companion preprint
 [@dziatkovskii2026graphrag], and the operating context in [@dziatkovskii2026fleet];
 both are archived on Zenodo with DOIs. The repository is public since 3 July 2026 and
 has tagged releases, a changelog, continuous integration on Python 3.9 to 3.13, and a
-published PyPI package. Outside contributors have merged pull requests, and the same author maintains a separate LangChain
-retriever package built on it. Adoption beyond the author is small: at the time of writing the
+published PyPI package. Outside contributors have merged pull requests. Adoption beyond the author is small: at the time of writing the
 repository has 15 stars and 15 forks (GitHub, 16 November 2026), and I do not claim more.
 
 The repository also ships `bench/`, an open leaderboard (memory-bench v0.1: a
 synthetic vault of 202 notes and 91 questions) in which memory systems are compared
 on recall@5 and on abstaining when the answer is absent. Rows marked CI-reproduced are
 rerun in continuous integration, and two reference rows were contributed by an outside
-author. Its question classes are fact, bridge, paraphrase, paraphrase-bridge and
-temporal. Table 1 compares version 0.3.0 with a plain dense baseline that uses the same
-chunker and bi-encoder but no graph hop and no reranker, and with BM25.
+author. Its classes are fact (28 questions), bridge (15), paraphrase (10), paraphrase-bridge
+(6), temporal (10) and two absent-answer classes (22). Recall is scored on the 69
+answerable questions; abstention comes from a shared extractive answer step, not from a
+retrieval threshold. Table 1 compares version 0.3.0, reranker on, with a plain dense
+baseline (same chunker and bi-encoder, no graph hop, no reranker) and with BM25.
 
 | system | R@5 | bridge R@5 | paraphrase R@5 | abstains when absent |
 |---|---:|---:|---:|---:|
@@ -95,11 +96,11 @@ chunker and bi-encoder but no graph hop and no reranker, and with BM25.
 
 Table: memory-bench v0.1 (`bench/LEADERBOARD.md`).
 
-On this vault graph mode does not beat the dense baseline overall. Within the same
-reranked pipeline, expansion moves bridge R@5 from 0.97 to 1.00 and paraphrase R@5
-from 0.80 to 0.50 (overall 0.88 to 0.85); the rest of the gap to plain dense retrieval
-comes from the reranking and abstention stage, which was not ablated separately. This
-is a property of one synthetic vault, not a general claim.
+Graph mode does not beat the dense baseline overall. Within the same reranked
+pipeline, expansion moves bridge R@5 from 0.97 to 1.00 and paraphrase R@5 from 0.80
+to 0.50 (ten questions). The gap to plain dense retrieval mixes reranking with the
+answer step and was not ablated separately; with so few questions per class these
+numbers are directional, not significant, and come from one synthetic vault.
 
 # AI usage disclosure
 
