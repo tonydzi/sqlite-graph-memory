@@ -27,8 +27,8 @@ already contain, and optional cross-encoder reranking (`mmarco-mMiniLMv2`, off b
 Context Protocol (MCP) and a command-line interface; a SQLite file holds only the per-turn ledger and the A/B log. Wikilinks are read from the
 notes at query time and are not copied into a graph database, which avoids a
 separately maintained edge copy; the index itself still needs a refresh after edits. A per-turn ledger, derived from the agent transcript by a Stop hook, records each
-turn's ask, summary, tools and decision lines; a separate A/B log records what each
-retrieval mode returned.
+turn's ask, summary, tools and decision lines; a separate A/B log records, per query,
+which notes graph expansion promoted.
 
 # Statement of need
 
@@ -53,16 +53,16 @@ to measure whether it helps, not a better extractor.
 # Software design
 
 Three decisions shape the code. First, the wikilink walk is used only for candidate
-generation: neighbours of the top 15 vector hits (at most 40) enter the pool, and
+generation: neighbours of the top 15 vector hits enter the pool, and
 ranking stays with the dense similarity or, when enabled, the cross-encoder. With dense ordering, the default, a neighbour outside the top 60 cannot enter the
 12 returned results, so the graph changes results only with reranking or PageRank fusion.
 Second, storage is
-plain: the index is one directory of files, SQLite holds only the turn ledger and the A/B log
+plain: the index is one directory of files, SQLite holds the turn ledger and the A/B log
 under a documented schema. Third, measurement is part of the
 product: the software includes a paired evaluation protocol with a query-class-stratified benchmark (`eval/`)
 and a public leaderboard (`bench/`). This article does not claim that graph expansion improves retrieval; it provides the means to test that on private data.
 A query-side entity gate switches expansion off for short name or tool lookups, where
-it added noise in pilot A/B runs; a note's `superseded_by` link is still followed, so replaced facts
+it added noise in pilot runs; a note's `superseded_by` link is still followed, so replaced facts
 stay reachable. Persisted bitemporal edges exist only as a design note
 (`docs/bitemporal.md`). The test suite needs no model
 download or network.
@@ -75,7 +75,7 @@ has tagged releases, a changelog, continuous integration on Python 3.9 to 3.13, 
 published PyPI package. Outside contributors have merged pull requests. Adoption beyond the author is small: 15 stars and 15 forks on
 GitHub (16 November 2026).
 
-The repository also ships `bench/`, an open leaderboard (memory-bench v0.1: a
+The repository also ships `bench/`, an open leaderboard (memory-bench v0.1, `bench/results/`: a
 synthetic vault of 202 notes and 91 questions) in which memory systems are compared
 on recall@5 and on abstaining when the answer is absent. CI-reproduced rows are rerun in
 continuous integration, and two reference rows came from an outside author. Its classes are fact (28 questions), bridge (15), paraphrase (10), paraphrase-bridge
