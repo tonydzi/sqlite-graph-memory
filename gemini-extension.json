@@ -1,0 +1,15 @@
+{
+  "name": "sqlite-graph-memory",
+  "version": "0.3.9",
+  "description": "Local recall over a folder of linked markdown notes: vector search plus one hop over [[wikilinks]], served as an MCP tool from a SQLite index.",
+  "mcpServers": {
+    "sqlite-graph-memory": {
+      "command": "uvx",
+      "args": ["--python", "3.12", "--from", "sqlite-graph-memory[lite]==0.3.9", "sgm-mcp"],
+      "env": {
+        "BRAIN_INDEX_DIR": "${HOME}/.sgm-index"
+      }
+    }
+  },
+  "contextFileName": "plugin/skills/recall-notes/SKILL.md"
+}

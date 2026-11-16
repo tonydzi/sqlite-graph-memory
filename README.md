@@ -92,6 +92,8 @@ Cursor (`~/.cursor/mcp.json`; Claude Desktop, Zed and Windsurf use the same bloc
 }
 ```
 
+Gemini CLI: `gemini extensions install https://github.com/tonydzi/sqlite-graph-memory` reads `gemini-extension.json` (pinned to 0.3.9, index in `$HOME/.sgm-index`; build it with step 1 first).
+
 VS Code uses `.vscode/mcp.json` with `"servers"` and `"type": "stdio"`, see "Install in your client" under Details. `uvx` must be on the PATH that the client app sees; restart the app if `uv` was installed after it started. The optional Claude Code plugin adds recall instructions; it requires this separate MCP connection.
 
 **3. Without `uvx` (pip route).** In a virtual environment: `pip install 'sqlite-graph-memory[lite]'`, then `sgm-index <notes>`, `sgm-ask`, and in the client config `"command": "sgm-mcp"` with the absolute path to that environment's `sgm-mcp`. On an Intel Mac use Python 3.12.
