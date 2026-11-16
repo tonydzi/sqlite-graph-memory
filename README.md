@@ -486,6 +486,8 @@ board with one adapter file and a pull request: [bench/CONTRIBUTING.md](bench/CO
 CI recomputes every submitted number from the per-question outputs, so a typed-in number
 cannot get onto the board.
 
+What the abstention column means in practice, measured against Mem0 and Fidelis on this board: we return nothing on 10 of the 22 unanswerable questions, Mem0 on 3, and that gap comes from one threshold line in our adapter, which adds 12 false refusals. The full write-up with all the costs: [Hugging Face](https://huggingface.co/blog/TonyDzi/memory-says-i-dont-know) · [GitHub](https://github.com/tonydzi/clawrush/blob/main/longreads/memory-says-i-dont-know-2026-11-11.md) · [replay script](https://github.com/tonydzi/clawrush/blob/main/artifacts/memory-says-i-dont-know-2026-11-11/replay_threshold.py).
+
 ## Health check — `sgm-stats`
 
 Four numbers about the link graph itself, no model and no index needed. It reads the notes with
