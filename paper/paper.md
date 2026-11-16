@@ -53,11 +53,12 @@ to measure whether it helps, not a better extractor.
 
 Three decisions shape the code. First, the wikilink walk is used only for candidate
 generation: neighbours of the top 15 vector hits (at most 40) enter the pool, and
-ranking stays with the dense similarity or, when enabled, the cross-encoder. The expansion limit bounds candidate growth; its effect on quality is empirical.
+ranking stays with the dense similarity or, when enabled, the cross-encoder. With dense ordering, the default, a neighbour outside the top 60 cannot enter the
+top 12, so the graph changes results only with reranking or PageRank fusion.
 A switch turns
 the expansion off for ablation. Second, storage is
 plain: the index is one directory of files, SQLite holds only the turn ledger and the A/B log
-under a documented schema, and there is no graph or vector database to run. Third, measurement is part of the
+under a documented schema. Third, measurement is part of the
 product: the software includes a paired evaluation protocol with a query-class-stratified benchmark (entity, theme, bridge, compare,
 temporal; `eval/`) and a public leaderboard (`bench/`). This article does not claim that graph expansion improves retrieval; it provides the means to test that on private data.
 A query-side entity gate switches expansion off for short name or tool lookups, where
@@ -70,21 +71,20 @@ suite would notice.
 
 # Research impact statement
 
-The protocol and pilot telemetry are described in a companion preprint
-[@dziatkovskii2026graphrag], and the operating context in [@dziatkovskii2026fleet];
-both are archived on Zenodo with DOIs. The repository is public since 3 July 2026 and
+The protocol and pilot telemetry are in a companion preprint
+[@dziatkovskii2026graphrag], archived on Zenodo with a DOI. The repository is public since 3 July 2026 and
 has tagged releases, a changelog, continuous integration on Python 3.9 to 3.13, and a
 published PyPI package. Outside contributors have merged pull requests. Adoption beyond the author is small: at the time of writing the
 repository has 15 stars and 15 forks (GitHub, 16 November 2026), and I do not claim more.
 
 The repository also ships `bench/`, an open leaderboard (memory-bench v0.1: a
 synthetic vault of 202 notes and 91 questions) in which memory systems are compared
-on recall@5 and on abstaining when the answer is absent. Rows marked CI-reproduced are
-rerun in continuous integration, and two reference rows were contributed by an outside
-author. Its classes are fact (28 questions), bridge (15), paraphrase (10), paraphrase-bridge
+on recall@5 and on abstaining when the answer is absent. CI-reproduced rows are rerun in
+continuous integration, and two reference rows came from an outside author. Its classes are fact (28 questions), bridge (15), paraphrase (10), paraphrase-bridge
 (6), temporal (10) and two absent-answer classes (22). Recall is scored on the 69
-answerable questions; abstention comes from a shared extractive answer step, not from a
-retrieval threshold. Table 1 compares version 0.3.0, reranker on, with a plain dense
+answerable questions. Abstention rules differ: baselines stop only when no sentence
+overlaps the question, while sqlite-graph-memory also stops when its top reranker score
+is below zero. Table 1 compares version 0.3.0, reranker on, with a plain dense
 baseline (same chunker and bi-encoder, no graph hop, no reranker) and with BM25.
 
 | system | R@5 | bridge R@5 | paraphrase R@5 | abstains when absent |
@@ -98,9 +98,11 @@ Table: memory-bench v0.1 (`bench/LEADERBOARD.md`).
 
 Graph mode does not beat the dense baseline overall. Within the same reranked
 pipeline, expansion moves bridge R@5 from 0.97 to 1.00 and paraphrase R@5 from 0.80
-to 0.50 (ten questions). The gap to plain dense retrieval mixes reranking with the
-answer step and was not ablated separately; with so few questions per class these
-numbers are directional, not significant, and come from one synthetic vault.
+to 0.50 (ten questions). Plain dense retrieval shares the first stage and has no
+reranker, so its 0.93 against 0.88 points at the reranker, though this is not a controlled
+ablation. The reranker threshold
+also discards every paraphrase answer (false abstain 1.00). With so few questions per
+class the numbers are directional, not significant, and come from one synthetic vault.
 
 # AI usage disclosure
 
@@ -108,12 +110,12 @@ Generative AI tools were used in this project: Claude Code (Anthropic) and Codex
 CLI (OpenAI) for code generation, refactoring, test scaffolding and documentation,
 and Claude for drafting and copy-editing this paper. The human author set the
 problem, the design decisions above and the evaluation protocol, and reviewed, edited
-and validated all generated code and text. Correctness was checked by the automated
-test suite, by the continuous-integration job that sabotages the metric on purpose,
-and by review of the author's changes by a second model family.
+and validated all generated code and text. Correctness was checked by the test suite,
+by a continuous-integration job that sabotages the metric on purpose, and by a second
+model family reviewing the author's changes.
 
 # Acknowledgements
 
-No external funding. I thank the outside contributors to the repository.
+No external funding.
 
 # References
