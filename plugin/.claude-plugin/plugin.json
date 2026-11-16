@@ -3,7 +3,7 @@
   "name": "sqlite-graph-memory",
   "displayName": "sqlite-graph-memory",
   "version": "0.3.8",
-  "description": "Recall over your markdown notes as a local stdio MCP server: vector search finds entry points, your [[wikilinks]] are the graph, a cross-encoder reranks. No graph database, no server to run; telemetry in one SQLite file. Needs uv. Build the index once with `sgm-index /path/to/notes`.",
+  "description": "Recall over your markdown notes as a local stdio MCP server: vector search finds entry points, your [[wikilinks]] are the graph, dense similarity orders the result (cross-encoder rerank is opt-in). No graph database, no server to run; telemetry in one SQLite file. Needs uv. Build the index once with `sgm-index /path/to/notes`.",
   "author": {
     "name": "Anton Dziatkovskii",
     "url": "https://github.com/tonydzi"
