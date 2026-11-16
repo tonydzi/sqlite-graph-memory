@@ -13,7 +13,7 @@ authors:
 affiliations:
   - name: Palo Alto AI Research Lab, Palo Alto, CA, USA
     index: 1
-date: 8 November 2026
+date: 16 November 2026
 bibliography: paper.bib
 ---
 
@@ -83,7 +83,27 @@ published PyPI package. Outside contributors have merged pull requests, includin
 the ablation diagnostics added to the evaluation script, and the same author maintains a separate LangChain
 retriever package built on it. The author uses the system daily as personal
 agent memory. Adoption beyond the authors is small: at the time of writing the
-repository has 14 stars and 14 forks (GitHub, 8 November 2026), and I do not claim more.
+repository has 15 stars and 15 forks (GitHub, 16 November 2026), and I do not claim more.
+
+The repository also ships `bench/`, an open leaderboard (memory-bench v0.1: a
+synthetic vault of 202 notes and 91 questions) in which memory systems are compared
+on recall@5 and on abstaining when the answer is absent. Rows marked CI-reproduced are
+rerun in continuous integration, and two reference rows were contributed by an outside
+author. Table 1 compares version 0.3.0 with a plain dense baseline that uses the same
+chunker and bi-encoder, and with BM25.
+
+| system | R@5 | bridge R@5 | paraphrase R@5 | abstains when absent |
+|---|---:|---:|---:|---:|
+| plain dense RAG | 0.93 | 0.87 | 1.00 | 0.18 |
+| sqlite-graph-memory, vector only | 0.88 | 0.97 | 0.80 | 0.45 |
+| sqlite-graph-memory, graph mode | 0.85 | 1.00 | 0.50 | 0.45 |
+| BM25 | 0.77 | 1.00 | 0.00 | 0.36 |
+
+Table: Recall@5 and abstention on memory-bench v0.1 (`bench/LEADERBOARD.md`).
+
+On this vault graph mode does not beat the dense baseline overall: expansion helps
+bridge questions (1.00 against 0.87), while the cross-encoder demotes paraphrase hits
+(0.50 against 1.00). This is a property of one synthetic vault, not a general claim.
 
 # AI usage disclosure
 
