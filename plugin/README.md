@@ -1,24 +1,35 @@
-# sqlite-graph-memory plugin for Claude Code
+# sqlite-graph-memory recall workflow plugin
 
-Recall over your markdown notes as a local stdio MCP server: vector search finds entry points,
-your `[[wikilinks]]` are the graph. No graph database, no server to run.
+This instructions-only plugin helps Claude use an **already configured**
+`sqlite-graph-memory` MCP server. It does not install Python packages, build an
+index, start a local server, or provide memory by itself.
 
-## Install
+## Prerequisite
 
-1. Install [uv](https://docs.astral.sh/uv/).
-2. Build the index once over any folder of markdown notes:
+Configure sqlite-graph-memory separately and build an index over your chosen
+markdown folder using the [project setup guide](https://github.com/tonydzi/sqlite-graph-memory#readme).
+The client must expose the server's `memory_recall` tool. If the tool is absent,
+the skill explains the prerequisite instead of installing or launching anything.
 
-   ```bash
-   BRAIN_INDEX_DIR=$HOME/.sgm-index uvx --python 3.12 --from 'sqlite-graph-memory[lite]' sgm-index ~/notes
-   ```
+## Install and use
 
-3. Install the plugin and give it that index folder when asked:
+Install from the marketplace in Claude Code 2.1.275 or later:
 
-   ```
-   /plugin install sqlite-graph-memory --marketplace tonydzi/sqlite-graph-memory
-   ```
+```text
+/plugin install sqlite-graph-memory --marketplace tonydzi/sqlite-graph-memory
+```
+Ask Claude to recall a past decision or search linked markdown notes. The
+`recall-notes` skill selects a query, reads the returned evidence, and cites it.
+The MCP server must be configured independently before this works.
 
-The server exposes one tool, `memory_recall`. It is read-only: the agent recalls, you write the notes.
-The runtime is pinned by `server.py.lock` in this folder (`uv run --locked server.py`).
+## Directory release 0.3.10
 
-Project, docs and issues: https://github.com/tonydzi/sqlite-graph-memory
+The directory package contains only Markdown instructions, JSON metadata and its
+icon. The previous locked launcher is preserved outside this package in
+[examples/locked-mcp](https://github.com/tonydzi/sqlite-graph-memory/tree/main/examples/locked-mcp).
+The Python library remains at its own version; this is a plugin-only release.
+
+No server or remote endpoint is declared by this plugin. Notes go only to the
+server the user configured separately. See the project's
+[privacy policy](https://github.com/tonydzi/sqlite-graph-memory/blob/main/PRIVACY.md)
+for the engine's model downloads and local telemetry.

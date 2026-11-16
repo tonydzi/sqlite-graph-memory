@@ -2,8 +2,8 @@
   "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
   "name": "sqlite-graph-memory",
   "displayName": "sqlite-graph-memory",
-  "version": "0.3.8",
-  "description": "Recall over your markdown notes as a local stdio MCP server: vector search finds entry points, your [[wikilinks]] are the graph, dense similarity orders the result (cross-encoder rerank is opt-in). No graph database, no server to run; telemetry in one SQLite file. Needs uv. Build the index once with `sgm-index /path/to/notes`.",
+  "version": "0.3.10",
+  "description": "Recall workflow for linked markdown notes using a separately configured sqlite-graph-memory MCP server. Instructions only: this plugin does not install or start a server. Requires an existing memory_recall tool and a previously built index.",
   "author": {
     "name": "Anton Dziatkovskii",
     "url": "https://github.com/tonydzi"
@@ -20,26 +20,6 @@
     "graph-rag",
     "sqlite"
   ],
-  "userConfig": {
-    "index_dir": {
-      "type": "directory",
-      "title": "Index directory",
-      "description": "Folder holding the index built by `sgm-index /path/to/notes` (it sets BRAIN_INDEX_DIR).",
-      "required": true
-    }
-  },
-  "mcpServers": {
-    "sqlite-graph-memory": {
-      "command": "uv",
-      "args": [
-        "run",
-        "--locked",
-        "${CLAUDE_PLUGIN_ROOT}/server.py"
-      ],
-      "env": {
-        "CLAUDE_PLUGIN_OPTION_INDEX_DIR": "${user_config.index_dir}"
-      }
-    }
-  },
-  "privacyPolicyUrl": "https://github.com/tonydzi/sqlite-graph-memory/blob/main/PRIVACY.md"
+  "privacyPolicyUrl": "https://github.com/tonydzi/sqlite-graph-memory/blob/main/PRIVACY.md",
+  "skills": "./skills/"
 }

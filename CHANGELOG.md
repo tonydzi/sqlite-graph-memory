@@ -4,11 +4,13 @@ What shipped, in plain words. Entries below v0.1.3 were written on 2026-09-05 fr
 release notes that already existed — the file itself did not exist until then, so those three are
 recorded after the fact rather than backdated to look contemporaneous.
 
+## Plugin 0.3.10 - 2026-11-16
+
+The directory rejected the previous package because an unverified organization cannot ship a local MCP server or executable files. `plugin/` now contains only a recall workflow skill, JSON metadata and an icon. It does not install or start a server. A separately configured `memory_recall` tool and prebuilt index are required; without that tool the skill explains the prerequisite and stops. The old launcher and lockfile remain outside the directory package in `examples/locked-mcp/`. Library version unchanged.
+
 ## v0.3.9 - 2026-11-14
 
-**Plugin moved to `plugin/` with a locked runtime.** The Claude plugin directory refuses a PyPI version as a pin, so the plugin now starts the server with `uv run --locked` from its own folder, where `uv.lock` pins `sqlite-graph-memory[lite]` and every dependency by hash, with Intel Mac, Apple Silicon, Linux and Windows resolved separately (onnxruntime 1.32 has no Intel Mac wheel). The directory now checks only that folder, not the whole repo. Install command unchanged; plugins need `uv`. The server starts as `uv run --locked ${CLAUDE_PLUGIN_ROOT}/server.py`, a launcher whose `server.py.lock` pins everything (Intel Macs held at onnxruntime 1.23.2) and which maps the plugin option `CLAUDE_PLUGIN_OPTION_INDEX_DIR` to `BRAIN_INDEX_DIR`.
-
-**Claude Code plugin.** `.claude-plugin/plugin.json` and `marketplace.json` make the repo installable with `/plugin install sqlite-graph-memory --marketplace tonydzi/sqlite-graph-memory`. It registers the same stdio server on `[lite]` (ONNX, no torch), asks for the index folder once, and keeps telemetry in the plugin's data folder. Checked 2026-11-12: `claude plugin validate . --strict` passes; installed into an empty `CLAUDE_CONFIG_DIR`, `claude mcp list` reports the server connected and `memory_recall` answers over a five-note synthetic folder.
+**Historical plugin packaging, superseded by plugin 0.3.10 below.** The original plugin registered a local stdio server and used a locked Python launcher. Its earlier connection checks applied to that package, not to the current instructions-only directory plugin. The launcher and its lockfile are now preserved in `examples/locked-mcp/` for separate manual configuration.
 
 **`sgm-doctor`: four edge-case fixes from review.** Thanks @Kaap10 (#110): imports `brain_ask` lazily so a missing or broken NumPy prints a plain-words `[FAIL]` instead of an unhandled traceback; marks missing transitive dependencies of `sentence-transformers` as `[FAIL]` rather than a missing extra warning; isolates custom `HF_HUB_CACHE` / `HF_HOME` directories without mixing in default caches and respects `XDG_CACHE_HOME`; and validates index `.npy` array shape against metadata chunks so truncated or 0-byte index files report `[FAIL]` (closes #107).
 
