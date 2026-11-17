@@ -10,7 +10,9 @@ The directory rejected the previous package because an unverified organization c
 
 ## v0.3.9 - 2026-11-14
 
-**Historical plugin packaging, superseded by plugin 0.3.10 below.** The original plugin registered a local stdio server and used a locked Python launcher. Its earlier connection checks applied to that package, not to the current instructions-only directory plugin. The launcher and its lockfile are now preserved in `examples/locked-mcp/` for separate manual configuration.
+<!-- edited after release: the plugin paragraph described packaging that plugin 0.3.10 replaced; rewritten to point readers at the current package -->
+
+**Historical plugin packaging, superseded by plugin 0.3.10 above.** The original plugin registered a local stdio server and used a locked Python launcher. Its earlier connection checks applied to that package, not to the current instructions-only directory plugin. The launcher and its lockfile are now preserved in `examples/locked-mcp/` for separate manual configuration.
 
 **`sgm-doctor`: four edge-case fixes from review.** Thanks @Kaap10 (#110): imports `brain_ask` lazily so a missing or broken NumPy prints a plain-words `[FAIL]` instead of an unhandled traceback; marks missing transitive dependencies of `sentence-transformers` as `[FAIL]` rather than a missing extra warning; isolates custom `HF_HUB_CACHE` / `HF_HOME` directories without mixing in default caches and respects `XDG_CACHE_HOME`; and validates index `.npy` array shape against metadata chunks so truncated or 0-byte index files report `[FAIL]` (closes #107).
 
