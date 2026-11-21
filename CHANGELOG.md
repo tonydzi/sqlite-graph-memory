@@ -4,6 +4,10 @@ What shipped, in plain words. Entries below v0.1.3 were written on 2026-09-05 fr
 release notes that already existed — the file itself did not exist until then, so those three are
 recorded after the fact rather than backdated to look contemporaneous.
 
+## Unreleased
+
+**Docs: README badge for the Awesome AI Agents listing.** Thanks @NipunaRanasinghe (#127): the README now carries an "Emerging in Awesome AI Agents" badge that links to the project's entry in the emerging list, the same entry that was added in NipunaRanasinghe/awesome-ai-agents#278.
+
 ## Plugin 0.3.10 - 2026-11-16
 
 The directory rejected the previous package because an unverified organization cannot ship a local MCP server or executable files. `plugin/` now contains only a recall workflow skill, JSON metadata and an icon. It does not install or start a server. A separately configured `memory_recall` tool and prebuilt index are required; without that tool the skill explains the prerequisite and stops. The old launcher and lockfile remain outside the directory package in `examples/locked-mcp/`. Library version unchanged.
