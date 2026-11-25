@@ -2,6 +2,8 @@
 
 <!-- mcp-name: io.github.tonydzi/sqlite-graph-memory -->
 
+[![tonydzi/sqlite-graph-memory MCP server](https://glama.ai/mcp/servers/tonydzi/sqlite-graph-memory/badges/score.svg)](https://glama.ai/mcp/servers/tonydzi/sqlite-graph-memory)
+
 Gives your AI coding assistant a memory of your own markdown notes, and follows the links between your notes to find related ones.
 
 **Who it's for:** people with a folder of markdown notes (an Obsidian vault works) who use Claude Code, Cursor, Codex or another MCP client.
